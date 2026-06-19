@@ -33,8 +33,9 @@ Grounded in the real Designer screens (prototype is isolated, but mirrors these 
   - **Include media file content** toggle.
   - **Cancel** / **Export** actions.
 - **Existing color language:** in *Resources changed*, bars are **green = added, yellow = modified, red = deleted**. The excluded-resources panel should align with this vocabulary when color coding is revisited.
+- **Runtime → Builds (second export entry point):** the header `Config / Runtime` toggle switches to a runtime shell (nav: Builds · Runtime Settings · Processes · UI Flows Sessions · Task Manager · Configure Params Overrides). The **Builds** page lists builds (e.g. `Bizkids 1.6.2`), each with an **Export build** icon. Exporting a build uses the **same** experience — target platform version + media toggle → processing → notification → download + excluded-resources panel. The only difference is the *source*: a build (`Bizkids 1.6.2`) instead of a committed version (`main 1.6.2`); labels, cache key, and the download manifest reflect it.
 
-This prototype rebuilds these surfaces in isolation and **adds** the missing post-export experience (processing → notification → download + impact).
+This prototype rebuilds these surfaces in isolation and **adds** the missing post-export experience (processing → notification → download + impact), shared by both the **Config** (version) and **Runtime** (build) export entry points.
 
 ---
 
@@ -216,6 +217,7 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 | Date | Decision | Status |
 |------|----------|--------|
 | 2026-06-19 | Iteration workflow = **publish-on-demand**: work on `prototype/export-notifications` (pushes update PR #1); live `gh-pages` URL updates only on explicit "publish". | ✅ Decided |
+| 2026-06-19 | **Same export experience reused in Runtime → Builds.** Config/Runtime toggle switches shells; build rows have an Export build icon that opens the same modal → notify → download flow, parameterized by source (build vs version). | ✅ Decided |
 | 2026-06-19 | Impact UX = inline grouped breadcrumb list + warning banner in the modal (per provided mockup). Path format `Category \ Subcategory \ **Name**`. | ✅ Decided |
 | 2026-06-19 | Row **color coding** of excluded resources — deferred. NB: FlowX already uses green=added / yellow=modified / red=deleted in *Resources changed*; align with this when revisited. | ⏸️ Deferred |
 | 2026-06-19 | Prototype is **isolated** from the FlowX codebase but mirrors the real Designer surfaces (header, Branching console, Export Version modal). | ✅ Decided |

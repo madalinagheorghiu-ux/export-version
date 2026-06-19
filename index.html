@@ -95,6 +95,16 @@
   .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;color:var(--muted);text-align:center;gap:8px}
   .placeholder .big{font-size:18px;font-weight:600;color:#3c4654}
 
+  /* ---------- Builds (runtime) ---------- */
+  .builds-label{font-size:12px;font-weight:600;color:var(--muted);padding:16px 18px 8px}
+  .build-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin:0 8px;border-radius:10px}
+  .build-row:hover{background:#f7f8fa}
+  .build-chip{display:inline-flex;align-items:center;gap:9px;background:#eef0f3;border-radius:9px;padding:9px 15px;font-weight:600;color:#33404f;font-size:14px}
+  .build-chip svg{color:#7e8a9a}
+  .tipwrap{position:relative;display:inline-flex}
+  .tipwrap .tip{position:absolute;bottom:-32px;right:0;background:#1f2733;color:#fff;font-size:11px;padding:5px 9px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s;z-index:30}
+  .tipwrap:hover .tip{opacity:1}
+
   /* ---------- Branching console overlay ---------- */
   .overlay{position:absolute;inset:54px 0 0 0;background:rgba(15,20,34,.28);z-index:40;display:flex}
   .console{position:absolute;inset:54px 0 0 0;background:#fff;z-index:41;display:grid;grid-template-columns:300px 1fr 360px;overflow:hidden}
@@ -267,7 +277,9 @@ const EXCLUSIONS = {
     E(['Reusable Resources','Custom Components'], 'signaturePad', 'CUSTOM_COMPONENT'),
   ],
 };
-const cacheKey = (target, media) => `${SOURCE.branch}@${SOURCE.version}->${target}|media:${media}`;
+// A "source" is what's being exported — either a committed version or a runtime build.
+const VERSION_SOURCE = { kind:'version', id:'main@1.6.2', label:'main 1.6.2' };
+const cacheKey = (source, target, media) => `${source.id}->${target}|media:${media}`;
 let _id = 100;
 const uid = () => `exp_${++_id}`;
 
@@ -288,6 +300,8 @@ const I = {
   plus:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>,
   hammer:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 12-8.5 8.5a2.1 2.1 0 0 1-3-3L12 9"/><path d="M17.6 6.4 14 10l-2-2 3.6-3.6a2.8 2.8 0 0 1 4 4L16 12"/></svg>,
   upload:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg>,
+  box:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7.5 4.3 9 5.1"/><path d="M21 8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>,
+  shield:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>,
   branch2:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M6 8.5v7M18 8.5c0 4-6 2.5-6 7"/></svg>,
   edit:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>,
 };
@@ -304,6 +318,17 @@ const NAV = [
   { kind:'item', label:'Document Intelligence', ic:'doc' },
 ];
 const navIcon = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>;
+
+const RUNTIME_NAV = [
+  { kind:'item', label:'Builds', ic:'hammer' },
+  { kind:'item', label:'Runtime Settings', ic:'shield', subs:['Active Policy','Scheduled Processes','Manage Triggers'] },
+  { kind:'item', label:'Processes', ic:'grid', subs:['Process Instances','Failed Process Start','Failed Triggers'] },
+  { kind:'item', label:'UI Flows Sessions', ic:'flow' },
+  { kind:'item', label:'Task Manager', ic:'task' },
+  { kind:'item', label:'Configure Params Overrides', ic:'cfg' },
+];
+
+const BUILDS = [ { tag:'1.6.2' }, { tag:'1.6.1' }, { tag:'1.1.6' }, { tag:'1.1.2' }, { tag:'1.1.1' } ];
 
 const PROCESSES = [
   { name:'Duplicate_Copy_of_leftSidePanel', who:'admin flowx', av:'af', when:'17 Jun 2026, 12:26 PM' },
@@ -344,7 +369,7 @@ function relTime(ts){
   const m = Math.floor(s/60); if (m<60) return `${m}m ago`;
   return `${Math.floor(m/60)}h ago`;
 }
-function jobLabel(j){ return `${SOURCE.branch} ${SOURCE.version} → ${j.target}`; }
+function jobLabel(j){ return `${j.source.label} → ${j.target}`; }
 function jobChip(j){
   if (j.state==='PROCESSING') return ['proc','Preparing'];
   if (j.state==='FAILED') return ['fail','Failed'];
@@ -353,7 +378,8 @@ function jobChip(j){
 }
 function triggerDownload(job){
   const manifest = {
-    export:`${SOURCE.branch}@${SOURCE.version}`,
+    export: job.source.label,
+    sourceKind: job.source.kind,
     targetPlatformVersion: job.target,
     includeMediaFiles: job.includeMedia,
     generatedAt: new Date().toISOString(),
@@ -363,16 +389,17 @@ function triggerDownload(job){
   const blob = new Blob([JSON.stringify(manifest, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `export-${SOURCE.branch}-${SOURCE.version}-to-${job.target}.json`;
+  a.href = url; a.download = `export-${job.source.label.replace(/\s+/g,'-')}-to-${job.target}.json`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
 }
 
 /* ============================ App ============================ */
 function App(){
+  const [view, setView] = useState('config'); // 'config' | 'runtime'
   const [page, setPage] = useState('Processes');
   const [consoleOpen, setConsoleOpen] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
+  const [exportSource, setExportSource] = useState(null); // null | source object
   const [downloadJobId, setDownloadJobId] = useState(null);
   const [bellOpen, setBellOpen] = useState(false);
   const [tipBranch, setTipBranch] = useState(false);
@@ -408,18 +435,18 @@ function App(){
     });
   };
 
-  const startExport = (target, includeMedia) => {
-    const key = cacheKey(target, includeMedia);
+  const startExport = (source, target, includeMedia) => {
+    const key = cacheKey(source, target, includeMedia);
     const cached = cache.current[key];
     if (cached){
-      const job = { id:uid(), target, includeMedia, state:cached.state, exclusions:cached.exclusions, fromCache:true, ts:Date.now() };
+      const job = { id:uid(), source, target, includeMedia, state:cached.state, exclusions:cached.exclusions, fromCache:true, ts:Date.now() };
       setJobs(p=>[job, ...p]);
-      setExportOpen(false);
+      setExportSource(null);
       announce(job);
       setDownloadJobId(job.id); // instant: open download right away
       return;
     }
-    const job = { id:uid(), target, includeMedia, state:'PROCESSING', exclusions:null, fromCache:false, ts:Date.now() };
+    const job = { id:uid(), source, target, includeMedia, state:'PROCESSING', exclusions:null, fromCache:false, ts:Date.now() };
     setJobs(p=>[job, ...p]);
     setTimeout(()=>{
       const excl = EXCLUSIONS[target] || [];
@@ -435,9 +462,14 @@ function App(){
   const markAllRead = () => setNotes(p=>p.map(n=>({...n, read:true})));
   const readOne = (id) => setNotes(p=>p.map(n=>n.id===id?{...n,read:true}:n));
 
+  const switchView = (v) => { setView(v); setPage(v==='runtime'?'Builds':'Processes'); setConsoleOpen(false); };
+  const openExportBuild = (b) => setExportSource({ kind:'build', id:'build@'+b.tag, label:'Bizkids '+b.tag, tag:b.tag });
+  const hasRunning = jobs.some(j=>j.state==='PROCESSING');
+
   return (
     <div className="app" onClick={()=>bellOpen&&setBellOpen(false)}>
       <Header
+        view={view} onSwitchView={switchView}
         unread={unread}
         onBranch={()=>setConsoleOpen(true)}
         onBell={(e)=>{e.stopPropagation();setBellOpen(o=>!o);}}
@@ -453,23 +485,28 @@ function App(){
         />}
 
       <div className="body">
-        <Sidebar page={page} setPage={(p)=>{setPage(p);}} />
+        <Sidebar nav={view==='runtime'?RUNTIME_NAV:NAV} page={page} setPage={setPage} />
         <div className="content">
-          {page==='Processes'
-            ? <ProcessesPage onOpenConsole={()=>setConsoleOpen(true)} />
-            : <GenericPage title={page} hasRunning={jobs.some(j=>j.state==='PROCESSING')} />}
+          {view==='config'
+            ? (page==='Processes'
+                ? <ProcessesPage onOpenConsole={()=>setConsoleOpen(true)} />
+                : <GenericPage title={page} hasRunning={hasRunning} />)
+            : (page==='Builds'
+                ? <BuildsPage onExportBuild={openExportBuild} />
+                : <GenericPage title={page} hasRunning={hasRunning} />)}
         </div>
       </div>
 
       {consoleOpen &&
         <BranchingConsole
           onClose={()=>setConsoleOpen(false)}
-          onExport={()=>setExportOpen(true)}
+          onExport={()=>setExportSource(VERSION_SOURCE)}
         />}
 
-      {exportOpen &&
+      {exportSource &&
         <ExportModal
-          onClose={()=>setExportOpen(false)}
+          source={exportSource}
+          onClose={()=>setExportSource(null)}
           onStart={startExport}
           jobs={jobs}
           cache={cache}
@@ -479,7 +516,7 @@ function App(){
         <DownloadModal
           job={downloadJob}
           onClose={()=>setDownloadJobId(null)}
-          onChangeTarget={()=>{ setDownloadJobId(null); setConsoleOpen(true); setExportOpen(true); }}
+          onChangeTarget={()=>{ const j=downloadJob; setDownloadJobId(null); setExportSource(j.source); }}
         />}
 
       <Toasts toasts={toasts} onView={openDownload} onClose={dismissToast} />
@@ -489,26 +526,31 @@ function App(){
 }
 
 /* ============================ Header ============================ */
-function Header({ unread, onBranch, onBell, tip, setTip }){
+function Header({ view, onSwitchView, unread, onBranch, onBell, tip, setTip }){
   return (
     <div className="header">
       <div className="logo">X</div>
       <span className="badge-sandbox">SANDBOX</span>
       <span className="crumb">Default workspace / <b>bizkids</b></span>
-      <div style={{position:'relative'}}
-           onMouseEnter={()=>setTip(true)} onMouseLeave={()=>setTip(false)}>
-        <div className="branch-pill" onClick={onBranch}>
-          <span className="dot"></span>
-          <span className="tok main">main</span>
-          <span className="tok committed">committed</span>
-          <span className="tok msg">sdfsdf</span>
-          <span style={{color:'#7e8a9a',display:'flex',marginLeft:2}}>{I.branch}</span>
+      {view==='config' && <>
+        <div style={{position:'relative'}}
+             onMouseEnter={()=>setTip(true)} onMouseLeave={()=>setTip(false)}>
+          <div className="branch-pill" onClick={onBranch}>
+            <span className="dot"></span>
+            <span className="tok main">main</span>
+            <span className="tok committed">committed</span>
+            <span className="tok msg">sdfsdf</span>
+            <span style={{color:'#7e8a9a',display:'flex',marginLeft:2}}>{I.branch}</span>
+          </div>
+          {tip && <div className="tooltip">Branching</div>}
         </div>
-        {tip && <div className="tooltip">Branching</div>}
-      </div>
-      <button className="commit-btn">{I.upload}<span>Commit Changes to Version</span></button>
+        <button className="commit-btn">{I.upload}<span>Commit Changes to Version</span></button>
+      </>}
       <div className="spacer"></div>
-      <div className="seg"><button className="on">Config</button><button>Runtime</button></div>
+      <div className="seg">
+        <button className={view==='config'?'on':''} onClick={()=>onSwitchView('config')}>Config</button>
+        <button className={view==='runtime'?'on':''} onClick={()=>onSwitchView('runtime')}>Runtime</button>
+      </div>
       <button className="icon-btn" onClick={onBell} title="Notifications">
         {I.bell}
         {unread>0 && <span className="bell-badge">{unread}</span>}
@@ -518,10 +560,10 @@ function Header({ unread, onBranch, onBell, tip, setTip }){
 }
 
 /* ============================ Sidebar ============================ */
-function Sidebar({ page, setPage }){
+function Sidebar({ nav, page, setPage }){
   return (
     <div className="sidebar">
-      {NAV.map(n=>(
+      {nav.map(n=>(
         <div key={n.label}>
           <div className={'nav-item'+(page===n.label?' on':'')} onClick={()=>setPage(n.label)}>
             <span className="ic">{navIcon()}</span>{n.label}
@@ -582,6 +624,34 @@ function GenericPage({ title, hasRunning }){
         <div className="big">{title}</div>
         <div>Prototype area — navigate freely while an export runs.</div>
         {hasRunning && <div style={{color:'#1f6feb',fontWeight:600}}>⏳ An export is being prepared — you'll be notified here too.</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ============================ Builds page (runtime) ============================ */
+function BuildsPage({ onExportBuild }){
+  return (
+    <div>
+      <div className="page-head">
+        <h1>Builds</h1>
+        <div className="search" style={{width:300}}>{I.search}<input placeholder="Search by build tag" /></div>
+      </div>
+      <div className="card" style={{paddingBottom:10}}>
+        <div className="builds-label">Builds</div>
+        {BUILDS.map(b=>(
+          <div className="build-row" key={b.tag}>
+            <span className="build-chip">{I.hammer} Bizkids {b.tag}</span>
+            <div className="row-actions">
+              <button className="mini">{I.play}</button>
+              <span className="tipwrap">
+                <button className="mini" onClick={()=>onExportBuild(b)}>{I.box}</button>
+                <span className="tip">Export build</span>
+              </span>
+              <button className="mini">{I.kebab}</button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -653,15 +723,16 @@ function BranchingConsole({ onClose, onExport }){
 }
 
 /* ============================ Export modal ============================ */
-function ExportModal({ onClose, onStart, jobs, cache }){
+function ExportModal({ source, onClose, onStart, jobs, cache }){
   const [target, setTarget] = useState('5.9.X');
   const [media, setMedia] = useState(true);
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState('form'); // form | processing
   const [pct, setPct] = useState(0);
 
+  const isBuild = source.kind === 'build';
   const isLower = target !== '5.9.X';
-  const willHitCache = !!cache.current[cacheKey(target, media)];
+  const willHitCache = !!cache.current[cacheKey(source, target, media)];
 
   useEffect(()=>{
     if (phase!=='processing') return;
@@ -671,8 +742,8 @@ function ExportModal({ onClose, onStart, jobs, cache }){
   }, [phase]);
 
   const onExport = () => {
-    if (willHitCache){ onStart(target, media); return; } // instant -> modal closes, download opens
-    onStart(target, media);
+    if (willHitCache){ onStart(source, target, media); return; } // instant -> modal closes, download opens
+    onStart(source, target, media);
     setPhase('processing');
   };
 
@@ -683,10 +754,14 @@ function ExportModal({ onClose, onStart, jobs, cache }){
           <>
             <div className="mhead">
               <button className="mclose" onClick={onClose}>{I.x}</button>
-              <h2>Export Version</h2>
+              <h2>{isBuild ? 'Export build' : 'Export Version'}</h2>
               <div style={{display:'flex',gap:7,alignItems:'center'}}>
-                <span className="dot" style={{background:'#1f6feb'}}></span>
-                <span className="vtag main">main</span><span className="vtag committed">committed</span>
+                {isBuild
+                  ? <span className="build-chip" style={{padding:'5px 12px',fontSize:13}}>{I.hammer} {source.label}</span>
+                  : <>
+                      <span className="dot" style={{background:'#1f6feb'}}></span>
+                      <span className="vtag main">main</span><span className="vtag committed">committed</span>
+                    </>}
               </div>
             </div>
             <div className="mbody">
@@ -743,7 +818,7 @@ function ExportModal({ onClose, onStart, jobs, cache }){
             <div className="proc">
               <div className="spinner"></div>
               <h3>Preparing your export…</h3>
-              <p>Building the ZIP for <b>{jobLabel({target})}</b>. This can take up to 15 minutes.<br/>You can close this and keep working — we'll notify you when it's ready.</p>
+              <p>Building the ZIP for <b>{jobLabel({source, target})}</b>. This can take up to 15 minutes.<br/>You can close this and keep working — we'll notify you when it's ready.</p>
               <div className="progress"><div className="bar" style={{width:pct+'%'}}></div></div>
               <div className="sim-note">Simulated: ~6s instead of up to 15 min</div>
               <div className="mfoot" style={{justifyContent:'center',width:'100%'}}>
