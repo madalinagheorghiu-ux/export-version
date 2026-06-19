@@ -173,6 +173,9 @@
   .mclose{position:absolute;top:18px;right:18px;border:0;background:transparent;color:#9aa4b2;width:30px;height:30px;border-radius:8px}
   .mclose:hover{background:#f2f3f5;color:#555}
   .mbody{padding:8px 26px 22px}
+  .dl-ctx{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .dl-ctx-t{font-size:12.5px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
+  .dl-ctx-t svg{color:#9aa4b2;vertical-align:-2px}
   .infobox{display:flex;gap:10px;background:#f7f8fa;border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:#546070;font-size:12.7px;line-height:1.5;margin:10px 0 20px}
   .infobox.amber{background:var(--amber-bg);border-color:var(--amber-bd);color:#7a5f18}
   .field-label{font-size:13.5px;font-weight:600;margin-bottom:7px}
@@ -953,6 +956,11 @@ function DownloadModal({ job, onClose, onChangeTarget }){
         <div className="mhead" style={{alignItems:'flex-start'}}>
           <button className="mclose" onClick={onClose}>{I.x}</button>
           <h2 style={{fontSize:19}}>Download export</h2>
+          {job.ctx &&
+            <div className="dl-ctx">
+              <span className={'env-badge sm '+envTone(job.ctx.env)}>{job.ctx.env}</span>
+              <span className="dl-ctx-t">{job.ctx.workspace} · <span className="nproj">{I.folder}{job.ctx.project}</span></span>
+            </div>}
           <div className="meta" style={{margin:0}}>
             {jobLabel(job)} · media {job.includeMedia?'included':'excluded'}
             {job.fromCache && <span className="chip cache" style={{marginLeft:8}}>reused</span>}
