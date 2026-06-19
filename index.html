@@ -217,12 +217,25 @@
   .bp-head h4{margin:0;font-size:14.5px}
   .bp-head button{border:0;background:transparent;color:var(--blue);font-size:12.5px;font-weight:600}
   .bp-section{font-size:11px;font-weight:700;letter-spacing:.05em;color:#9aa4b2;text-transform:uppercase;padding:12px 16px 6px}
-  .nlist{max-height:440px;overflow:auto}
-  .nitem{display:flex;align-items:flex-start;gap:9px;padding:13px 14px;border-bottom:1px solid var(--border-2)}
+  .bp-filters{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .fchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600;color:#546070}
+  .fchip:hover{background:#f5f7fa}
+  .fchip.on{background:var(--blue-soft);border-color:#cfe0ff;color:var(--blue)}
+  .fcount{font-size:11px;font-weight:700;color:var(--faint)}
+  .fchip.on .fcount{color:var(--blue)}
+  .nlist{max-height:420px;overflow:auto}
+  .nitem{padding:11px 14px;border-bottom:1px solid var(--border-2)}
   .nitem:hover{background:#fafbfc}
-  .nitem.unread{background:#f3f8ff}
-  .nitem.unread:hover{background:#eaf2ff}
-  .n-lead{width:9px;flex:0 0 auto;display:flex;justify-content:center;padding-top:11px}
+  .nitem.unread{background:#f3f8ff;box-shadow:inset 3px 0 0 var(--blue)}
+  .nrow1{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .nmeta{font-size:11.5px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nproj{display:inline-flex;align-items:center;gap:4px;vertical-align:bottom}
+  .nproj svg{color:#9aa4b2;vertical-align:-2px}
+  .ntime{margin-left:auto;font-size:11px;color:var(--faint);white-space:nowrap}
+  .ndismiss{border:0;background:transparent;color:#c2cad4;width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;padding:0}
+  .ndismiss:hover{background:#eef0f3;color:#697586}
+  .ndismiss svg{width:14px;height:14px}
+  .nrow2{display:flex;align-items:flex-start;gap:10px}
   .nicon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
   .nicon.ok{background:#e7f6ee;color:#2e9e6b}
   .nicon.warn{background:var(--amber-bg);color:#b6891f}
@@ -465,7 +478,7 @@ function App(){
   useEffect(()=>{ bellOpenRef.current = bellOpen; }, [bellOpen]);
 
   const downloadJob = jobs.find(j=>j.id===downloadJobId) || null;
-  const unread = jobs.filter(j=>jobReady(j) && !j.read).length;
+  const unread = jobs.filter(j=>jobReady(j) && !j.read && !j.dismissed).length;
 
   const dismissToast = (id)=> setToasts(p=>p.filter(x=>x.id!==id));
   const pushToast = (job) => {
@@ -483,6 +496,7 @@ function App(){
 
   const markRead = (id) => setJobs(p=>p.map(j=>j.id===id?{...j, read:true}:j));
   const markAllRead = () => setJobs(p=>p.map(j=>({...j, read:true})));
+  const dismissNote = (id) => setJobs(p=>p.map(j=>j.id===id?{...j, dismissed:true, read:true}:j));
 
   // Act on a ready export: clean → download the ZIP instantly; with exclusions → open the impact modal.
   const actOnJob = (jobId) => {
@@ -554,7 +568,7 @@ function App(){
         <BellPanel
           jobs={jobs}
           onClose={()=>setBellOpen(false)} onMarkAll={markAllRead}
-          onAct={actOnJob}
+          onAct={actOnJob} onDismiss={dismissNote}
           stop={(e)=>e.stopPropagation()}
         />}
 
@@ -1022,51 +1036,67 @@ function notifStatus(job){
   }
 }
 
-function NotifItem({ job, onAct }){
+function NotifItem({ job, onAct, onDismiss }){
   const st = notifStatus(job);
-  const ready = job.state==='READY' || job.state==='READY_WITH_EXCLUSIONS';
+  const ready = jobReady(job);
   const unread = ready && !job.read;
   return (
-    <div className={'nitem'+(unread?' unread':'')}
-         onClick={ready?()=>onAct(job.id):undefined}
-         style={{cursor:ready?'pointer':'default'}}>
-      <span className="n-lead">{unread && <span className="unread-dot"></span>}</span>
-      <span className={'nicon '+st.cls}>{st.icon}</span>
-      <div className="ntext">
-        <div className="t">{st.title}</div>
-        <div className="s">{jobLabel(job)}{job.fromCache?' · reused a previous export':''}</div>
-        {job.ctx &&
-          <div className="nctx">
-            <span className={'env-badge sm '+envTone(job.ctx.env)}>{job.ctx.env}</span>
-            <span className="nctx-t">{job.ctx.workspace} · {I.folder} {job.ctx.project}</span>
-          </div>}
-        <div className="tm">{relTime(job.ts)}</div>
+    <div className={'nitem'+(unread?' unread':'')}>
+      {/* context header */}
+      <div className="nrow1">
+        {job.ctx && <>
+          <span className={'env-badge sm '+envTone(job.ctx.env)}>{job.ctx.env}</span>
+          <span className="nmeta">{job.ctx.workspace} · <span className="nproj">{I.folder}{job.ctx.project}</span></span>
+        </>}
+        <span className="ntime">{relTime(job.ts)}</span>
+        <button className="ndismiss" title="Dismiss" onClick={(e)=>{e.stopPropagation();onDismiss(job.id);}}>{I.x}</button>
       </div>
-      <div className="nright">
-        {job.state==='PROCESSING' &&
-          <span className="nproc"><span className="mini-spin"></span> Preparing</span>}
-        {job.state==='READY' &&
-          <button className="nbtn" onClick={(e)=>{e.stopPropagation();onAct(job.id);}}>{I.dl} Download</button>}
-        {job.state==='READY_WITH_EXCLUSIONS' &&
-          <button className="nbtn warn" onClick={(e)=>{e.stopPropagation();onAct(job.id);}}>{I.dl} Review &amp; download</button>}
-        {job.state==='FAILED' &&
-          <span className="chip fail">Failed</span>}
+      {/* notification body */}
+      <div className="nrow2" onClick={ready?()=>onAct(job.id):undefined} style={{cursor:ready?'pointer':'default'}}>
+        <span className={'nicon '+st.cls}>{st.icon}</span>
+        <div className="ntext">
+          <div className="t">{st.title}</div>
+          <div className="s">{jobLabel(job)}{job.fromCache?' · reused':''}</div>
+        </div>
+        <div className="nright">
+          {job.state==='PROCESSING' &&
+            <span className="nproc"><span className="mini-spin"></span> Preparing</span>}
+          {job.state==='READY' &&
+            <button className="nbtn" onClick={(e)=>{e.stopPropagation();onAct(job.id);}}>{I.dl} Download</button>}
+          {job.state==='READY_WITH_EXCLUSIONS' &&
+            <button className="nbtn warn" onClick={(e)=>{e.stopPropagation();onAct(job.id);}}>{I.dl} Review</button>}
+          {job.state==='FAILED' &&
+            <span className="chip fail">Failed</span>}
+        </div>
       </div>
     </div>
   );
 }
 
-function BellPanel({ jobs, onClose, onMarkAll, onAct, stop }){
-  const anyUnread = jobs.some(j=>(j.state==='READY'||j.state==='READY_WITH_EXCLUSIONS') && !j.read);
+const NOTIF_FILTERS = [['ALL','All'],['SANDBOX','Sandbox'],['STAGING','Staging'],['PRODUCTION','Production']];
+function BellPanel({ jobs, onClose, onMarkAll, onAct, onDismiss, stop }){
+  const [filter, setFilter] = useState('ALL');
+  const feed = jobs.filter(j=>!j.dismissed);
+  const countFor = (e) => feed.filter(j=> e==='ALL' || (j.ctx && j.ctx.env===e)).length;
+  const shown = feed.filter(j=> filter==='ALL' || (j.ctx && j.ctx.env===filter));
+  const anyUnread = feed.some(j=>jobReady(j) && !j.read);
   return (
     <div className="bell-panel" onClick={stop}>
       <div className="bp-head">
         <h4>Notifications</h4>
         {anyUnread && <button onClick={onMarkAll}>Mark all read</button>}
       </div>
+      <div className="bp-filters">
+        {NOTIF_FILTERS.map(([k,label])=>(
+          <button key={k} className={'fchip'+(filter===k?' on':'')} onClick={()=>setFilter(k)}>
+            {label}<span className="fcount">{countFor(k)}</span>
+          </button>
+        ))}
+      </div>
       <div className="nlist">
-        {jobs.length===0 && <div className="empty">No notifications yet.<br/>Start an export to see one here.</div>}
-        {jobs.map(j=> <NotifItem key={j.id} job={j} onAct={onAct} />)}
+        {shown.length===0 &&
+          <div className="empty">{feed.length===0 ? 'No notifications yet.' : 'Nothing in this environment.'}</div>}
+        {shown.map(j=> <NotifItem key={j.id} job={j} onAct={onAct} onDismiss={onDismiss} />)}
       </div>
     </div>
   );
