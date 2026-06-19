@@ -127,6 +127,7 @@ Types: `EXPORT_READY`, `EXPORT_READY_WITH_EXCLUSIONS`, `EXPORT_FAILED`.
   - the **notification center is open** (the feed updates live), or
   - the **"Preparing…" modal for that export is still open** — in which case that modal **switches straight to the download modal** (clean → "Download ZIP"; excluded → impact panel) instead of toasting.
 - **Cross-view download readiness:** exports are linked by version `tag`. A ready export made in **Config** (version `1.6.2`) surfaces as a green **"Download ready"** affordance on the matching **Runtime → Builds** row (`Bizkids 1.6.2`), and vice-versa — the artifact is shared, so it's downloadable from either view.
+- **Context on every notification (multi-workspace):** users switch workspace + environment from the **logo menu** (env groups `SANDBOX` / `STAGING` / `PRODUCTION`, each with its workspaces). Every export is **stamped with the context it was launched in** — `{ environment, workspace, project }` — and each notification (and toast) shows an **env badge** (blue/amber/dark) + **workspace** + **project** (e.g. `[PRODUCTION] Silviu prod · bizkids`). Because the bell is global, this tells the user *where* a notification belongs even after they've switched context.
 
 Because the notification lives in the app shell, the user can close the modal, navigate, refresh, or return later and still be informed.
 
@@ -232,6 +233,7 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 | 2026-06-19 | **Notification center = single unified feed** (merged the old "notifications" + "exports" sections). Each row shows status + read/unread + inline action. **Clean exports download instantly from the row; only excluded exports open the impact modal.** Feed designed to host other notification types later (licence expiry, etc. — not built). | ✅ Decided |
 | 2026-06-19 | **Don't double-surface a ready export:** suppress the toast when the center is open; when the "Preparing…" modal is left open it switches straight to the download modal. | ✅ Decided |
 | 2026-06-19 | **Cross-view download readiness:** a ready export links Config↔Runtime by version tag — surfaces as "Download ready" on the matching Runtime build row (and the shared artifact is downloadable from either view). | ✅ Decided |
+| 2026-06-19 | **Notifications carry workspace context.** Logo menu switches workspace+environment (SANDBOX/STAGING/PRODUCTION); each export is stamped with `{environment, workspace, project}` and every notification/toast shows env badge + workspace + project. | ✅ Decided |
 | 2026-06-19 | Impact UX = inline grouped breadcrumb list + warning banner in the modal (per provided mockup). Path format `Category \ Subcategory \ **Name**`. | ✅ Decided |
 | 2026-06-19 | Row **color coding** of excluded resources — deferred. NB: FlowX already uses green=added / yellow=modified / red=deleted in *Resources changed*; align with this when revisited. | ⏸️ Deferred |
 | 2026-06-19 | Prototype is **isolated** from the FlowX codebase but mirrors the real Designer surfaces (header, Branching console, Export Version modal). | ✅ Decided |

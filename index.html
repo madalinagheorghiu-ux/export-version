@@ -32,8 +32,29 @@
 
   /* ---------- Header ---------- */
   .header{height:54px;background:var(--header);display:flex;align-items:center;gap:14px;padding:0 16px;color:#dbe2ea;flex:0 0 auto;position:relative;z-index:60}
-  .logo{width:30px;height:30px;border-radius:7px;background:#11161f;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;border-bottom:2px solid var(--amber-bar)}
-  .badge-sandbox{background:#1f6feb;color:#fff;font-weight:700;font-size:11px;letter-spacing:.04em;padding:3px 8px;border-radius:6px}
+  .logo{width:30px;height:30px;border-radius:7px;background:#11161f;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;border:0;border-bottom:2px solid var(--amber-bar);padding:0;font-size:14px;cursor:pointer}
+  .logo:hover{background:#1a2233}
+  .crumb-proj{display:inline-flex;align-items:center;gap:5px}
+  .crumb-proj svg{color:#8c98a8}
+  .env-badge{font-size:11px;font-weight:700;letter-spacing:.03em;padding:3px 9px;border-radius:6px;white-space:nowrap}
+  .env-badge.sandbox{background:#1f6feb;color:#fff}
+  .env-badge.staging{background:#f0b429;color:#503c05}
+  .env-badge.production{background:#3a4250;color:#fff}
+  .env-badge.sm{font-size:9.5px;padding:1px 7px;border-radius:5px}
+  /* workspace switcher */
+  .ws-menu{position:absolute;top:42px;left:0;width:306px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);z-index:80;padding:14px 14px 10px}
+  .ws-brand{text-align:center;font-weight:800;font-size:18px;color:#11161f;letter-spacing:-.01em;margin:2px 0 12px}
+  .ws-brand span{border-bottom:3px solid var(--amber-bar);padding-bottom:1px}
+  .ws-search{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:9px;padding:9px 12px;color:var(--faint);margin-bottom:8px}
+  .ws-search input{border:0;outline:0;flex:1;font-size:13px;color:var(--text)}
+  .ws-group{padding:2px 0}
+  .ws-grouphead{display:flex;align-items:center;gap:8px;padding:8px 6px;cursor:pointer;border-radius:8px}
+  .ws-grouphead:hover{background:#f5f7fa}
+  .chev2{display:flex;color:#8c98a8;transition:transform .15s;transform:rotate(-90deg)}
+  .chev2.open{transform:none}
+  .ws-item{padding:8px 10px 8px 34px;font-size:13.5px;color:#3c4654;cursor:pointer;border-radius:8px}
+  .ws-item:hover{background:#f5f7fa}
+  .ws-item.sel{background:var(--blue-soft);color:var(--blue);font-weight:600}
   .crumb{color:#aeb8c6;font-size:13px}
   .crumb b{color:#eef2f6;font-weight:600}
   .branch-pill{display:flex;align-items:center;gap:8px;background:#161d2b;border:1px solid #2a3447;border-radius:999px;padding:4px 10px 4px 6px;cursor:pointer;transition:border-color .15s}
@@ -212,6 +233,9 @@
   .ntext .s{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ntext .tm{font-size:11px;color:var(--faint);margin-top:3px}
   .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--blue)}
+  .nctx{display:flex;align-items:center;gap:7px;margin-top:5px}
+  .nctx-t{font-size:11.5px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
+  .nctx-t svg{color:#9aa4b2}
   .nright{margin-left:auto;display:flex;align-items:center;gap:8px;flex:0 0 auto;padding-top:3px}
   .nbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;border-radius:8px;padding:6px 11px;font-weight:600;color:var(--blue);font-size:12px;white-space:nowrap}
   .nbtn:hover{background:#f5f7fa}
@@ -241,6 +265,7 @@
   @keyframes slidein{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
   .toast .tt{font-weight:700;font-size:13.2px}
   .toast .tb{font-size:12.3px;color:var(--muted);margin-top:2px;line-height:1.4}
+  .toast .tctx{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--muted)}
   .toast .ta{display:flex;gap:8px;margin-top:9px}
   .toast .ta button{font-size:12px;font-weight:600;border-radius:7px;padding:5px 10px;border:1px solid var(--border);background:#fff;color:#3c4654}
   .toast .ta .primary{background:var(--blue);color:#fff;border-color:var(--blue)}
@@ -316,6 +341,7 @@ const I = {
   box:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7.5 4.3 9 5.1"/><path d="M21 8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>,
   shield:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>,
   clock:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>,
+  folder:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2Z"/></svg>,
   branch2:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M6 8.5v7M18 8.5c0 4-6 2.5-6 7"/></svg>,
   edit:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>,
 };
@@ -343,6 +369,14 @@ const RUNTIME_NAV = [
 ];
 
 const BUILDS = [ { tag:'1.6.2' }, { tag:'1.6.1' }, { tag:'1.1.6' }, { tag:'1.1.2' }, { tag:'1.1.1' } ];
+
+// Workspaces grouped by environment — users switch context from the logo menu.
+const WORKSPACES = {
+  SANDBOX:    ['Default workspace', 'Experiments'],
+  STAGING:    ['Default workspace', 'QA workspace'],
+  PRODUCTION: ['andreid_ws_2', 'Silviu prod', 'TA workspace_production'],
+};
+const envTone = (e) => e==='PRODUCTION' ? 'production' : e==='STAGING' ? 'staging' : 'sandbox';
 
 const PROCESSES = [
   { name:'Duplicate_Copy_of_leftSidePanel', who:'admin flowx', av:'af', when:'17 Jun 2026, 12:26 PM' },
@@ -417,6 +451,10 @@ function App(){
   const [downloadJobId, setDownloadJobId] = useState(null);
   const [bellOpen, setBellOpen] = useState(false);
   const [tipBranch, setTipBranch] = useState(false);
+  const [wsMenuOpen, setWsMenuOpen] = useState(false);
+  const [env, setEnv] = useState('SANDBOX');
+  const [workspace, setWorkspace] = useState('Default workspace');
+  const project = 'bizkids'; // the currently open project
 
   const [jobs, setJobs] = useState([]);
   const [toasts, setToasts] = useState([]);
@@ -434,7 +472,7 @@ function App(){
     const excl = job.exclusions.length;
     const id = uid();
     const toast = {
-      id, jobId: job.id, excluded: excl>0,
+      id, jobId: job.id, excluded: excl>0, ctx: job.ctx,
       variant: job.fromCache ? 'cache' : (excl ? 'warn' : 'ok'),
       title: job.fromCache ? 'Ready instantly' : (excl ? 'Export ready — with exclusions' : 'Export ready'),
       body: excl ? `${jobLabel(job)} · ${excl} excluded resource${excl>1?'s':''}` : jobLabel(job),
@@ -466,10 +504,11 @@ function App(){
   };
 
   const startExport = (source, target, includeMedia) => {
+    const ctx = { env, workspace, project }; // snapshot of where the export was launched
     const key = cacheKey(source, target, includeMedia);
     const cached = cache.current[key];
     if (cached){
-      const job = { id:uid(), source, target, includeMedia, state:cached.state, exclusions:cached.exclusions, fromCache:true, read:false, ts:Date.now() };
+      const job = { id:uid(), source, target, includeMedia, ctx, state:cached.state, exclusions:cached.exclusions, fromCache:true, read:false, ts:Date.now() };
       setJobs(p=>[job, ...p]);
       closeExport();
       if (!bellOpenRef.current) pushToast(job);          // suppress toast if the center is open
@@ -477,7 +516,7 @@ function App(){
       else triggerDownload(job);                          // instant + user-initiated
       return job;
     }
-    const job = { id:uid(), source, target, includeMedia, state:'PROCESSING', exclusions:null, fromCache:false, read:false, ts:Date.now() };
+    const job = { id:uid(), source, target, includeMedia, ctx, state:'PROCESSING', exclusions:null, fromCache:false, read:false, ts:Date.now() };
     setJobs(p=>[job, ...p]);
     setTimeout(()=>{
       const excl = EXCLUSIONS[target] || [];
@@ -495,16 +534,21 @@ function App(){
 
   const switchView = (v) => { setView(v); setPage(v==='runtime'?'Builds':'Processes'); setConsoleOpen(false); };
   const openExportBuild = (b) => setExportSource({ kind:'build', id:'build@'+b.tag, label:'Bizkids '+b.tag, tag:b.tag });
+  const selectWorkspace = (e, ws) => { setEnv(e); setWorkspace(ws); setWsMenuOpen(false); };
   const hasRunning = jobs.some(j=>j.state==='PROCESSING');
 
   return (
-    <div className="app" onClick={()=>bellOpen&&setBellOpen(false)}>
+    <div className="app" onClick={()=>{ if(bellOpen)setBellOpen(false); if(wsMenuOpen)setWsMenuOpen(false); }}>
       <Header
         view={view} onSwitchView={switchView}
         unread={unread}
         onBranch={()=>setConsoleOpen(true)}
-        onBell={(e)=>{e.stopPropagation();setBellOpen(o=>!o);}}
+        onBell={(e)=>{e.stopPropagation();setBellOpen(o=>!o);setWsMenuOpen(false);}}
         tip={tipBranch} setTip={setTipBranch}
+        env={env} workspace={workspace} project={project}
+        wsMenuOpen={wsMenuOpen}
+        onLogo={(e)=>{e.stopPropagation();setWsMenuOpen(o=>!o);setBellOpen(false);}}
+        onSelectWs={selectWorkspace}
       />
       {bellOpen &&
         <BellPanel
@@ -558,12 +602,15 @@ function App(){
 }
 
 /* ============================ Header ============================ */
-function Header({ view, onSwitchView, unread, onBranch, onBell, tip, setTip }){
+function Header({ view, onSwitchView, unread, onBranch, onBell, tip, setTip, env, workspace, project, wsMenuOpen, onLogo, onSelectWs }){
   return (
     <div className="header">
-      <div className="logo">X</div>
-      <span className="badge-sandbox">SANDBOX</span>
-      <span className="crumb">Default workspace / <b>bizkids</b></span>
+      <div style={{position:'relative'}}>
+        <button className="logo" onClick={onLogo} title="Switch workspace">X</button>
+        {wsMenuOpen && <WorkspaceMenu env={env} workspace={workspace} onSelect={onSelectWs} stop={(e)=>e.stopPropagation()} />}
+      </div>
+      <span className={'env-badge '+envTone(env)}>{env}</span>
+      <span className="crumb">{workspace} / <span className="crumb-proj">{I.folder}<b>{project}</b></span></span>
       {view==='config' && <>
         <div style={{position:'relative'}}
              onMouseEnter={()=>setTip(true)} onMouseLeave={()=>setTip(false)}>
@@ -936,6 +983,33 @@ function DownloadModal({ job, onClose, onChangeTarget }){
   );
 }
 
+/* ============================ Workspace switcher (logo menu) ============================ */
+function WorkspaceMenu({ env, workspace, onSelect, stop }){
+  const [openEnv, setOpenEnv] = useState(env);
+  const [q, setQ] = useState('');
+  return (
+    <div className="ws-menu" onClick={stop}>
+      <div className="ws-brand">FLOW<span>X</span>.AI</div>
+      <div className="ws-search">{I.search}<input placeholder="Search by Workspace" value={q} onChange={e=>setQ(e.target.value)} autoFocus /></div>
+      {Object.keys(WORKSPACES).map(e=>{
+        const list = WORKSPACES[e].filter(w=>w.toLowerCase().includes(q.toLowerCase()));
+        const open = q ? list.length>0 : openEnv===e;
+        return (
+          <div key={e} className="ws-group">
+            <div className="ws-grouphead" onClick={()=>setOpenEnv(openEnv===e?null:e)}>
+              <span className={'chev2'+(open?' open':'')}>{I.chev}</span>
+              <span className={'env-badge '+envTone(e)}>{e}</span>
+            </div>
+            {open && list.map(w=>(
+              <div key={w} className={'ws-item'+(env===e&&workspace===w?' sel':'')} onClick={()=>onSelect(e,w)}>{w}</div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ============================ Bell panel — unified notification center ============================ */
 // One feed. Each item shows status + read/unread + its own action.
 // Today every item is an export; other kinds (e.g. licence expiry) would branch in NotifItem.
@@ -961,6 +1035,11 @@ function NotifItem({ job, onAct }){
       <div className="ntext">
         <div className="t">{st.title}</div>
         <div className="s">{jobLabel(job)}{job.fromCache?' · reused a previous export':''}</div>
+        {job.ctx &&
+          <div className="nctx">
+            <span className={'env-badge sm '+envTone(job.ctx.env)}>{job.ctx.env}</span>
+            <span className="nctx-t">{job.ctx.workspace} · {I.folder} {job.ctx.project}</span>
+          </div>}
         <div className="tm">{relTime(job.ts)}</div>
       </div>
       <div className="nright">
@@ -1002,6 +1081,11 @@ function Toasts({ toasts, onAct, onClose }){
           <div style={{flex:1}}>
             <div className="tt">{t.title}</div>
             <div className="tb">{t.body}</div>
+            {t.ctx &&
+              <div className="tctx">
+                <span className={'env-badge sm '+envTone(t.ctx.env)}>{t.ctx.env}</span>
+                <span>{t.ctx.workspace} · {t.ctx.project}</span>
+              </div>}
             <div className="ta">
               <button className="primary" onClick={()=>{onAct(t.jobId);onClose(t.id);}}>{t.excluded?'Review & download':'Download'}</button>
             </div>
