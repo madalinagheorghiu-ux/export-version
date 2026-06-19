@@ -194,20 +194,29 @@
   .bp-head h4{margin:0;font-size:14.5px}
   .bp-head button{border:0;background:transparent;color:var(--blue);font-size:12.5px;font-weight:600}
   .bp-section{font-size:11px;font-weight:700;letter-spacing:.05em;color:#9aa4b2;text-transform:uppercase;padding:12px 16px 6px}
-  .nlist{max-height:300px;overflow:auto}
-  .nitem{display:flex;gap:11px;padding:12px 16px;border-bottom:1px solid var(--border-2);cursor:pointer}
-  .nitem:hover{background:#f7f8fa}
+  .nlist{max-height:440px;overflow:auto}
+  .nitem{display:flex;align-items:flex-start;gap:9px;padding:13px 14px;border-bottom:1px solid var(--border-2)}
+  .nitem:hover{background:#fafbfc}
   .nitem.unread{background:#f3f8ff}
   .nitem.unread:hover{background:#eaf2ff}
+  .n-lead{width:9px;flex:0 0 auto;display:flex;justify-content:center;padding-top:11px}
   .nicon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
   .nicon.ok{background:#e7f6ee;color:#2e9e6b}
   .nicon.warn{background:var(--amber-bg);color:#b6891f}
   .nicon.err{background:#fdeceb;color:#d6453a}
+  .nicon.proc{background:var(--grey-bg);color:#697586}
   .ntext{flex:1;min-width:0}
   .ntext .t{font-size:13.2px;font-weight:600;color:#222b38;line-height:1.35}
-  .ntext .s{font-size:12px;color:var(--muted);margin-top:2px}
+  .ntext .s{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ntext .tm{font-size:11px;color:var(--faint);margin-top:3px}
-  .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex:0 0 auto;margin-top:5px}
+  .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--blue)}
+  .nright{margin-left:auto;display:flex;align-items:center;gap:8px;flex:0 0 auto;padding-top:3px}
+  .nbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;border-radius:8px;padding:6px 11px;font-weight:600;color:var(--blue);font-size:12px;white-space:nowrap}
+  .nbtn:hover{background:#f5f7fa}
+  .nbtn.warn{color:#b6891f;border-color:#ecd9a3}
+  .nbtn.warn:hover{background:var(--amber-bg)}
+  .nproc{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--muted)}
+  .mini-spin{width:13px;height:13px;border-radius:50%;border:2px solid #d6dbe2;border-top-color:#8a94a3;animation:spin .9s linear infinite;display:inline-block}
   .exp-list{max-height:210px;overflow:auto;padding-bottom:6px}
   .erow{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:12.7px;border-bottom:1px solid var(--border-2)}
   .erow .ei{flex:1;min-width:0}
@@ -302,6 +311,7 @@ const I = {
   upload:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg>,
   box:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7.5 4.3 9 5.1"/><path d="M21 8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>,
   shield:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>,
+  clock:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>,
   branch2:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M6 8.5v7M18 8.5c0 4-6 2.5-6 7"/></svg>,
   edit:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>,
 };
@@ -405,62 +415,70 @@ function App(){
   const [tipBranch, setTipBranch] = useState(false);
 
   const [jobs, setJobs] = useState([]);
-  const [notes, setNotes] = useState([]);
   const [toasts, setToasts] = useState([]);
   const cache = useRef({});
 
+  const isReady = (j) => j.state==='READY' || j.state==='READY_WITH_EXCLUSIONS';
   const downloadJob = jobs.find(j=>j.id===downloadJobId) || null;
-  const unread = notes.filter(n=>!n.read).length;
+  const unread = jobs.filter(j=>isReady(j) && !j.read).length;
 
-  const pushToast = (t) => {
-    const id = uid();
-    setToasts(p=>[...p, {...t, id}]);
-    setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)), 9000);
-  };
   const dismissToast = (id)=> setToasts(p=>p.filter(x=>x.id!==id));
-
-  const announce = (job) => {
+  const pushToast = (job) => {
     const excl = job.exclusions.length;
-    const type = job.state==='READY_WITH_EXCLUSIONS' ? 'warn' : 'ok';
-    setNotes(p=>[{
-      id:uid(), jobId:job.id, type, read:false, ts:Date.now(),
-      t: excl ? `Export ready — ${excl} resource${excl>1?'s':''} excluded` : 'Export ready to download',
-      s: `${jobLabel(job)}${job.fromCache?' · reused a previous export':''}`,
-    }, ...p]);
-    pushToast({
-      variant: job.fromCache ? 'cache' : type,
-      jobId: job.id,
+    const id = uid();
+    const toast = {
+      id, jobId: job.id, excluded: excl>0,
+      variant: job.fromCache ? 'cache' : (excl ? 'warn' : 'ok'),
       title: job.fromCache ? 'Ready instantly' : (excl ? 'Export ready — with exclusions' : 'Export ready'),
       body: excl ? `${jobLabel(job)} · ${excl} excluded resource${excl>1?'s':''}` : jobLabel(job),
-    });
+    };
+    setToasts(p=>[...p, toast]);
+    setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)), 9000);
+  };
+
+  const markRead = (id) => setJobs(p=>p.map(j=>j.id===id?{...j, read:true}:j));
+  const markAllRead = () => setJobs(p=>p.map(j=>({...j, read:true})));
+
+  // Act on a ready export: clean → download the ZIP instantly; with exclusions → open the impact modal.
+  const actOnJob = (jobId) => {
+    const job = jobs.find(j=>j.id===jobId);
+    if (!job || !isReady(job)) return;
+    markRead(jobId);
+    setBellOpen(false);
+    if (job.state==='READY_WITH_EXCLUSIONS') setDownloadJobId(jobId);
+    else triggerDownload(job);
+  };
+
+  // Export reached a ready state. Always toast. When user is right here (cache hit), act immediately.
+  const fireReady = (job, backgroundOnly) => {
+    pushToast(job);
+    if (!backgroundOnly){
+      if (job.state==='READY_WITH_EXCLUSIONS') setDownloadJobId(job.id);
+      else triggerDownload(job);
+    }
   };
 
   const startExport = (source, target, includeMedia) => {
     const key = cacheKey(source, target, includeMedia);
     const cached = cache.current[key];
     if (cached){
-      const job = { id:uid(), source, target, includeMedia, state:cached.state, exclusions:cached.exclusions, fromCache:true, ts:Date.now() };
+      const job = { id:uid(), source, target, includeMedia, state:cached.state, exclusions:cached.exclusions, fromCache:true, read:false, ts:Date.now() };
       setJobs(p=>[job, ...p]);
       setExportSource(null);
-      announce(job);
-      setDownloadJobId(job.id); // instant: open download right away
+      fireReady(job, false); // instant + user-initiated → act now
       return;
     }
-    const job = { id:uid(), source, target, includeMedia, state:'PROCESSING', exclusions:null, fromCache:false, ts:Date.now() };
+    const job = { id:uid(), source, target, includeMedia, state:'PROCESSING', exclusions:null, fromCache:false, read:false, ts:Date.now() };
     setJobs(p=>[job, ...p]);
     setTimeout(()=>{
       const excl = EXCLUSIONS[target] || [];
       const finished = { ...job, state: excl.length ? 'READY_WITH_EXCLUSIONS' : 'READY', exclusions: excl };
       cache.current[key] = { state:finished.state, exclusions:excl };
       setJobs(p=>p.map(j=>j.id===job.id? finished : j));
-      announce(finished);
+      fireReady(finished, true); // background → toast only; user pulls from the center
     }, PROCESS_MS);
     return job;
   };
-
-  const openDownload = (jobId) => { setDownloadJobId(jobId); setBellOpen(false); };
-  const markAllRead = () => setNotes(p=>p.map(n=>({...n, read:true})));
-  const readOne = (id) => setNotes(p=>p.map(n=>n.id===id?{...n,read:true}:n));
 
   const switchView = (v) => { setView(v); setPage(v==='runtime'?'Builds':'Processes'); setConsoleOpen(false); };
   const openExportBuild = (b) => setExportSource({ kind:'build', id:'build@'+b.tag, label:'Bizkids '+b.tag, tag:b.tag });
@@ -477,10 +495,9 @@ function App(){
       />
       {bellOpen &&
         <BellPanel
-          notes={notes} jobs={jobs}
+          jobs={jobs}
           onClose={()=>setBellOpen(false)} onMarkAll={markAllRead}
-          onOpenNote={(n)=>{readOne(n.id); openDownload(n.jobId);}}
-          onDownload={openDownload}
+          onAct={actOnJob}
           stop={(e)=>e.stopPropagation()}
         />}
 
@@ -519,7 +536,7 @@ function App(){
           onChangeTarget={()=>{ const j=downloadJob; setDownloadJobId(null); setExportSource(j.source); }}
         />}
 
-      <Toasts toasts={toasts} onView={openDownload} onClose={dismissToast} />
+      <Toasts toasts={toasts} onAct={actOnJob} onClose={dismissToast} />
       <div className="proto-stamp">Prototype · mocked backend</div>
     </div>
   );
@@ -886,56 +903,65 @@ function DownloadModal({ job, onClose, onChangeTarget }){
   );
 }
 
-/* ============================ Bell panel ============================ */
-function BellPanel({ notes, jobs, onClose, onMarkAll, onOpenNote, onDownload, stop }){
+/* ============================ Bell panel — unified notification center ============================ */
+// One feed. Each item shows status + read/unread + its own action.
+// Today every item is an export; other kinds (e.g. licence expiry) would branch in NotifItem.
+function notifStatus(job){
+  switch(job.state){
+    case 'PROCESSING':            return { cls:'proc', icon:I.clock, title:'Preparing export…' };
+    case 'READY_WITH_EXCLUSIONS': return { cls:'warn', icon:I.warn,  title:`Export ready — ${job.exclusions.length} resource${job.exclusions.length>1?'s':''} excluded` };
+    case 'FAILED':                return { cls:'err',  icon:I.x,     title:'Export failed' };
+    default:                      return { cls:'ok',   icon:I.check, title:'Export ready to download' };
+  }
+}
+
+function NotifItem({ job, onAct }){
+  const st = notifStatus(job);
+  const ready = job.state==='READY' || job.state==='READY_WITH_EXCLUSIONS';
+  const unread = ready && !job.read;
+  return (
+    <div className={'nitem'+(unread?' unread':'')}
+         onClick={ready?()=>onAct(job.id):undefined}
+         style={{cursor:ready?'pointer':'default'}}>
+      <span className="n-lead">{unread && <span className="unread-dot"></span>}</span>
+      <span className={'nicon '+st.cls}>{st.icon}</span>
+      <div className="ntext">
+        <div className="t">{st.title}</div>
+        <div className="s">{jobLabel(job)}{job.fromCache?' · reused a previous export':''}</div>
+        <div className="tm">{relTime(job.ts)}</div>
+      </div>
+      <div className="nright">
+        {job.state==='PROCESSING' &&
+          <span className="nproc"><span className="mini-spin"></span> Preparing</span>}
+        {job.state==='READY' &&
+          <button className="nbtn" onClick={(e)=>{e.stopPropagation();onAct(job.id);}}>{I.dl} Download</button>}
+        {job.state==='READY_WITH_EXCLUSIONS' &&
+          <button className="nbtn warn" onClick={(e)=>{e.stopPropagation();onAct(job.id);}}>{I.dl} Review &amp; download</button>}
+        {job.state==='FAILED' &&
+          <span className="chip fail">Failed</span>}
+      </div>
+    </div>
+  );
+}
+
+function BellPanel({ jobs, onClose, onMarkAll, onAct, stop }){
+  const anyUnread = jobs.some(j=>(j.state==='READY'||j.state==='READY_WITH_EXCLUSIONS') && !j.read);
   return (
     <div className="bell-panel" onClick={stop}>
       <div className="bp-head">
         <h4>Notifications</h4>
-        {notes.some(n=>!n.read) && <button onClick={onMarkAll}>Mark all read</button>}
+        {anyUnread && <button onClick={onMarkAll}>Mark all read</button>}
       </div>
       <div className="nlist">
-        {notes.length===0 && <div className="empty">No notifications yet.<br/>Start an export to see one here.</div>}
-        {notes.map(n=>(
-          <div key={n.id} className={'nitem'+(n.read?'':' unread')} onClick={()=>onOpenNote(n)}>
-            <span className={'nicon '+(n.type==='warn'?'warn':n.type==='err'?'err':'ok')}>
-              {n.type==='warn'?I.warn:n.type==='err'?I.x:I.check}
-            </span>
-            <div className="ntext">
-              <div className="t">{n.t}</div>
-              <div className="s">{n.s}</div>
-              <div className="tm">{relTime(n.ts)}</div>
-            </div>
-            {!n.read && <span className="unread-dot"></span>}
-          </div>
-        ))}
-      </div>
-
-      <div className="bp-section">Exports</div>
-      <div className="exp-list">
-        {jobs.length===0 && <div className="empty" style={{padding:'14px 16px'}}>No exports yet.</div>}
-        {jobs.map(j=>{
-          const [cls,label] = jobChip(j);
-          const ready = j.state==='READY' || j.state==='READY_WITH_EXCLUSIONS';
-          return (
-            <div className="erow" key={j.id}>
-              <div className="ei">
-                <div className="et">{jobLabel(j)}</div>
-                <div className="es">media {j.includeMedia?'on':'off'} · {relTime(j.ts)}</div>
-              </div>
-              {j.fromCache && <span className="chip cache">cached</span>}
-              <span className={'chip '+cls}>{label}</span>
-              {ready && <button className="dl" onClick={()=>onDownload(j.id)}>{I.dl} Download</button>}
-            </div>
-          );
-        })}
+        {jobs.length===0 && <div className="empty">No notifications yet.<br/>Start an export to see one here.</div>}
+        {jobs.map(j=> <NotifItem key={j.id} job={j} onAct={onAct} />)}
       </div>
     </div>
   );
 }
 
 /* ============================ Toasts ============================ */
-function Toasts({ toasts, onView, onClose }){
+function Toasts({ toasts, onAct, onClose }){
   return (
     <div className="toasts">
       {toasts.map(t=>(
@@ -944,7 +970,7 @@ function Toasts({ toasts, onView, onClose }){
             <div className="tt">{t.title}</div>
             <div className="tb">{t.body}</div>
             <div className="ta">
-              <button className="primary" onClick={()=>{onView(t.jobId);onClose(t.id);}}>View &amp; download</button>
+              <button className="primary" onClick={()=>{onAct(t.jobId);onClose(t.id);}}>{t.excluded?'Review & download':'Download'}</button>
             </div>
           </div>
           <button className="tx" onClick={()=>onClose(t.id)}>{I.x}</button>

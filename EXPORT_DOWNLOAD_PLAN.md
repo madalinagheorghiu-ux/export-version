@@ -115,7 +115,14 @@ Types: `EXPORT_READY`, `EXPORT_READY_WITH_EXCLUSIONS`, `EXPORT_FAILED`.
 
 **c. Fallback delivery** — if no live socket, the row is already persisted; the frontend fetches unread notifications on next load. *Push if connected, pull on reconnect — never lost.*
 
-**d. Frontend notification center** — a global **bell** in the app shell (always mounted, independent of the export modal) with an unread badge; a **toast** for live arrivals; clicking routes to version settings and reopens the download/impact view for that `jobId`.
+**d. Frontend notification center (unified feed)** — a global **bell** in the app shell (always mounted, independent of the export modal) with an unread badge; a **toast** for live arrivals.
+- **Single list** (the export status and the notification are the *same* row — not two sections). Each item shows: read/unread indicator · status icon · title · source label · time · an inline **action**.
+- **Statuses:** `Preparing…` (spinner) → `Export ready to download` / `Export ready — N excluded` / `Export failed`.
+- **Action behaviour (key):**
+  - **Clean export (`READY`)** → **Download** button downloads the ZIP **instantly** — no modal.
+  - **With exclusions (`READY_WITH_EXCLUSIONS`)** → **Review & download** opens the impact modal (excluded-resources panel) first.
+- **Extensible by type:** today every item is an export, but the feed is built to host other notification kinds later (e.g. licence-expiration) — not built yet.
+- Toast action mirrors the same rule (Download vs. Review & download) and points at the same `jobId`.
 
 Because the notification lives in the app shell, the user can close the modal, navigate, refresh, or return later and still be informed.
 
@@ -218,6 +225,7 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 |------|----------|--------|
 | 2026-06-19 | Iteration workflow = **publish-on-demand**: work on `prototype/export-notifications` (pushes update PR #1); live `gh-pages` URL updates only on explicit "publish". | ✅ Decided |
 | 2026-06-19 | **Same export experience reused in Runtime → Builds.** Config/Runtime toggle switches shells; build rows have an Export build icon that opens the same modal → notify → download flow, parameterized by source (build vs version). | ✅ Decided |
+| 2026-06-19 | **Notification center = single unified feed** (merged the old "notifications" + "exports" sections). Each row shows status + read/unread + inline action. **Clean exports download instantly from the row; only excluded exports open the impact modal.** Feed designed to host other notification types later (licence expiry, etc. — not built). | ✅ Decided |
 | 2026-06-19 | Impact UX = inline grouped breadcrumb list + warning banner in the modal (per provided mockup). Path format `Category \ Subcategory \ **Name**`. | ✅ Decided |
 | 2026-06-19 | Row **color coding** of excluded resources — deferred. NB: FlowX already uses green=added / yellow=modified / red=deleted in *Resources changed*; align with this when revisited. | ⏸️ Deferred |
 | 2026-06-19 | Prototype is **isolated** from the FlowX codebase but mirrors the real Designer surfaces (header, Branching console, Export Version modal). | ✅ Decided |
