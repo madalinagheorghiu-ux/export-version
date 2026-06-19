@@ -224,6 +224,9 @@
   .toast .ta button{font-size:12px;font-weight:600;border-radius:7px;padding:5px 10px;border:1px solid var(--border);background:#fff;color:#3c4654}
   .toast .ta .primary{background:var(--blue);color:#fff;border-color:var(--blue)}
   .toast .tx{border:0;background:transparent;color:#aab2bd;align-self:flex-start}
+
+  /* ---------- Prototype stamp ---------- */
+  .proto-stamp{position:fixed;left:14px;bottom:14px;z-index:50;font-size:11px;font-weight:600;color:#8a94a3;background:#fff;border:1px solid var(--border);border-radius:999px;padding:5px 11px;box-shadow:var(--shadow-sm);opacity:.9}
 </style>
 </head>
 <body>
@@ -480,6 +483,7 @@ function App(){
         />}
 
       <Toasts toasts={toasts} onView={openDownload} onClose={dismissToast} />
+      <div className="proto-stamp">Prototype · mocked backend</div>
     </div>
   );
 }

@@ -203,10 +203,19 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 - Note: the folder name contains a `:`, which breaks raw `file://` URLs and Python's `http.server` in some sandboxes — serve over HTTP via `server.js` instead.
 - Gotcha (fixed): Babel standalone's `react` preset defaults to the **automatic** JSX runtime (emits `import` → fails in a classic `<script>`). The page registers a `react-classic` preset (`runtime: 'classic'`) so JSX compiles to `React.createElement`.
 
+## Hosting & iteration workflow
+
+- **Repo:** `madalinagheorghiu-ux/export-version` (public).
+- **Live prototype:** https://madalinagheorghiu-ux.github.io/export-version/ — served from the `gh-pages` branch.
+- **Review PR:** https://github.com/madalinagheorghiu-ux/export-version/pull/1 (`prototype/export-notifications` → `main`).
+- **Hosted spec:** https://madalinagheorghiu-ux.github.io/RandomDocs/export-download-notifications-spec.html
+- **Publish model = publish-on-demand:** iterate on `prototype/export-notifications` (each push updates the PR for review); the live `gh-pages` URL only moves on an explicit **"publish"** (fast-forward `gh-pages` → latest prototype commit). Colleagues see a stable demo between publishes.
+
 ## Decision Log
 
 | Date | Decision | Status |
 |------|----------|--------|
+| 2026-06-19 | Iteration workflow = **publish-on-demand**: work on `prototype/export-notifications` (pushes update PR #1); live `gh-pages` URL updates only on explicit "publish". | ✅ Decided |
 | 2026-06-19 | Impact UX = inline grouped breadcrumb list + warning banner in the modal (per provided mockup). Path format `Category \ Subcategory \ **Name**`. | ✅ Decided |
 | 2026-06-19 | Row **color coding** of excluded resources — deferred. NB: FlowX already uses green=added / yellow=modified / red=deleted in *Resources changed*; align with this when revisited. | ⏸️ Deferred |
 | 2026-06-19 | Prototype is **isolated** from the FlowX codebase but mirrors the real Designer surfaces (header, Branching console, Export Version modal). | ✅ Decided |
