@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowX — Export / Download / Notifications prototype</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+  // Force the classic JSX runtime (React.createElement) so the inline script
+  // runs as a classic script — the automatic runtime emits `import`, which fails.
+  Babel.registerPreset('react-classic', {
+    presets: [[Babel.availablePresets.react, { runtime: 'classic' }]]
+  });
+</script>
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#fff; --header:#0e1422; --header-line:#222c3e;
+    --text:#1f2733; --muted:#697586; --faint:#9aa4b2; --border:#e6e8ec; --border-2:#eef0f3;
+    --blue:#1f6feb; --blue-700:#1a5fd0; --blue-soft:#eaf1fe;
+    --amber-bg:#fdf7e6; --amber-bd:#f0e0ad; --amber-bar:#e9b949; --amber-text:#8a6a16;
+    --green:#2e9e6b; --yellow:#e7b008; --red:#e0584d;
+    --shadow:0 6px 22px rgba(16,24,40,.13);
+    --shadow-sm:0 1px 2px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box}
+  html,body,#root{height:100%}
+  body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit;cursor:pointer}
+  .app{display:flex;flex-direction:column;height:100%}
+
+  /* ---------- Header ---------- */
+  .header{height:54px;background:var(--header);display:flex;align-items:center;gap:14px;padding:0 16px;color:#dbe2ea;flex:0 0 auto;position:relative;z-index:60}
+  .logo{width:30px;height:30px;border-radius:7px;background:#11161f;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;border-bottom:2px solid var(--amber-bar)}
+  .badge-sandbox{background:#1f6feb;color:#fff;font-weight:700;font-size:11px;letter-spacing:.04em;padding:3px 8px;border-radius:6px}
+  .crumb{color:#aeb8c6;font-size:13px}
+  .crumb b{color:#eef2f6;font-weight:600}
+  .branch-pill{display:flex;align-items:center;gap:8px;background:#161d2b;border:1px solid #2a3447;border-radius:999px;padding:4px 10px 4px 6px;cursor:pointer;transition:border-color .15s}
+  .branch-pill:hover{border-color:#41506b}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--blue)}
+  .tok{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;line-height:1.4}
+  .tok.main{background:#13233f;color:#7db0ff;border:1px solid #28456f}
+  .tok.committed{background:#11301f;color:#5fcf8e;border:1px solid #1f5236}
+  .tok.draft{color:#e8a14a;border:1px dashed #7a5a23;background:transparent}
+  .tok.msg{color:#9aa4b2}
+  .commit-btn{display:flex;align-items:center;gap:7px;background:#161d2b;border:1px solid #2a3447;color:#cfd8e3;border-radius:8px;padding:6px 11px;font-size:12.5px;font-weight:500}
+  .commit-btn:hover{background:#1b2433}
+  .spacer{flex:1}
+  .seg{display:flex;background:#161d2b;border:1px solid #2a3447;border-radius:8px;overflow:hidden}
+  .seg button{background:transparent;border:0;color:#8c98a8;padding:5px 12px;font-size:12.5px;font-weight:600}
+  .seg button.on{background:var(--blue);color:#fff}
+  .icon-btn{position:relative;width:34px;height:34px;border-radius:8px;border:1px solid transparent;background:transparent;color:#aeb8c6;display:flex;align-items:center;justify-content:center}
+  .icon-btn:hover{background:#161d2b;color:#fff}
+  .bell-badge{position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:#e0584d;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--header)}
+  .tooltip{position:absolute;top:46px;left:50%;transform:translateX(-50%);background:#fff;color:#333;font-size:11px;padding:3px 8px;border-radius:6px;box-shadow:var(--shadow);white-space:nowrap;pointer-events:none}
+  .avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#3a2e00}
+  .avatar.af{background:#f6c344}.avatar.mg{background:#cdd4dd;color:#3a4250}.avatar.ck{background:#bcd3c4;color:#234}
+
+  /* ---------- Body ---------- */
+  .body{flex:1;display:flex;min-height:0}
+  .sidebar{width:248px;background:#fff;border-right:1px solid var(--border);padding:10px 0;overflow:auto;flex:0 0 auto}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:9px 18px;color:#3c4654;font-size:13.5px;cursor:pointer;font-weight:500}
+  .nav-item:hover{background:#f7f8fa}
+  .nav-item.on{background:var(--blue-soft);color:var(--blue);font-weight:600;box-shadow:inset 3px 0 0 var(--blue)}
+  .nav-item .ic{color:#8c98a8;display:flex}
+  .nav-item.on .ic{color:var(--blue)}
+  .nav-sub{padding:7px 18px 7px 47px;color:#5b6573;font-size:13px;cursor:pointer}
+  .nav-sub:hover{background:#f7f8fa}
+  .nav-group-label{font-size:11px;font-weight:700;letter-spacing:.05em;color:#9aa4b2;padding:14px 18px 4px;text-transform:uppercase}
+  .content{flex:1;overflow:auto;padding:22px 26px}
+
+  .card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm)}
+  .page-head{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:16px}
+  .page-head h1{margin:0;font-size:22px;font-weight:700}
+  .search{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:9px;padding:8px 12px;width:330px;color:var(--faint)}
+  .search input{border:0;outline:0;flex:1;font-size:13.5px;color:var(--text)}
+  .btn-blue{background:var(--blue);color:#fff;border:0;border-radius:9px;padding:9px 13px;font-weight:600;display:flex;align-items:center;gap:7px}
+  .btn-blue:hover{background:var(--blue-700)}
+  .btn-blue:disabled{opacity:.5;cursor:not-allowed}
+  .btn-ghost{background:#fff;color:#3c4654;border:1px solid var(--border);border-radius:9px;padding:9px 13px;font-weight:600;display:flex;align-items:center;gap:7px;justify-content:center}
+  .btn-ghost:hover{background:#f7f8fa}
+  .kbd-hint{display:flex;align-items:center;gap:9px;background:#eef4ff;border:1px solid #d7e3ff;color:#2a5fb0;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:16px}
+
+  table{width:100%;border-collapse:collapse}
+  thead th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:14px 18px;border-bottom:1px solid var(--border)}
+  tbody td{padding:15px 18px;border-bottom:1px solid var(--border-2);font-size:14px}
+  tbody tr:last-child td{border-bottom:0}
+  .row-name{font-weight:500;color:#222b38}
+  .who{display:flex;align-items:center;gap:9px;color:#3c4654}
+  .row-actions{display:flex;gap:6px;justify-content:flex-end}
+  .mini{width:30px;height:30px;border:1px solid var(--border);border-radius:8px;background:#fff;color:#697586;display:flex;align-items:center;justify-content:center}
+  .mini:hover{background:#f5f6f8}
+
+  .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;color:var(--muted);text-align:center;gap:8px}
+  .placeholder .big{font-size:18px;font-weight:600;color:#3c4654}
+
+  /* ---------- Branching console overlay ---------- */
+  .overlay{position:absolute;inset:54px 0 0 0;background:rgba(15,20,34,.28);z-index:40;display:flex}
+  .console{position:absolute;inset:54px 0 0 0;background:#fff;z-index:41;display:grid;grid-template-columns:300px 1fr 360px;overflow:hidden}
+  .vpanel{border-right:1px solid var(--border);padding:18px;overflow:auto;display:flex;flex-direction:column}
+  .vpanel h3,.cpanel h3{margin:0 0 14px;font-size:15px;font-weight:700}
+  .tagrow{display:flex;gap:7px;margin-bottom:10px}
+  .vtag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px}
+  .vtag.main{background:#eaf1fe;color:#1f6feb}
+  .vtag.committed{background:#e7f6ee;color:#2e9e6b}
+  .vtag.draft{color:#c9842a;border:1px dashed #e0b878;background:#fdf7e6}
+  .meta{font-size:12.5px;color:var(--muted);margin:4px 0}
+  .meta b{color:#3c4654;font-weight:600}
+  .rc-title{font-size:13px;font-weight:700;margin:18px 0 10px;display:flex;align-items:center;gap:6px}
+  .rc{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12.5px;color:#546070}
+  .rc-bar{width:4px;height:18px;border-radius:3px;flex:0 0 auto}
+  .rc .nm{color:#222b38;font-weight:600}
+  .vpanel .actions{margin-top:auto;display:flex;flex-direction:column;gap:9px;padding-top:18px}
+  .center{padding:18px 22px;overflow:auto;background:#fcfcfd}
+  .center .ttl{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .branch-row{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:8px}
+  .branch-row.sel{outline:2px solid var(--blue);background:#f3f8ff}
+  .branch-row:hover{background:#f5f7fa}
+  .node{width:13px;height:13px;border-radius:50%;background:var(--blue);flex:0 0 auto;margin-left:6px}
+  .node.draft{background:#fff;border:2px dashed #e0a64a}
+  .node.orange{background:#e9a23b}
+  .vline{flex:1}
+  .vername{display:flex;align-items:center;gap:8px}
+  .pill{font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px}
+  .pill.main{background:#eaf1fe;color:#1f6feb}
+  .pill.ver{background:#eef0f3;color:#546070;display:flex;align-items:center;gap:4px}
+  .pill.test{background:#fcf3d6;color:#9a7a16}
+  .pill.hotfix{background:#fcf3d6;color:#9a7a16}
+  .pill.draftp{color:#c9842a;border:1px dashed #e0b878}
+  .cpanel{border-left:1px solid var(--border);padding:18px;overflow:auto}
+  .cpanel .crow{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--border-2);font-size:13px}
+  .crow .msg{color:#3c4654;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* ---------- Modal ---------- */
+  .modal-scrim{position:fixed;inset:0;background:rgba(15,20,34,.5);z-index:80;display:flex;align-items:center;justify-content:center;padding:20px}
+  .modal{background:#fff;border-radius:16px;box-shadow:var(--shadow);width:540px;max-width:100%;max-height:90vh;overflow:auto}
+  .modal .mhead{display:flex;flex-direction:column;align-items:center;gap:10px;padding:26px 26px 6px;position:relative}
+  .modal .mhead h2{margin:0;font-size:21px;font-weight:700}
+  .mclose{position:absolute;top:18px;right:18px;border:0;background:transparent;color:#9aa4b2;width:30px;height:30px;border-radius:8px}
+  .mclose:hover{background:#f2f3f5;color:#555}
+  .mbody{padding:8px 26px 22px}
+  .infobox{display:flex;gap:10px;background:#f7f8fa;border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:#546070;font-size:12.7px;line-height:1.5;margin:10px 0 20px}
+  .infobox.amber{background:var(--amber-bg);border-color:var(--amber-bd);color:#7a5f18}
+  .field-label{font-size:13.5px;font-weight:600;margin-bottom:7px}
+  .select{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;cursor:pointer;background:#fff}
+  .select:hover{border-color:#c7cdd6}
+  .select .cur{font-size:11px;font-weight:600;color:#697586;background:#eef0f3;border-radius:6px;padding:2px 8px;margin-right:8px}
+  .help{font-size:12px;color:var(--muted);margin:7px 0 0}
+  .dd{border:1px solid var(--border);border-radius:10px;margin-top:6px;box-shadow:var(--shadow-sm);overflow:hidden}
+  .dd-item{padding:11px 14px;font-size:14px;display:flex;align-items:center;justify-content:space-between}
+  .dd-item:hover{background:#f5f7fa;cursor:pointer}
+  .dd-item.sel{background:#eaf1fe;color:var(--blue)}
+  .toggle-row{display:flex;align-items:center;gap:11px;margin-top:22px}
+  .switch{width:38px;height:22px;border-radius:999px;background:#cdd4dd;position:relative;transition:background .15s;border:0;flex:0 0 auto}
+  .switch.on{background:var(--blue)}
+  .switch .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .switch.on .knob{left:18px}
+  .mfoot{display:flex;justify-content:flex-end;gap:10px;margin-top:26px}
+
+  /* processing */
+  .proc{display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 10px 6px}
+  .spinner{width:42px;height:42px;border-radius:50%;border:4px solid #e6ebf2;border-top-color:var(--blue);animation:spin 1s linear infinite;margin-bottom:16px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .proc h3{margin:0 0 6px;font-size:17px}
+  .proc p{margin:0;color:var(--muted);font-size:13px;line-height:1.5;max-width:360px}
+  .progress{width:100%;height:6px;background:#eef0f3;border-radius:999px;overflow:hidden;margin:20px 0 6px}
+  .progress .bar{height:100%;background:var(--blue);border-radius:999px;transition:width .3s}
+  .sim-note{font-size:11.5px;color:var(--faint);margin-top:4px}
+
+  /* excluded panel */
+  .excl-head{display:flex;align-items:baseline;gap:8px;font-weight:700;font-size:15px;margin:18px 0 4px}
+  .excl-head .cnt{color:var(--muted);font-weight:600}
+  .excl-row{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--border-2);font-size:14px}
+  .excl-row:last-child{border-bottom:0}
+  .excl-bar{width:4px;height:20px;border-radius:3px;background:#cfd5de;flex:0 0 auto}
+  .excl-path{color:var(--muted)}
+  .excl-path b{color:#1f2733;font-weight:700}
+  .ok-banner{display:flex;gap:10px;align-items:center;background:#e9f7ef;border:1px solid #bce6cf;color:#1f7a4d;border-radius:10px;padding:13px 15px;font-size:13.5px}
+
+  /* ---------- Bell panel ---------- */
+  .bell-panel{position:absolute;top:50px;right:10px;width:392px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);z-index:70;overflow:hidden}
+  .bp-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+  .bp-head h4{margin:0;font-size:14.5px}
+  .bp-head button{border:0;background:transparent;color:var(--blue);font-size:12.5px;font-weight:600}
+  .bp-section{font-size:11px;font-weight:700;letter-spacing:.05em;color:#9aa4b2;text-transform:uppercase;padding:12px 16px 6px}
+  .nlist{max-height:300px;overflow:auto}
+  .nitem{display:flex;gap:11px;padding:12px 16px;border-bottom:1px solid var(--border-2);cursor:pointer}
+  .nitem:hover{background:#f7f8fa}
+  .nitem.unread{background:#f3f8ff}
+  .nitem.unread:hover{background:#eaf2ff}
+  .nicon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .nicon.ok{background:#e7f6ee;color:#2e9e6b}
+  .nicon.warn{background:var(--amber-bg);color:#b6891f}
+  .nicon.err{background:#fdeceb;color:#d6453a}
+  .ntext{flex:1;min-width:0}
+  .ntext .t{font-size:13.2px;font-weight:600;color:#222b38;line-height:1.35}
+  .ntext .s{font-size:12px;color:var(--muted);margin-top:2px}
+  .ntext .tm{font-size:11px;color:var(--faint);margin-top:3px}
+  .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex:0 0 auto;margin-top:5px}
+  .exp-list{max-height:210px;overflow:auto;padding-bottom:6px}
+  .erow{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:12.7px;border-bottom:1px solid var(--border-2)}
+  .erow .ei{flex:1;min-width:0}
+  .erow .et{font-weight:600;color:#222b38;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .erow .es{color:var(--muted);font-size:11.5px;margin-top:1px}
+  .chip{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .chip.proc{background:#eef0f3;color:#697586}
+  .chip.ready{background:#e7f6ee;color:#2e9e6b}
+  .chip.excl{background:var(--amber-bg);color:#b6891f}
+  .chip.fail{background:#fdeceb;color:#d6453a}
+  .chip.cache{background:#eef4ff;color:#3a5fb0}
+  .erow .dl{border:1px solid var(--border);background:#fff;border-radius:7px;padding:5px 9px;font-weight:600;color:var(--blue);font-size:11.5px;display:flex;align-items:center;gap:5px}
+  .erow .dl:hover{background:#f5f7fa}
+  .empty{padding:26px 16px;text-align:center;color:var(--faint);font-size:12.5px}
+
+  /* ---------- Toasts ---------- */
+  .toasts{position:fixed;right:18px;bottom:18px;z-index:90;display:flex;flex-direction:column;gap:10px;width:360px}
+  .toast{background:#fff;border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:11px;box-shadow:var(--shadow);padding:13px 14px;display:flex;gap:11px;animation:slidein .25s ease}
+  .toast.ok{border-left-color:var(--green)} .toast.warn{border-left-color:var(--amber-bar)} .toast.err{border-left-color:var(--red)} .toast.cache{border-left-color:var(--blue)}
+  @keyframes slidein{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+  .toast .tt{font-weight:700;font-size:13.2px}
+  .toast .tb{font-size:12.3px;color:var(--muted);margin-top:2px;line-height:1.4}
+  .toast .ta{display:flex;gap:8px;margin-top:9px}
+  .toast .ta button{font-size:12px;font-weight:600;border-radius:7px;padding:5px 10px;border:1px solid var(--border);background:#fff;color:#3c4654}
+  .toast .ta .primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .toast .tx{border:0;background:transparent;color:#aab2bd;align-self:flex-start}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react-classic">
+const { useState, useEffect, useRef } = React;
+
+/* ============================ Mock backend ============================ */
+const SOURCE = { branch:'main', version:'1.6.2', platform:'5.9.X' };
+const PROCESS_MS = 6000; // compressed from "up to 15 min"
+
+const VERSIONS = [
+  { id:'5.9.X', label:'5.9.X', current:true },
+  { id:'5.5.x', label:'5.5.x' },
+  { id:'5.1.x', label:'5.1.x' },
+];
+
+const E = (path, name, type) => ({ path, name, type });
+const EXCLUSIONS = {
+  '5.9.X': [],
+  '5.5.x': [
+    E(['Reusable Resources','Functions'], 'createAuditLog', 'FUNCTION'),
+    E(['Integrations','Data Sources'], 'MailQueue', 'DATA_SOURCE'),
+    E(['Integrations','Workflows'], 'AIEmailSummary', 'WORKFLOW'),
+    E(['Integrations','Data Sources'], 'Submissions_with_schema', 'DATA_SOURCE'),
+    E(['CMS','Notification Templates'], 'welcomeEmail', 'NOTIFICATION_TEMPLATE'),
+  ],
+  '5.1.x': [
+    E(['Reusable Resources','Functions'], 'createAuditLog', 'FUNCTION'),
+    E(['Integrations','Data Sources'], 'MailQueue', 'DATA_SOURCE'),
+    E(['Integrations','Workflows'], 'AIEmailSummary', 'WORKFLOW'),
+    E(['Integrations','Data Sources'], 'Submissions_with_schema', 'DATA_SOURCE'),
+    E(['CMS','Notification Templates'], 'welcomeEmail', 'NOTIFICATION_TEMPLATE'),
+    E(['Document Intelligence','Templates'], 'invoiceParser', 'DOC_TEMPLATE'),
+    E(['Task Manager','Allocation Rules'], 'autoAssign', 'ALLOCATION_RULE'),
+    E(['UI Flows'], 'checkoutFlow', 'UI_FLOW'),
+    E(['Reusable Resources','Custom Components'], 'signaturePad', 'CUSTOM_COMPONENT'),
+  ],
+};
+const cacheKey = (target, media) => `${SOURCE.branch}@${SOURCE.version}->${target}|media:${media}`;
+let _id = 100;
+const uid = () => `exp_${++_id}`;
+
+/* ============================ Icons ============================ */
+const I = {
+  bell:<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>,
+  branch:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M6 8.5v7M18 8.5c0 4-6 2.5-6 7"/></svg>,
+  chev:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m6 9 6 6 6-6"/></svg>,
+  x:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>,
+  warn:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m10.3 3.3-8 14A2 2 0 0 0 4 20h16a2 2 0 0 0 1.7-2.7l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>,
+  dl:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>,
+  check:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>,
+  search:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>,
+  copy:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>,
+  play:<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l11-7z"/></svg>,
+  list:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>,
+  kebab:<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>,
+  plus:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>,
+  hammer:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 12-8.5 8.5a2.1 2.1 0 0 1-3-3L12 9"/><path d="M17.6 6.4 14 10l-2-2 3.6-3.6a2.8 2.8 0 0 1 4 4L16 12"/></svg>,
+  upload:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg>,
+  branch2:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M6 8.5v7M18 8.5c0 4-6 2.5-6 7"/></svg>,
+  edit:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>,
+};
+
+/* ============================ Static nav ============================ */
+const NAV = [
+  { kind:'item', label:'Processes', ic:'grid' },
+  { kind:'item', label:'Project Data Model', ic:'db' },
+  { kind:'item', label:'Reusable Resources', ic:'cube', subs:['UI Templates','Custom Components','Functions'] },
+  { kind:'item', label:'UI Flows', ic:'flow' },
+  { kind:'item', label:'CMS', ic:'cms', subs:['Enumerations','Substitution Tags','Media Library','Notification Templates','Document Templates'] },
+  { kind:'item', label:'Task Manager', ic:'task', subs:['Views','Stages','Allocation Rules'] },
+  { kind:'item', label:'Integrations', ic:'plug', subs:['Data Sources','Workflows','Proxy Connections'] },
+  { kind:'item', label:'Document Intelligence', ic:'doc' },
+];
+const navIcon = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>;
+
+const PROCESSES = [
+  { name:'Duplicate_Copy_of_leftSidePanel', who:'admin flowx', av:'af', when:'17 Jun 2026, 12:26 PM' },
+  { name:'onboarding', who:'admin flowx', av:'af', when:'09 Jun 2026, 9:57 AM' },
+  { name:'migrateInstances', who:'madalina gheorghiu', av:'mg', when:'30 Sep 2025, 2:47 PM' },
+];
+
+const RESOURCES_CHANGED = [
+  { c:'#e7b008', t:'CMS \\ Enumerations \\', n:'lala' },
+  { c:'#e7b008', t:'Processes \\', n:'onboarding' },
+  { c:'#e7b008', t:'Reusable Resources \\ UI Templates \\', n:'personal_data' },
+  { c:'#e7b008', t:'Version Settings', n:'' },
+  { c:'#e7b008', t:'Resource Overrides', n:'' },
+  { c:'#2e9e6b', t:'Integrations \\ Data Sources \\', n:'Planning Documents' },
+  { c:'#e0584d', t:'Processes \\', n:'mobile_only' },
+  { c:'#e0584d', t:'Processes \\', n:'Copy_of_leftSidePanel' },
+  { c:'#e0584d', t:'Processes \\', n:'process44' },
+  { c:'#e0584d', t:'Processes \\', n:'test_custom_comp' },
+];
+
+const BRANCHES = [
+  { node:'draft', name:'main', pills:[['main','draft']], by:'AF', msg:'draft', draft:true },
+  { node:'orange', name:'test', pills:[['test','test']], by:'AF', msg:'fwefwe' },
+  { node:'sel', name:'main', ver:'1.6.2', pills:[['ver','1.6.2'],['main','main']], by:'AF', msg:'sdfsdf', committed:true, sel:true },
+  { node:'blue', ver:'1.6.1', pills:[['ver','1.6.1']], by:'CK', msg:'kgjhg' },
+  { node:'draft', name:'hotfix3', pills:[['hotfix','hotfix3']], by:'MG', msg:'draft', draft:true },
+  { node:'draft', name:'hotfix-1', pills:[['hotfix','hotfix-1']], by:'MG', msg:'draft', draft:true },
+  { node:'orange', ver:'1.1.2', pills:[['ver','1.1.2']], by:'MG', msg:'ok' },
+  { node:'blue', ver:'1.1.6', pills:[['ver','1.1.6']], by:'MG', msg:'message very log lalalalalala' },
+  { node:'blue', ver:'1.1.1', pills:[['ver','1.1.1']], by:'MG', msg:'ghfgh' },
+];
+
+/* ============================ Helpers ============================ */
+function relTime(ts){
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s<5) return 'just now';
+  if (s<60) return `${s}s ago`;
+  const m = Math.floor(s/60); if (m<60) return `${m}m ago`;
+  return `${Math.floor(m/60)}h ago`;
+}
+function jobLabel(j){ return `${SOURCE.branch} ${SOURCE.version} → ${j.target}`; }
+function jobChip(j){
+  if (j.state==='PROCESSING') return ['proc','Preparing'];
+  if (j.state==='FAILED') return ['fail','Failed'];
+  if (j.state==='READY_WITH_EXCLUSIONS') return ['excl',`${j.exclusions.length} excluded`];
+  return ['ready','Ready'];
+}
+function triggerDownload(job){
+  const manifest = {
+    export:`${SOURCE.branch}@${SOURCE.version}`,
+    targetPlatformVersion: job.target,
+    includeMediaFiles: job.includeMedia,
+    generatedAt: new Date().toISOString(),
+    reusedFromCache: !!job.fromCache,
+    excludedResources: (job.exclusions||[]).map(e=>({ path:[...e.path, e.name].join(' \\ '), type:e.type, reason:`Not supported on ${job.target}` })),
+  };
+  const blob = new Blob([JSON.stringify(manifest, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `export-${SOURCE.branch}-${SOURCE.version}-to-${job.target}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+/* ============================ App ============================ */
+function App(){
+  const [page, setPage] = useState('Processes');
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [downloadJobId, setDownloadJobId] = useState(null);
+  const [bellOpen, setBellOpen] = useState(false);
+  const [tipBranch, setTipBranch] = useState(false);
+
+  const [jobs, setJobs] = useState([]);
+  const [notes, setNotes] = useState([]);
+  const [toasts, setToasts] = useState([]);
+  const cache = useRef({});
+
+  const downloadJob = jobs.find(j=>j.id===downloadJobId) || null;
+  const unread = notes.filter(n=>!n.read).length;
+
+  const pushToast = (t) => {
+    const id = uid();
+    setToasts(p=>[...p, {...t, id}]);
+    setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)), 9000);
+  };
+  const dismissToast = (id)=> setToasts(p=>p.filter(x=>x.id!==id));
+
+  const announce = (job) => {
+    const excl = job.exclusions.length;
+    const type = job.state==='READY_WITH_EXCLUSIONS' ? 'warn' : 'ok';
+    setNotes(p=>[{
+      id:uid(), jobId:job.id, type, read:false, ts:Date.now(),
+      t: excl ? `Export ready — ${excl} resource${excl>1?'s':''} excluded` : 'Export ready to download',
+      s: `${jobLabel(job)}${job.fromCache?' · reused a previous export':''}`,
+    }, ...p]);
+    pushToast({
+      variant: job.fromCache ? 'cache' : type,
+      jobId: job.id,
+      title: job.fromCache ? 'Ready instantly' : (excl ? 'Export ready — with exclusions' : 'Export ready'),
+      body: excl ? `${jobLabel(job)} · ${excl} excluded resource${excl>1?'s':''}` : jobLabel(job),
+    });
+  };
+
+  const startExport = (target, includeMedia) => {
+    const key = cacheKey(target, includeMedia);
+    const cached = cache.current[key];
+    if (cached){
+      const job = { id:uid(), target, includeMedia, state:cached.state, exclusions:cached.exclusions, fromCache:true, ts:Date.now() };
+      setJobs(p=>[job, ...p]);
+      setExportOpen(false);
+      announce(job);
+      setDownloadJobId(job.id); // instant: open download right away
+      return;
+    }
+    const job = { id:uid(), target, includeMedia, state:'PROCESSING', exclusions:null, fromCache:false, ts:Date.now() };
+    setJobs(p=>[job, ...p]);
+    setTimeout(()=>{
+      const excl = EXCLUSIONS[target] || [];
+      const finished = { ...job, state: excl.length ? 'READY_WITH_EXCLUSIONS' : 'READY', exclusions: excl };
+      cache.current[key] = { state:finished.state, exclusions:excl };
+      setJobs(p=>p.map(j=>j.id===job.id? finished : j));
+      announce(finished);
+    }, PROCESS_MS);
+    return job;
+  };
+
+  const openDownload = (jobId) => { setDownloadJobId(jobId); setBellOpen(false); };
+  const markAllRead = () => setNotes(p=>p.map(n=>({...n, read:true})));
+  const readOne = (id) => setNotes(p=>p.map(n=>n.id===id?{...n,read:true}:n));
+
+  return (
+    <div className="app" onClick={()=>bellOpen&&setBellOpen(false)}>
+      <Header
+        unread={unread}
+        onBranch={()=>setConsoleOpen(true)}
+        onBell={(e)=>{e.stopPropagation();setBellOpen(o=>!o);}}
+        tip={tipBranch} setTip={setTipBranch}
+      />
+      {bellOpen &&
+        <BellPanel
+          notes={notes} jobs={jobs}
+          onClose={()=>setBellOpen(false)} onMarkAll={markAllRead}
+          onOpenNote={(n)=>{readOne(n.id); openDownload(n.jobId);}}
+          onDownload={openDownload}
+          stop={(e)=>e.stopPropagation()}
+        />}
+
+      <div className="body">
+        <Sidebar page={page} setPage={(p)=>{setPage(p);}} />
+        <div className="content">
+          {page==='Processes'
+            ? <ProcessesPage onOpenConsole={()=>setConsoleOpen(true)} />
+            : <GenericPage title={page} hasRunning={jobs.some(j=>j.state==='PROCESSING')} />}
+        </div>
+      </div>
+
+      {consoleOpen &&
+        <BranchingConsole
+          onClose={()=>setConsoleOpen(false)}
+          onExport={()=>setExportOpen(true)}
+        />}
+
+      {exportOpen &&
+        <ExportModal
+          onClose={()=>setExportOpen(false)}
+          onStart={startExport}
+          jobs={jobs}
+          cache={cache}
+        />}
+
+      {downloadJob &&
+        <DownloadModal
+          job={downloadJob}
+          onClose={()=>setDownloadJobId(null)}
+          onChangeTarget={()=>{ setDownloadJobId(null); setConsoleOpen(true); setExportOpen(true); }}
+        />}
+
+      <Toasts toasts={toasts} onView={openDownload} onClose={dismissToast} />
+    </div>
+  );
+}
+
+/* ============================ Header ============================ */
+function Header({ unread, onBranch, onBell, tip, setTip }){
+  return (
+    <div className="header">
+      <div className="logo">X</div>
+      <span className="badge-sandbox">SANDBOX</span>
+      <span className="crumb">Default workspace / <b>bizkids</b></span>
+      <div style={{position:'relative'}}
+           onMouseEnter={()=>setTip(true)} onMouseLeave={()=>setTip(false)}>
+        <div className="branch-pill" onClick={onBranch}>
+          <span className="dot"></span>
+          <span className="tok main">main</span>
+          <span className="tok committed">committed</span>
+          <span className="tok msg">sdfsdf</span>
+          <span style={{color:'#7e8a9a',display:'flex',marginLeft:2}}>{I.branch}</span>
+        </div>
+        {tip && <div className="tooltip">Branching</div>}
+      </div>
+      <button className="commit-btn">{I.upload}<span>Commit Changes to Version</span></button>
+      <div className="spacer"></div>
+      <div className="seg"><button className="on">Config</button><button>Runtime</button></div>
+      <button className="icon-btn" onClick={onBell} title="Notifications">
+        {I.bell}
+        {unread>0 && <span className="bell-badge">{unread}</span>}
+      </button>
+    </div>
+  );
+}
+
+/* ============================ Sidebar ============================ */
+function Sidebar({ page, setPage }){
+  return (
+    <div className="sidebar">
+      {NAV.map(n=>(
+        <div key={n.label}>
+          <div className={'nav-item'+(page===n.label?' on':'')} onClick={()=>setPage(n.label)}>
+            <span className="ic">{navIcon()}</span>{n.label}
+          </div>
+          {n.subs && n.subs.map(s=>(
+            <div key={s} className="nav-sub" onClick={()=>setPage(s)}>{s}</div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ============================ Processes page ============================ */
+function ProcessesPage({ onOpenConsole }){
+  return (
+    <div>
+      <div className="kbd-hint">
+        {I.branch}
+        <span>Prototype — click the <b>Branching</b> pill in the header (or <a onClick={onOpenConsole} style={{color:'#1f6feb',fontWeight:700,cursor:'pointer'}}>open the console</a>) → <b>Export Version</b> to start. The export runs in the background; you'll get a notification anywhere in the app.</span>
+      </div>
+      <div className="page-head">
+        <h1>Processes</h1>
+        <div style={{display:'flex',gap:10,alignItems:'center'}}>
+          <div className="search">{I.search}<input placeholder="Search by process name" /></div>
+          <button className="btn-blue">{I.plus}</button>
+          <button className="mini" style={{width:38,height:38}}>{I.kebab}</button>
+        </div>
+      </div>
+      <div className="card">
+        <table>
+          <thead><tr><th>Name</th><th>Edited by</th><th>Edited at</th><th></th></tr></thead>
+          <tbody>
+            {PROCESSES.map(p=>(
+              <tr key={p.name}>
+                <td className="row-name">{p.name}</td>
+                <td><div className="who"><span className={'avatar '+p.av}>{p.av.toUpperCase()}</span>{p.who}</div></td>
+                <td style={{color:'#697586'}}>{p.when}</td>
+                <td><div className="row-actions">
+                  <button className="mini">{I.play}</button>
+                  <button className="mini">{I.list}</button>
+                  <button className="mini">{I.kebab}</button>
+                </div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function GenericPage({ title, hasRunning }){
+  return (
+    <div>
+      <div className="page-head"><h1>{title}</h1></div>
+      <div className="placeholder">
+        <div className="big">{title}</div>
+        <div>Prototype area — navigate freely while an export runs.</div>
+        {hasRunning && <div style={{color:'#1f6feb',fontWeight:600}}>⏳ An export is being prepared — you'll be notified here too.</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ============================ Branching console ============================ */
+function BranchingConsole({ onClose, onExport }){
+  return (
+    <>
+      <div className="overlay" onClick={onClose}></div>
+      <div className="console" onClick={e=>e.stopPropagation()}>
+        {/* left */}
+        <div className="vpanel">
+          <h3>Version Details</h3>
+          <div className="tagrow"><span className="vtag main">main</span><span className="vtag committed">committed</span></div>
+          <div className="meta">Last edited by: <b>AF</b> 09 Jun 2026 at 3:18 PM</div>
+          <div className="meta">ID: <b>9dd73a0c…</b> {I.copy}</div>
+          <div className="rc-title">Resources changed <span style={{color:'#9aa4b2'}}>ⓘ</span></div>
+          {RESOURCES_CHANGED.map((r,i)=>(
+            <div className="rc" key={i}>
+              <span className="rc-bar" style={{background:r.c}}></span>
+              <span>{r.t} {r.n && <span className="nm">{r.n}</span>}</span>
+            </div>
+          ))}
+          <div className="actions">
+            <button className="btn-ghost" disabled style={{justifyContent:'center'}}>{I.hammer} Create Build…</button>
+            <button className="btn-ghost">{I.branch2} Create New Branch</button>
+            <button className="btn-ghost">{I.edit} Edit Commit Message</button>
+            <button className="btn-blue" style={{justifyContent:'center'}} onClick={onExport}>{I.upload} Export Version</button>
+          </div>
+        </div>
+        {/* center */}
+        <div className="center">
+          <div className="ttl">
+            <h3 style={{margin:0}}>All Branches</h3>
+            <button className="mini" title="Export" onClick={onExport}>{I.upload}</button>
+          </div>
+          {BRANCHES.map((b,i)=>(
+            <div className={'branch-row'+(b.sel?' sel':'')} key={i}>
+              <span className={'node'+(b.draft?' draft':b.node==='orange'?' orange':'')}></span>
+              <span className="vername" style={{flex:1}}>
+                {b.pills.map((p,j)=>(
+                  <span key={j} className={'pill '+(p[0]==='ver'?'ver':p[0]==='main'?'main':p[0]==='draft'?'draftp':p[0])}>
+                    {p[0]==='ver' && I.branch} {p[1]}
+                  </span>
+                ))}
+              </span>
+            </div>
+          ))}
+        </div>
+        {/* right */}
+        <div className="cpanel">
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+            <h3 style={{margin:0}}>Version Details</h3>
+            <button className="mclose" style={{position:'static'}} onClick={onClose}>{I.x}</button>
+          </div>
+          {BRANCHES.map((b,i)=>(
+            <div className="crow" key={i}>
+              <span className={'avatar '+(b.by==='AF'?'af':b.by==='CK'?'ck':'mg')}>{b.by}</span>
+              <span className="msg">{b.msg}</span>
+              {b.committed && <span className="vtag committed">committed</span>}
+              {b.draft && <span className="vtag draft">draft</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ============================ Export modal ============================ */
+function ExportModal({ onClose, onStart, jobs, cache }){
+  const [target, setTarget] = useState('5.9.X');
+  const [media, setMedia] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [phase, setPhase] = useState('form'); // form | processing
+  const [pct, setPct] = useState(0);
+
+  const isLower = target !== '5.9.X';
+  const willHitCache = !!cache.current[cacheKey(target, media)];
+
+  useEffect(()=>{
+    if (phase!=='processing') return;
+    setPct(4);
+    const t = setInterval(()=> setPct(p=> Math.min(p + (100/(PROCESS_MS/250)), 96)), 250);
+    return ()=>clearInterval(t);
+  }, [phase]);
+
+  const onExport = () => {
+    if (willHitCache){ onStart(target, media); return; } // instant -> modal closes, download opens
+    onStart(target, media);
+    setPhase('processing');
+  };
+
+  return (
+    <div className="modal-scrim" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        {phase==='form' ? (
+          <>
+            <div className="mhead">
+              <button className="mclose" onClick={onClose}>{I.x}</button>
+              <h2>Export Version</h2>
+              <div style={{display:'flex',gap:7,alignItems:'center'}}>
+                <span className="dot" style={{background:'#1f6feb'}}></span>
+                <span className="vtag main">main</span><span className="vtag committed">committed</span>
+              </div>
+            </div>
+            <div className="mbody">
+              <div className="infobox">
+                <span style={{color:'#e0a324'}}>💡</span>
+                <span>Choose the target FlowX.AI version and whether to include media files in the export package. The exported ZIP can only be imported into environments running the selected version.</span>
+              </div>
+
+              <div className="field-label">Target platform version</div>
+              <div className="select" onClick={()=>setOpen(o=>!o)}>
+                <span>{VERSIONS.find(v=>v.id===target).label}</span>
+                <span style={{display:'flex',alignItems:'center'}}>
+                  {target==='5.9.X' && <span className="cur">Current Version</span>}
+                  {I.chev}
+                </span>
+              </div>
+              {open &&
+                <div className="dd">
+                  {VERSIONS.map(v=>(
+                    <div key={v.id} className={'dd-item'+(v.id===target?' sel':'')}
+                         onClick={()=>{setTarget(v.id);setOpen(false);}}>
+                      <span>{v.label}</span>
+                      {v.current && <span className="cur">Current Version</span>}
+                    </div>
+                  ))}
+                </div>}
+              <div className="help">Select the platform version running in the target environment.</div>
+
+              {isLower &&
+                <div className="infobox amber" style={{marginTop:14,marginBottom:0}}>
+                  {I.warn}
+                  <span>Some resources may not exist on <b>{target}</b> and will be excluded. You'll see the full list before downloading.</span>
+                </div>}
+
+              {willHitCache &&
+                <div className="infobox" style={{marginTop:14,marginBottom:0,background:'#eef4ff',borderColor:'#d7e3ff',color:'#2a5fb0'}}>
+                  ⚡ <span>An identical export already exists — it'll be available <b>instantly</b>, no waiting.</span>
+                </div>}
+
+              <div className="toggle-row">
+                <button className={'switch'+(media?' on':'')} onClick={()=>setMedia(m=>!m)}><span className="knob"></span></button>
+                <span style={{fontWeight:500}}>Include media file content <span style={{color:'#9aa4b2'}}>ⓘ</span></span>
+              </div>
+
+              <div className="mfoot">
+                <button className="btn-ghost" onClick={onClose}>Cancel</button>
+                <button className="btn-blue" onClick={onExport}>{willHitCache?'Get download':'Export'}</button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="mbody" style={{paddingTop:30}}>
+            <button className="mclose" onClick={onClose}>{I.x}</button>
+            <div className="proc">
+              <div className="spinner"></div>
+              <h3>Preparing your export…</h3>
+              <p>Building the ZIP for <b>{jobLabel({target})}</b>. This can take up to 15 minutes.<br/>You can close this and keep working — we'll notify you when it's ready.</p>
+              <div className="progress"><div className="bar" style={{width:pct+'%'}}></div></div>
+              <div className="sim-note">Simulated: ~6s instead of up to 15 min</div>
+              <div className="mfoot" style={{justifyContent:'center',width:'100%'}}>
+                <button className="btn-ghost" onClick={onClose}>Close — keep working</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ============================ Download modal ============================ */
+function DownloadModal({ job, onClose, onChangeTarget }){
+  const hasExcl = job.state==='READY_WITH_EXCLUSIONS';
+  const excl = job.exclusions || [];
+  return (
+    <div className="modal-scrim" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="mhead" style={{alignItems:'flex-start'}}>
+          <button className="mclose" onClick={onClose}>{I.x}</button>
+          <h2 style={{fontSize:19}}>Download export</h2>
+          <div className="meta" style={{margin:0}}>
+            {jobLabel(job)} · media {job.includeMedia?'included':'excluded'}
+            {job.fromCache && <span className="chip cache" style={{marginLeft:8}}>reused</span>}
+          </div>
+        </div>
+        <div className="mbody">
+          {hasExcl ? (
+            <>
+              <div className="infobox amber" style={{margin:'6px 0 4px'}}>
+                {I.warn}
+                <span>These resources don't exist on <b>{job.target}</b> and will be <b>excluded</b> from the downloaded ZIP. Download anyway, or cancel and choose a higher target version.</span>
+              </div>
+              <div className="excl-head">Excluded resources <span className="cnt">({excl.length})</span></div>
+              <div>
+                {excl.map((e,i)=>(
+                  <div className="excl-row" key={i}>
+                    <span className="excl-bar"></span>
+                    <span className="excl-path">{e.path.join(' \\ ')} {'\\'} <b>{e.name}</b></span>
+                  </div>
+                ))}
+              </div>
+              <div className="mfoot">
+                <button className="btn-ghost" onClick={onChangeTarget}>Cancel &amp; choose higher version</button>
+                <button className="btn-blue" onClick={()=>{triggerDownload(job);onClose();}}>{I.dl} Download anyway</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="ok-banner" style={{marginTop:6}}>
+                {I.check}
+                <span>All resources are included. Your export is ready to download.</span>
+              </div>
+              <div className="mfoot">
+                <button className="btn-ghost" onClick={onClose}>Close</button>
+                <button className="btn-blue" onClick={()=>{triggerDownload(job);onClose();}}>{I.dl} Download ZIP</button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================ Bell panel ============================ */
+function BellPanel({ notes, jobs, onClose, onMarkAll, onOpenNote, onDownload, stop }){
+  return (
+    <div className="bell-panel" onClick={stop}>
+      <div className="bp-head">
+        <h4>Notifications</h4>
+        {notes.some(n=>!n.read) && <button onClick={onMarkAll}>Mark all read</button>}
+      </div>
+      <div className="nlist">
+        {notes.length===0 && <div className="empty">No notifications yet.<br/>Start an export to see one here.</div>}
+        {notes.map(n=>(
+          <div key={n.id} className={'nitem'+(n.read?'':' unread')} onClick={()=>onOpenNote(n)}>
+            <span className={'nicon '+(n.type==='warn'?'warn':n.type==='err'?'err':'ok')}>
+              {n.type==='warn'?I.warn:n.type==='err'?I.x:I.check}
+            </span>
+            <div className="ntext">
+              <div className="t">{n.t}</div>
+              <div className="s">{n.s}</div>
+              <div className="tm">{relTime(n.ts)}</div>
+            </div>
+            {!n.read && <span className="unread-dot"></span>}
+          </div>
+        ))}
+      </div>
+
+      <div className="bp-section">Exports</div>
+      <div className="exp-list">
+        {jobs.length===0 && <div className="empty" style={{padding:'14px 16px'}}>No exports yet.</div>}
+        {jobs.map(j=>{
+          const [cls,label] = jobChip(j);
+          const ready = j.state==='READY' || j.state==='READY_WITH_EXCLUSIONS';
+          return (
+            <div className="erow" key={j.id}>
+              <div className="ei">
+                <div className="et">{jobLabel(j)}</div>
+                <div className="es">media {j.includeMedia?'on':'off'} · {relTime(j.ts)}</div>
+              </div>
+              {j.fromCache && <span className="chip cache">cached</span>}
+              <span className={'chip '+cls}>{label}</span>
+              {ready && <button className="dl" onClick={()=>onDownload(j.id)}>{I.dl} Download</button>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ============================ Toasts ============================ */
+function Toasts({ toasts, onView, onClose }){
+  return (
+    <div className="toasts">
+      {toasts.map(t=>(
+        <div key={t.id} className={'toast '+(t.variant||'')}>
+          <div style={{flex:1}}>
+            <div className="tt">{t.title}</div>
+            <div className="tb">{t.body}</div>
+            <div className="ta">
+              <button className="primary" onClick={()=>{onView(t.jobId);onClose(t.id);}}>View &amp; download</button>
+            </div>
+          </div>
+          <button className="tx" onClick={()=>onClose(t.id)}>{I.x}</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
