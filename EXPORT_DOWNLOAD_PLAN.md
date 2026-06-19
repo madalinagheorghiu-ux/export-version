@@ -123,6 +123,10 @@ Types: `EXPORT_READY`, `EXPORT_READY_WITH_EXCLUSIONS`, `EXPORT_FAILED`.
   - **With exclusions (`READY_WITH_EXCLUSIONS`)** → **Review & download** opens the impact modal (excluded-resources panel) first.
 - **Extensible by type:** today every item is an export, but the feed is built to host other notification kinds later (e.g. licence-expiration) — not built yet.
 - Toast action mirrors the same rule (Download vs. Review & download) and points at the same `jobId`.
+- **Toast suppression (don't double-surface):** the right-side toast is suppressed when the user is already looking at the result —
+  - the **notification center is open** (the feed updates live), or
+  - the **"Preparing…" modal for that export is still open** — in which case that modal **switches straight to the download modal** (clean → "Download ZIP"; excluded → impact panel) instead of toasting.
+- **Cross-view download readiness:** exports are linked by version `tag`. A ready export made in **Config** (version `1.6.2`) surfaces as a green **"Download ready"** affordance on the matching **Runtime → Builds** row (`Bizkids 1.6.2`), and vice-versa — the artifact is shared, so it's downloadable from either view.
 
 Because the notification lives in the app shell, the user can close the modal, navigate, refresh, or return later and still be informed.
 
@@ -226,6 +230,8 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 | 2026-06-19 | Iteration workflow = **publish-on-demand**: work on `prototype/export-notifications` (pushes update PR #1); live `gh-pages` URL updates only on explicit "publish". | ✅ Decided |
 | 2026-06-19 | **Same export experience reused in Runtime → Builds.** Config/Runtime toggle switches shells; build rows have an Export build icon that opens the same modal → notify → download flow, parameterized by source (build vs version). | ✅ Decided |
 | 2026-06-19 | **Notification center = single unified feed** (merged the old "notifications" + "exports" sections). Each row shows status + read/unread + inline action. **Clean exports download instantly from the row; only excluded exports open the impact modal.** Feed designed to host other notification types later (licence expiry, etc. — not built). | ✅ Decided |
+| 2026-06-19 | **Don't double-surface a ready export:** suppress the toast when the center is open; when the "Preparing…" modal is left open it switches straight to the download modal. | ✅ Decided |
+| 2026-06-19 | **Cross-view download readiness:** a ready export links Config↔Runtime by version tag — surfaces as "Download ready" on the matching Runtime build row (and the shared artifact is downloadable from either view). | ✅ Decided |
 | 2026-06-19 | Impact UX = inline grouped breadcrumb list + warning banner in the modal (per provided mockup). Path format `Category \ Subcategory \ **Name**`. | ✅ Decided |
 | 2026-06-19 | Row **color coding** of excluded resources — deferred. NB: FlowX already uses green=added / yellow=modified / red=deleted in *Resources changed*; align with this when revisited. | ⏸️ Deferred |
 | 2026-06-19 | Prototype is **isolated** from the FlowX codebase but mirrors the real Designer surfaces (header, Branching console, Export Version modal). | ✅ Decided |

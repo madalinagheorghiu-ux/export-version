@@ -101,6 +101,8 @@
   .build-row:hover{background:#f7f8fa}
   .build-chip{display:inline-flex;align-items:center;gap:9px;background:#eef0f3;border-radius:9px;padding:9px 15px;font-weight:600;color:#33404f;font-size:14px}
   .build-chip svg{color:#7e8a9a}
+  .ready-pill{display:inline-flex;align-items:center;gap:6px;background:#e7f6ee;color:#1f7a4d;border:1px solid #bce6cf;border-radius:8px;padding:6px 11px;font-weight:600;font-size:12px;white-space:nowrap}
+  .ready-pill:hover{background:#dcf1e6}
   .tipwrap{position:relative;display:inline-flex}
   .tipwrap .tip{position:absolute;bottom:-32px;right:0;background:#1f2733;color:#fff;font-size:11px;padding:5px 9px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s;z-index:30}
   .tipwrap:hover .tip{opacity:1}
@@ -287,8 +289,10 @@ const EXCLUSIONS = {
   ],
 };
 // A "source" is what's being exported — either a committed version or a runtime build.
-const VERSION_SOURCE = { kind:'version', id:'main@1.6.2', label:'main 1.6.2' };
+// `tag` is the shared version number that links a Config version to its Runtime build.
+const VERSION_SOURCE = { kind:'version', id:'main@1.6.2', label:'main 1.6.2', tag:'1.6.2' };
 const cacheKey = (source, target, media) => `${source.id}->${target}|media:${media}`;
+const jobReady = (j) => !!j && (j.state==='READY' || j.state==='READY_WITH_EXCLUSIONS');
 let _id = 100;
 const uid = () => `exp_${++_id}`;
 
@@ -417,10 +421,13 @@ function App(){
   const [jobs, setJobs] = useState([]);
   const [toasts, setToasts] = useState([]);
   const cache = useRef({});
+  // Refs so the export-completion timeout reads live UI state (not stale closures).
+  const bellOpenRef = useRef(false);
+  const watchRef = useRef(null); // id of the job whose "Preparing…" modal is still open
+  useEffect(()=>{ bellOpenRef.current = bellOpen; }, [bellOpen]);
 
-  const isReady = (j) => j.state==='READY' || j.state==='READY_WITH_EXCLUSIONS';
   const downloadJob = jobs.find(j=>j.id===downloadJobId) || null;
-  const unread = jobs.filter(j=>isReady(j) && !j.read).length;
+  const unread = jobs.filter(j=>jobReady(j) && !j.read).length;
 
   const dismissToast = (id)=> setToasts(p=>p.filter(x=>x.id!==id));
   const pushToast = (job) => {
@@ -442,20 +449,20 @@ function App(){
   // Act on a ready export: clean → download the ZIP instantly; with exclusions → open the impact modal.
   const actOnJob = (jobId) => {
     const job = jobs.find(j=>j.id===jobId);
-    if (!job || !isReady(job)) return;
+    if (!jobReady(job)) return;
     markRead(jobId);
     setBellOpen(false);
     if (job.state==='READY_WITH_EXCLUSIONS') setDownloadJobId(jobId);
     else triggerDownload(job);
   };
 
-  // Export reached a ready state. Always toast. When user is right here (cache hit), act immediately.
-  const fireReady = (job, backgroundOnly) => {
-    pushToast(job);
-    if (!backgroundOnly){
-      if (job.state==='READY_WITH_EXCLUSIONS') setDownloadJobId(job.id);
-      else triggerDownload(job);
-    }
+  const closeExport = () => { watchRef.current = null; setExportSource(null); };
+  // The "Preparing…" modal for this job is still open → switch it straight to the download modal.
+  const onExportReady = (job) => {
+    watchRef.current = null;
+    markRead(job.id);
+    setExportSource(null);
+    setDownloadJobId(job.id);
   };
 
   const startExport = (source, target, includeMedia) => {
@@ -464,9 +471,11 @@ function App(){
     if (cached){
       const job = { id:uid(), source, target, includeMedia, state:cached.state, exclusions:cached.exclusions, fromCache:true, read:false, ts:Date.now() };
       setJobs(p=>[job, ...p]);
-      setExportSource(null);
-      fireReady(job, false); // instant + user-initiated → act now
-      return;
+      closeExport();
+      if (!bellOpenRef.current) pushToast(job);          // suppress toast if the center is open
+      if (job.state==='READY_WITH_EXCLUSIONS') setDownloadJobId(job.id);
+      else triggerDownload(job);                          // instant + user-initiated
+      return job;
     }
     const job = { id:uid(), source, target, includeMedia, state:'PROCESSING', exclusions:null, fromCache:false, read:false, ts:Date.now() };
     setJobs(p=>[job, ...p]);
@@ -475,7 +484,11 @@ function App(){
       const finished = { ...job, state: excl.length ? 'READY_WITH_EXCLUSIONS' : 'READY', exclusions: excl };
       cache.current[key] = { state:finished.state, exclusions:excl };
       setJobs(p=>p.map(j=>j.id===job.id? finished : j));
-      fireReady(finished, true); // background → toast only; user pulls from the center
+      // Suppress the right-side toast when the user is already looking:
+      //   (a) the notification center is open, or (b) the Preparing modal for this job is open.
+      const watched = watchRef.current === job.id;
+      if (!watched && !bellOpenRef.current) pushToast(finished);
+      // If watched, ExportModal's effect calls onExportReady → switches to the download modal.
     }, PROCESS_MS);
     return job;
   };
@@ -509,7 +522,7 @@ function App(){
                 ? <ProcessesPage onOpenConsole={()=>setConsoleOpen(true)} />
                 : <GenericPage title={page} hasRunning={hasRunning} />)
             : (page==='Builds'
-                ? <BuildsPage onExportBuild={openExportBuild} />
+                ? <BuildsPage onExportBuild={openExportBuild} jobs={jobs} onAct={actOnJob} />
                 : <GenericPage title={page} hasRunning={hasRunning} />)}
         </div>
       </div>
@@ -523,8 +536,10 @@ function App(){
       {exportSource &&
         <ExportModal
           source={exportSource}
-          onClose={()=>setExportSource(null)}
+          onClose={closeExport}
           onStart={startExport}
+          onWatch={(id)=>{ watchRef.current = id; }}
+          onReady={onExportReady}
           jobs={jobs}
           cache={cache}
         />}
@@ -647,7 +662,9 @@ function GenericPage({ title, hasRunning }){
 }
 
 /* ============================ Builds page (runtime) ============================ */
-function BuildsPage({ onExportBuild }){
+function BuildsPage({ onExportBuild, jobs, onAct }){
+  // Cross-view link: a ready export for this version (made in Config or Runtime) shows here too.
+  const latestFor = (tag) => jobs.find(j => j.source && j.source.tag===tag);
   return (
     <div>
       <div className="page-head">
@@ -656,19 +673,26 @@ function BuildsPage({ onExportBuild }){
       </div>
       <div className="card" style={{paddingBottom:10}}>
         <div className="builds-label">Builds</div>
-        {BUILDS.map(b=>(
-          <div className="build-row" key={b.tag}>
-            <span className="build-chip">{I.hammer} Bizkids {b.tag}</span>
-            <div className="row-actions">
-              <button className="mini">{I.play}</button>
-              <span className="tipwrap">
-                <button className="mini" onClick={()=>onExportBuild(b)}>{I.box}</button>
-                <span className="tip">Export build</span>
-              </span>
-              <button className="mini">{I.kebab}</button>
+        {BUILDS.map(b=>{
+          const j = latestFor(b.tag);
+          return (
+            <div className="build-row" key={b.tag}>
+              <span className="build-chip">{I.hammer} Bizkids {b.tag}</span>
+              <div className="row-actions">
+                {jobReady(j) &&
+                  <button className="ready-pill" onClick={()=>onAct(j.id)}>{I.check} Download ready</button>}
+                {j && j.state==='PROCESSING' &&
+                  <span className="nproc"><span className="mini-spin"></span> Preparing</span>}
+                <button className="mini">{I.play}</button>
+                <span className="tipwrap">
+                  <button className="mini" onClick={()=>onExportBuild(b)}>{I.box}</button>
+                  <span className="tip">Export build</span>
+                </span>
+                <button className="mini">{I.kebab}</button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -740,12 +764,13 @@ function BranchingConsole({ onClose, onExport }){
 }
 
 /* ============================ Export modal ============================ */
-function ExportModal({ source, onClose, onStart, jobs, cache }){
+function ExportModal({ source, onClose, onStart, onWatch, onReady, jobs, cache }){
   const [target, setTarget] = useState('5.9.X');
   const [media, setMedia] = useState(true);
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState('form'); // form | processing
   const [pct, setPct] = useState(0);
+  const [watchId, setWatchId] = useState(null);
 
   const isBuild = source.kind === 'build';
   const isLower = target !== '5.9.X';
@@ -758,9 +783,17 @@ function ExportModal({ source, onClose, onStart, jobs, cache }){
     return ()=>clearInterval(t);
   }, [phase]);
 
+  // While the Preparing modal is open, when this export becomes ready → switch to the download modal.
+  useEffect(()=>{
+    if (phase!=='processing' || !watchId) return;
+    const j = jobs.find(x=>x.id===watchId);
+    if (jobReady(j)) onReady(j);
+  }, [jobs, watchId, phase]);
+
   const onExport = () => {
     if (willHitCache){ onStart(source, target, media); return; } // instant -> modal closes, download opens
-    onStart(source, target, media);
+    const job = onStart(source, target, media);
+    if (job){ setWatchId(job.id); onWatch(job.id); }
     setPhase('processing');
   };
 
