@@ -3,7 +3,7 @@
 > **Purpose:** Living design doc for the version-settings export/download + notification mechanism.
 > Keep this updated as decisions are made. See the **Decision Log** at the bottom.
 >
-> **Last updated:** 2026-06-19
+> **Last updated:** 2026-06-19 · [Live prototype](https://madalinagheorghiu-ux.github.io/export-version/) · [PR #1](https://github.com/madalinagheorghiu-ux/export-version/pull/1)
 
 ---
 
@@ -150,9 +150,9 @@ Because the notification lives in the app shell, the user can close the modal, n
 #### Excluded-resources panel
 
 **Warning banner:**
-> ⚠️ These resources don't exist on **{targetVersion}** and will be **excluded** from the downloaded ZIP. Download anyway, or cancel and choose a higher target version.
+> ⚠️ These resources don't exist on **{targetVersion}** and will be **excluded** from the downloaded ZIP. Download anyway, or change the target version.
 
-- Actions: **Download anyway** (primary) · **Cancel** → returns to the Step 1 target-version picker.
+- Actions: **Download anyway** (primary) · **Change Target Version** → returns to the Step 1 target-version picker.
 
 **List header:** `Excluded resources (N)`
 
@@ -227,11 +227,11 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 - **Hosted spec:** https://madalinagheorghiu-ux.github.io/RandomDocs/export-download-notifications-spec.html
 - **Publish model = publish-on-demand:** iterate on `prototype/export-notifications` (each push updates the PR for review); the live `gh-pages` URL only moves on an explicit **"publish"** (fast-forward `gh-pages` → latest prototype commit). Colleagues see a stable demo between publishes.
 
-## Notification center — candidate enhancements (backlog)
+## Ideas to make the center more useful (future features)
 
-Done: unified feed · env context · two-row layout · environment filter · dismiss · instant vs. impact download.
+**Shipped so far:** unified feed · per-notification env/workspace/project context · two-row layout · environment filter · dismiss · instant-vs-impact download · context shown in the download modal · cross-view "Download ready".
 
-Next candidates (rough priority):
+**Next candidates (rough priority):**
 1. **Type filter / tabs** — once there are more kinds (exports, build status, licence expiry, errors): `All / Downloads / System / Alerts`.
 2. **Deep-link "Go to"** — jump to the build/version/project a notification refers to (auto-switch workspace/env context).
 3. **Expiry indicator + Retry** — show when a download artifact expires (ties to artifact TTL); "Export expired — re-export"; Retry on `FAILED`.

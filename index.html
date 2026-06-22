@@ -971,7 +971,7 @@ function DownloadModal({ job, onClose, onChangeTarget }){
             <>
               <div className="infobox amber" style={{margin:'6px 0 4px'}}>
                 {I.warn}
-                <span>These resources don't exist on <b>{job.target}</b> and will be <b>excluded</b> from the downloaded ZIP. Download anyway, or cancel and choose a higher target version.</span>
+                <span>These resources don't exist on <b>{job.target}</b> and will be <b>excluded</b> from the downloaded ZIP. Download anyway, or change the target version.</span>
               </div>
               <div className="excl-head">Excluded resources <span className="cnt">({excl.length})</span></div>
               <div>
@@ -983,7 +983,7 @@ function DownloadModal({ job, onClose, onChangeTarget }){
                 ))}
               </div>
               <div className="mfoot">
-                <button className="btn-ghost" onClick={onChangeTarget}>Cancel &amp; choose higher version</button>
+                <button className="btn-ghost" onClick={onChangeTarget}>Change Target Version</button>
                 <button className="btn-blue" onClick={()=>{triggerDownload(job);onClose();}}>{I.dl} Download anyway</button>
               </div>
             </>
