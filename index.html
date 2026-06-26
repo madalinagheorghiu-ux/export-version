@@ -1057,7 +1057,8 @@ function NotifItem({ job, onAct, onDismiss }){
           <span className="nmeta">{job.ctx.workspace} · <span className="nproj">{I.folder}{job.ctx.project}</span></span>
         </>}
         <span className="ntime">{relTime(job.ts)}</span>
-        <button className="ndismiss" title="Dismiss" onClick={(e)=>{e.stopPropagation();onDismiss(job.id);}}>{I.x}</button>
+        {job.state!=='PROCESSING' &&
+          <button className="ndismiss" title="Dismiss" onClick={(e)=>{e.stopPropagation();onDismiss(job.id);}}>{I.x}</button>}
       </div>
       {/* notification body */}
       <div className="nrow2" onClick={ready?()=>onAct(job.id):undefined} style={{cursor:ready?'pointer':'default'}}>
