@@ -275,7 +275,7 @@
   .empty{padding:26px 16px;text-align:center;color:var(--faint);font-size:12.5px}
 
   /* ---------- Toasts ---------- */
-  .toasts{position:fixed;right:18px;bottom:18px;z-index:90;display:flex;flex-direction:column;gap:10px;width:360px}
+  .toasts{position:fixed;right:18px;bottom:56px;z-index:90;display:flex;flex-direction:column;gap:10px;width:360px}
   .toast{background:#fff;border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:11px;box-shadow:var(--shadow);padding:13px 14px;display:flex;gap:11px;animation:slidein .25s ease}
   .toast.ok{border-left-color:var(--green)} .toast.warn{border-left-color:var(--amber-bar)} .toast.err{border-left-color:var(--red)} .toast.cache{border-left-color:var(--blue)}
   @keyframes slidein{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
@@ -288,7 +288,7 @@
   .toast .tx{border:0;background:transparent;color:#aab2bd;align-self:flex-start}
 
   /* ---------- Prototype stamp ---------- */
-  .proto-stamp{position:fixed;left:14px;bottom:14px;z-index:50;font-size:11px;font-weight:600;color:#8a94a3;background:#fff;border:1px solid var(--border);border-radius:999px;padding:5px 11px;box-shadow:var(--shadow-sm);opacity:.9}
+  .proto-stamp{position:fixed;right:16px;bottom:16px;z-index:50;font-size:11px;font-weight:600;color:#8a94a3;background:#fff;border:1px solid var(--border);border-radius:999px;padding:5px 11px;box-shadow:var(--shadow-sm);opacity:.9}
 </style>
 </head>
 <body>
