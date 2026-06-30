@@ -3,7 +3,7 @@
 > **Purpose:** Living design doc for the version-settings export/download + notification mechanism.
 > Keep this updated as decisions are made. See the **Decision Log** at the bottom.
 >
-> **Last updated:** 2026-06-19 · [Live prototype](https://madalinagheorghiu-ux.github.io/export-version/) · [PR #1](https://github.com/madalinagheorghiu-ux/export-version/pull/1)
+> **Last updated:** 2026-06-30 (Outcome zone + filter refinements) · [Live prototype](https://madalinagheorghiu-ux.github.io/export-version/) · [PR #1](https://github.com/madalinagheorghiu-ux/export-version/pull/1)
 
 ---
 
@@ -34,6 +34,7 @@ Grounded in the real Designer screens (prototype is isolated, but mirrors these 
   - **Cancel** / **Export** actions.
 - **Existing color language:** in *Resources changed*, bars are **green = added, yellow = modified, red = deleted**. The excluded-resources panel should align with this vocabulary when color coding is revisited.
 - **Runtime → Builds (second export entry point):** the header `Config / Runtime` toggle switches to a runtime shell whose nav is grouped into sections — **Deployment** (Builds) · **Runtime Configurations** (Active Policy · Configure Params Overrides · Scheduled Processes · Triggers) · **Monitoring** (Process Instances · UI Flows Sessions · Task Manager · Failed Process Start · Failed Triggers) · **Runtime Control** (Corrective Actions). The **Builds** page lists builds (e.g. `Bizkids 1.6.2`), each with an **Export build** icon. Exporting a build uses the **same** experience — target platform version + media toggle → processing → notification → download + excluded-resources panel. The only difference is the *source*: a build (`Bizkids 1.6.2`) instead of a committed version (`main 1.6.2`); labels, cache key, and the download manifest reflect it.
+- **Runtime → Corrective Actions (migration entry point):** the **Corrective Actions** page (under Runtime Control in the nav) is the home for operations that fix or move running process instances. Currently surfaces **Bulk Migration** and **Move Token Bulk** as the two operation types. The operations table shows: Operation Type · Operation ID · Source Build · Target Build · Operation Status · Updated At · kebab `⋮` menu.
 
 This prototype rebuilds these surfaces in isolation and **adds** the missing post-export experience (processing → notification → download + impact), shared by both the **Config** (version) and **Runtime** (build) export entry points.
 
@@ -187,7 +188,122 @@ UI builds the breadcrumb from `path` + `name` in each `ExclusionReport` entry. (
 
 ---
 
-## 9. UX explorations — where the notification + download live
+## 9. Corrective Actions — Bulk Migration
+
+### Overview
+
+**Bulk Migration** moves running process instances from a source build to a target build. Like the export flow it is a long-running async operation (seconds to minutes in production) that notifies the user on completion and offers a result detail view.
+
+### Migration Job states
+
+```
+IN_PROGRESS ──► COMPLETED
+            └──► FAILED
+```
+
+| State | Meaning | User-facing |
+|-------|---------|-------------|
+| `IN_PROGRESS` | Worker migrating instances | spinner / progress bar |
+| `COMPLETED` | All instances processed | ✅ "Bulk migration completed" |
+| `FAILED` | Worker error | ❌ "Bulk migration failed" |
+
+Each instance within a completed migration has its own outcome: **Success**, **Failed**, or **Terminated**.
+
+### 9.1 Migration flow (step by step)
+
+**Entry point:** Corrective Actions → `+` button → **Migrate Bulk**
+
+1. **Setup modal (Step 1)**
+   - Two build pickers: **Source Build** (where instances currently live) and **Target Build** (where they should move). Dropdowns list available builds (`3.7 – 3.10`); target excludes the selected source.
+   - **Continue** advances to the summary; **Cancel** dismisses.
+
+   #### Edge case: source build with no running instances
+
+   Migration can only proceed when the source build has at least one instance in a running (active/incident) state. Two design options are under consideration:
+
+   **Option A — Inline validation after selection**
+   The user selects any build freely; if the chosen source has no running instances, an error/warning is shown below the dropdown and **Continue** is disabled.
+   - ✅ Simple, uncluttered dropdown — no visual noise before the user has context.
+   - ✅ Familiar form-validation pattern (feedback after input).
+   - ✅ User can see all builds first, then understand the constraint.
+   - ❌ Error-after-action: the user must undo a choice already made.
+   - ❌ If many builds have no instances, the user may trial-and-error through several before finding a valid one.
+
+   **Option B — Disabled dropdown items with hover tooltip** *(preferred)*
+   Builds with no running instances are shown in the dropdown but grayed out and non-selectable; hovering reveals a tooltip explaining why (e.g. *"No running instances on this build"*).
+   - ✅ Error-prevention over error-recovery (Nielsen heuristic #5) — invalid choices are never made.
+   - ✅ Full eligibility picture at a glance: valid vs. ineligible builds visible together.
+   - ✅ Tooltip educates the user inline — no need to read documentation.
+   - ❌ Tooltip discoverability is lower on touch/mobile.
+   - ❌ If *all* builds are ineligible, the dropdown alone is not enough — requires an additional callout above the field.
+   - **Safeguard:** when every build is ineligible, show a callout above the picker (*"No builds currently have running instances. Migration requires at least one active or incident instance."*) so the user is never left with a fully-disabled dropdown and no explanation.
+
+   > **Status:** ✅ Decided — **Option B implemented.** Mock data: `3.8`, `3.9`, `3.9.1` have running instances; `3.7` and `3.10` do not. Both tooltips use the same styled dark CSS `::after` pseudo-element (not browser-native `title`): the `(i)` icon shows *"Only active or incident instances can be migrated"*; disabled items show *"No running instances on this build"* with an inline *"No instances"* tag for always-visible discoverability. Safeguard: when `ALL_BUILDS_EMPTY` is true, an orange callout appears above the Source Build field. Continue is disabled (opacity + `not-allowed`) while an invalid source is selected.
+
+2. **Summary modal (Step 2)**
+   - Shows a grouped breakdown of what the migration will do, organised into three collapsible sections:
+     - **Migrate to {targetBuild}** — processes whose instances will move.
+     - **Terminate** — processes whose instances will move to `TERMINATED` state.
+     - **Leave on {sourceBuild}** — processes that stay untouched on the source.
+   - Each section is collapsible (chevron toggle). Each row shows process name + a short description.
+   - Actions: **Back** (returns to Setup) · **Start Migration** (launches the job) · **Cancel**.
+
+3. **Processing modal**
+   - Mirrors the "Preparing your export…" pattern: animated progress bar, spinner, copy *"Migrating from {src} to {tgt}. This may take a few minutes. Close — keep working."*
+   - On completion the modal **auto-transitions** to the Migration Detail Page (no manual action needed).
+   - **Close — keep working** dismisses the modal early; the job continues; a toast fires on completion (unless the bell panel is already open).
+
+4. **Notification + toast** (mirrors export pattern)
+   - Migration appears in the unified bell feed alongside exports, sorted by timestamp.
+   - Bell badge increments on completion; feed item shows "Bulk migration completed" + `{src} → {tgt}` + process count.
+   - Toast: "Bulk migration completed · View results" — clicking opens the Migration Detail Page.
+   - **Toast suppression:** no toast when (a) the bell panel is open, or (b) the processing modal for that migration is still open.
+   - Each migration is stamped with `{ environment, workspace, project }` — shown in the feed and toast, same as exports.
+
+5. **Migration Detail Page** (full-page, replaces the content area)
+   - Opened by: clicking a completed live row in the Corrective Actions table, clicking "View results" in the toast, or clicking the bell feed item.
+   - **Breadcrumb:** `← Operations / Migration {opId}…` — clicking "Operations" returns to the Corrective Actions list.
+   - **Summary card:** "Migration ● Completed" heading + badge · Operation ID · Started timestamp · Run time · **SOURCE BUILD → TARGET BUILD** chips (with git-branch icon). No outcome data here — kept focused on identity/context.
+   - **Instances card (three-zone layout):**
+     - *Header:* "Instances" title · subtitle ("Per-instance result … retried individually.") · search box.
+     - *Outcome zone:* sits between the header and the table — OUTCOME label · total count · segmented progress bar (green / red / amber) · inline clickable stats: Success N (X%) · Failed N (X%) · Terminated N (X%).
+     - *Table:* column headers + rows + footer.
+   - **Status filter:** clicking a stat chip in the Outcome zone filters the table to that status. Active chip gets a coloured background highlight and border. Click the same chip again to clear. No extra badge is shown in the "Instances" heading — the highlighted chip in the Outcome zone is the only filter indicator.
+     - Columns: PROCESS INSTANCE UUID · PROCESS NAME · STATUS · DETAILS · MIGRATED AT.
+     - Coloured status pills: **Success** (green) · **Failed** (red) · **Terminated** (amber).
+     - Table scrolls horizontally at narrow viewports (`min-width: 680px`).
+     - Footer: "Showing N of N instances" + prev/next pagination.
+   - Mock data: 20 instances — 16 Success, 3 Failed, 1 Terminated — seeded deterministically.
+
+6. **Migration Details modal (kebab `⋮`)** — compact alternative view
+   - Clicking the `⋮` button on any **live completed row** in the Corrective Actions table opens `MigrationDetailModal` — a compact modal with the process-group breakdown (Migrated to / Terminated / Left on).
+   - This is distinct from the full-page detail — the modal is a quick-glance summary; the full page has the per-instance table.
+   - Kebab click stops row-click propagation (so it doesn't also navigate to the detail page).
+   - Static / non-live rows (pre-seeded `INITIAL_OPS`) do not open any modal on kebab click in the current prototype.
+
+### 9.2 Notification feed integration
+
+Migrations share the unified bell panel feed with exports. The `notifStatus` helper branches on `item.type`:
+
+| type | state | Feed title | Icon |
+|------|-------|-----------|------|
+| `migration` | `IN_PROGRESS` | Bulk migration in progress… | spinner |
+| `migration` | `COMPLETED` | Bulk migration completed | ✅ |
+| `migration` | `FAILED` | Bulk migration failed | ❌ |
+
+Feed action on a completed migration: "View results" → opens Migration Detail Page (navigates to Runtime → Corrective Actions, sets `migDetailId`).
+
+### 9.3 Prototype implementation notes
+
+- `MIGRATION_PROCESS_MS = 8000` (8 s simulated, representing minutes in production).
+- `migrations` state array in App; each entry: `{ id, type:'migration', opType, opId, srcBuild, tgtBuild, state, summary, ctx, read, dismissed, ts }`.
+- `migDetailId` state in App controls full-page routing — checked **before** the Config/Runtime branch so the detail page renders regardless of current view.
+- `migWatchRef` tracks whether the processing modal is still open (mirrors `watchRef` for exports) for toast suppression.
+- `MOCK_INSTANCES` (20 rows, deterministically seeded at page load) is the shared fixture used by all Migration Detail Pages in the prototype.
+
+---
+
+## 10. UX explorations — where the notification + download live
 
 The open design question: **where do export status, the global notification, and the download action live?** Three explorations.
 
@@ -210,6 +326,8 @@ The open design question: **where do export status, the global notification, and
 ### Recommendation — **A + a slim history (blend of A & B)**
 Lead with the **header bell** (best satisfies "wherever you are" + reusable), and give its dropdown/panel a small **"Exports" list** so cached re-downloads and past exports are discoverable. Defers B's full tray but keeps history. Build target for the prototype.
 
+> **Note:** The bell panel now also surfaces **migration** notifications alongside export notifications in the same unified feed — proving the "extensible by type" promise from Exploration A.
+
 ---
 
 ## Running the prototype
@@ -229,7 +347,7 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 
 ## Ideas to make the center more useful (future features)
 
-**Shipped so far:** unified feed · per-notification env/workspace/project context · two-row layout · environment filter · dismiss · instant-vs-impact download · context shown in the download modal · cross-view "Download ready".
+**Shipped so far:** unified feed · per-notification env/workspace/project context · two-row layout · environment filter · dismiss · instant-vs-impact download · context shown in the download modal · cross-view "Download ready" · **Bulk Migration flow** (setup → summary → processing → completion) · **migration notifications in the unified bell feed** · **Migration Detail Page** (full-page: summary card + outcome bar + per-instance table) · **status filter on instances** (click Success / Failed / Terminated chip to filter) · **Migration Details modal via kebab** (compact process-group summary, distinct from full-page).
 
 **Next candidates (rough priority):**
 1. **Type filter / tabs** — once there are more kinds (exports, build status, licence expiry, errors): `All / Downloads / System / Alerts`.
@@ -259,6 +377,13 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 | 2026-06-19 | Export launches from the existing **Branching console → Export Version** modal; missing post-export screens to be built. | ✅ Decided |
 | 2026-06-19 | Notification + download surface = **Exploration A + slim history**: header notification bell (toast + badge), download modal with excluded-resources panel, and a small Exports list inside the bell panel for cached re-downloads. | ✅ Decided |
 | 2026-06-19 | Prototype format = **interactive React app** (single self-contained `index.html`, React 18 + Babel via CDN, no build step), with a mocked backend (compressed delay, in-memory cache/dedup, simulated notifications). | ✅ Decided |
+| 2026-06-30 | **Bulk Migration added to Corrective Actions.** 4-step flow: Setup modal (source + target build) → Summary modal (Migrate to / Terminate / Leave on breakdown, collapsible) → Processing modal (auto-transitions to detail page on completion) → Migration Detail Page. Same toast-suppression and bell-feed rules as exports. | ✅ Decided |
+| 2026-06-30 | **Migration Detail Page = full-page view** (not a modal). Replaces the content area via `migDetailId` state, checked before the Config/Runtime routing branch. Breadcrumb `← Operations / Migration {id}…` returns to the Corrective Actions list. | ✅ Decided |
+| 2026-06-30 | **Dual access pattern for completed migrations:** row click → full Migration Detail Page (summary + per-instance table); kebab `⋮` → compact Migration Details modal (process-group summary only). Both are live-migration-only; static seed rows don't open anything on kebab. | ✅ Decided |
+| 2026-06-30 | **Outcome zone lives inside the Instances card**, between the card header and the table — not in the summary card. Summary card is identity-only (title, meta, builds). Instances card has three zones: header · outcome · table. | ✅ Decided |
+| 2026-06-30 | **Status filter on instances table.** Clicking Success / Failed / Terminated in the Outcome zone filters the table to that status. Active chip gets coloured background highlight. Click again to clear. No badge shown in the "Instances" heading — the highlighted chip is the only filter indicator. Resets page to 1. | ✅ Decided |
+| 2026-06-30 | **Migrations surface in the unified bell feed** alongside exports — proving the "extensible by type" design. Feed item action "View results" → navigates to Runtime → Corrective Actions + opens Migration Detail Page. | ✅ Decided |
+| 2026-06-30 | **Source build with no running instances (Setup modal) — Option B chosen.** Builds with no running instances are shown in the Source Build dropdown but grayed out and non-selectable; hovering shows a styled tooltip ("No running instances on this build") + always-visible "No instances" inline tag. The `(i)` icon next to "Source Build" uses the same styled tooltip ("Only active or incident instances can be migrated"). Safeguard: if all builds are empty, an orange callout replaces per-item tooltips as the primary signal. Continue is disabled while an ineligible source is selected. | ✅ Decided |
 
 ## Open questions
 
@@ -267,3 +392,4 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 - **Color-bar semantics** — if/when color coding returns: severity (fully excluded vs. partially affected) vs. resource category vs. decorative; add a legend if meaningful.
 - **Artifact TTL** — exact retention window (24h / 48h / 72h).
 - **Exclusion report export** — include CSV/JSON download in v1 or later?
+- ~~**Bulk Migration — source build with no running instances**~~ — resolved. Option B implemented. See §9.1 and Decision Log.

@@ -187,9 +187,17 @@
   .select .cur{font-size:11px;font-weight:600;color:#697586;background:#eef0f3;border-radius:6px;padding:2px 8px;margin-right:8px}
   .help{font-size:12px;color:var(--muted);margin:7px 0 0}
   .dd{border:1px solid var(--border);border-radius:10px;margin-top:6px;box-shadow:var(--shadow-sm);overflow:hidden}
-  .dd-item{padding:11px 14px;font-size:14px;display:flex;align-items:center;justify-content:space-between}
+  .dd-item{padding:11px 14px;font-size:14px;display:flex;align-items:center;justify-content:space-between;position:relative}
   .dd-item:hover{background:#f5f7fa;cursor:pointer}
   .dd-item.sel{background:#eaf1fe;color:var(--blue)}
+  .dd-item.disabled{cursor:not-allowed;opacity:1}
+  .dd-item.disabled:hover{background:transparent}
+  .dd-item.disabled .build-ver{color:#b0b8c4}
+  .dd-item.disabled .build-ver svg{color:#c8d0da}
+  .dd-item-no-inst{font-size:11px;color:#b0b8c4;font-style:italic;margin-left:8px;white-space:nowrap}
+  .dd-item[data-tooltip]:hover::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);background:#1f2733;color:#fff;padding:5px 10px;border-radius:6px;font-size:11.5px;white-space:nowrap;z-index:200;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+  .info-icon{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1.5px solid #6b7280;font-size:10px;color:#6b7280;cursor:default;font-style:normal;font-weight:600;margin-left:4px;vertical-align:middle;position:relative}
+  .info-icon[data-tooltip]:hover::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% + 7px);transform:translateX(-50%);background:#1f2733;color:#fff;padding:5px 10px;border-radius:6px;font-size:11.5px;white-space:nowrap;z-index:200;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
   .toggle-row{display:flex;align-items:center;gap:11px;margin-top:22px}
   .switch{width:38px;height:22px;border-radius:999px;background:#cdd4dd;position:relative;transition:background .15s;border:0;flex:0 0 auto}
   .switch.on{background:var(--blue)}
@@ -292,6 +300,70 @@
 
   /* ---------- Prototype stamp ---------- */
   .proto-stamp{position:fixed;right:16px;bottom:16px;z-index:50;font-size:11px;font-weight:600;color:#8a94a3;background:#fff;border:1px solid var(--border);border-radius:999px;padding:5px 11px;box-shadow:var(--shadow-sm);opacity:.9}
+
+  /* ---------- Corrective Actions ---------- */
+  .status-pill{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:600;white-space:nowrap}
+  .status-pill.in-progress{background:#eef4ff;color:#2a5fb0}
+  .status-pill.completed{background:#e7f6ee;color:#1f7a4d}
+  .status-pill.failed{background:#fdeceb;color:#d6453a}
+  .ca-op-id{font-family:'SF Mono',ui-monospace,monospace;font-size:12px;color:#697586;display:flex;align-items:center;gap:5px}
+  .build-ver{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:#33404f}
+  .build-ver svg{color:#7e8a9a}
+  .dropdown-wrap{position:relative}
+  .dropdown-menu{position:absolute;right:0;top:42px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);z-index:50;min-width:210px;padding:6px 0;overflow:hidden}
+  .dropdown-item{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13.5px;color:#3c4654;cursor:pointer}
+  .dropdown-item:hover{background:#f5f7fa}
+  .mig-fields{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  .mig-subtitle{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:7px;margin-top:5px;flex-wrap:wrap}
+  .mig-group{margin-bottom:2px}
+  .mig-group-head{display:flex;align-items:center;gap:8px;padding:11px 0;cursor:pointer;font-size:13.5px;font-weight:600;color:#1f2733;border-bottom:1px solid var(--border-2);user-select:none}
+  .mig-group-head .gc{margin-left:auto;color:var(--muted);font-weight:400;font-size:13px;padding-right:4px}
+  .mig-chev{display:inline-flex;color:#8c98a8;transition:transform .15s}
+  .mig-chev.open{transform:rotate(0deg)}
+  .mig-chev.closed{transform:rotate(-90deg)}
+  .mig-proc-row{display:flex;align-items:center;justify-content:space-between;padding:10px 4px 10px 22px;border-bottom:1px solid var(--border-2);font-size:13px;gap:12px}
+  .mig-proc-row:last-child{border-bottom:0}
+  .mig-proc-name{display:flex;align-items:center;gap:8px;font-weight:500;color:#222b38;min-width:0}
+  .mig-proc-desc{color:var(--muted);font-size:12.5px;white-space:nowrap}
+
+  /* ---------- Migration detail page ---------- */
+  .mig-detail-breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:13.5px}
+  .mig-detail-breadcrumb .back-btn{display:flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--muted);padding:4px 8px 4px 0;cursor:pointer;font-size:13.5px}
+  .mig-detail-breadcrumb .back-btn:hover{color:var(--text)}
+  .mig-detail-breadcrumb .sep{color:#c2cad4}
+  .mig-detail-breadcrumb .crumb-link{color:var(--muted);cursor:pointer}
+  .mig-detail-breadcrumb .crumb-link:hover{color:var(--blue)}
+  .mig-detail-breadcrumb .crumb-cur{font-weight:600;color:var(--text)}
+  .mig-detail-breadcrumb .crumb-id{font-family:'SF Mono',ui-monospace,monospace;font-size:12px;color:var(--muted)}
+  .mig-summary-card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm);padding:0;margin-bottom:16px;display:flex;flex-direction:column}
+  .mig-summary-left{flex:1;min-width:0;padding:24px 28px}
+  .mig-summary-right{border-top:1px solid var(--border);padding:20px 28px}
+  .mig-meta-row{display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+  .mig-meta-item{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+  .mig-meta-item b{color:#3c4654;font-weight:600}
+  .mig-build-row{display:flex;align-items:center;gap:12px;margin-top:4px}
+  .mig-build-box{display:flex;flex-direction:column;gap:6px}
+  .mig-build-label{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  .mig-build-chip{display:inline-flex;align-items:center;gap:8px;background:#eef0f3;border-radius:9px;padding:8px 14px;font-weight:600;color:#33404f;font-size:13.5px}
+  .outcome-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .outcome-label span:first-child{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  .outcome-total{font-size:13px;color:var(--muted)}
+  .outcome-total b{color:#1f2733;font-size:15px;font-weight:700}
+  .outcome-bar{height:8px;border-radius:999px;overflow:hidden;display:flex;margin-bottom:14px;background:#eef0f3}
+  .outcome-stats-row{display:flex;gap:24px;flex-wrap:wrap}
+  .outcome-stat{display:flex;align-items:center;gap:8px}
+  .outcome-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .outcome-stat .ol{font-size:13px;color:#3c4654}
+  .outcome-stat .ov{font-weight:700;font-size:13.5px;margin-left:4px}
+  .outcome-stat .op{font-size:12px;color:var(--muted);margin-left:2px}
+  .inst-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;white-space:nowrap}
+  .inst-pill.success{background:#e7f6ee;color:#1f7a4d}
+  .inst-pill.failed{background:#fdeceb;color:#d6453a}
+  .inst-pill.terminated{background:#fdf7e6;color:#b6891f}
+  .inst-table-head{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border)}
+  .inst-footer{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;border-top:1px solid var(--border-2);font-size:13px;color:var(--muted)}
+  .page-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid var(--border);border-radius:8px;background:#fff;color:#697586;cursor:pointer;font-size:16px}
+  .page-cur{display:inline-flex;align-items:center;padding:4px 12px;background:var(--blue);color:#fff;border-radius:7px;font-size:12.5px;font-weight:600}
 </style>
 </head>
 <body>
@@ -366,6 +438,11 @@ const I = {
   control:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>,
   branch2:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M6 8.5v7M18 8.5c0 4-6 2.5-6 7"/></svg>,
   edit:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>,
+  arrowR:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>,
+  arrowL:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>,
+  gitBranch:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>,
+  proc:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>,
+  token:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m8 3 4 8 5-5 5 15H2L7 11Z"/></svg>,
 };
 
 /* ============================ Static nav ============================ */
@@ -389,6 +466,46 @@ const RUNTIME_NAV = [
 ];
 
 const BUILDS = [ { tag:'1.6.2' }, { tag:'1.6.1' }, { tag:'1.1.6' }, { tag:'1.1.2' }, { tag:'1.1.1' } ];
+
+/* --- Corrective Actions mock data --- */
+const MIGRATION_PROCESS_MS = 8000;
+const MIGRATION_BUILDS = ['3.7', '3.8', '3.9', '3.9.1', '3.10'];
+// Mock: which builds have at least one running (active/incident) instance
+const BUILDS_WITH_INSTANCES = new Set(['3.8', '3.9', '3.9.1']);
+const ALL_BUILDS_EMPTY = MIGRATION_BUILDS.every(b => !BUILDS_WITH_INSTANCES.has(b));
+const INITIAL_OPS = [
+  { id:'e4d7d1a1', opType:'Migration Bulk', srcBuild:'3.9', tgtBuild:'3.9.1', status:'In Progress',  updatedAt:'07 Oct 2025, 11:40 PM' },
+  { id:'e4d7d1a2', opType:'Migration Bulk', srcBuild:'3.9', tgtBuild:'3.9.1', status:'Completed',    updatedAt:'07 Oct 2025, 11:40 PM' },
+  { id:'e4d7d1a3', opType:'Move Token',     srcBuild:'3.9', tgtBuild:'-',     status:'Completed',    updatedAt:'07 Oct 2025, 11:40 PM' },
+];
+const genMigSummary = () => ({
+  migrateTo: [
+    { name:'property_details', desc:'Instances will be moved to the target build', icon:'proc' },
+    { name:'property_details', desc:'Instances will be moved to the target build', icon:'folder' },
+    { name:'onboarding',       desc:'Instances will be moved to the target build', icon:'proc' },
+  ],
+  terminate: [{ name:'property_details', desc:'Instances move to a TERMINATED state.', icon:'proc' }],
+  leaveOn:   [{ name:'property_details', desc:'Instances stay on the source build, untouched.', icon:'folder' }],
+});
+const hexId = () => Math.random().toString(16).slice(2,10);
+const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+  const r = Math.trunc(Math.random()*16); return (c==='x'?r:(r&0x3|0x8)).toString(16);
+});
+const MOCK_INSTANCES = (() => {
+  const rows = [];
+  const procs = ['property_details','onboarding','kyc_flow','loan_application','account_opening'];
+  const statuses = ['Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Failed','Failed','Failed','Terminated'];
+  for (let i=0; i<20; i++){
+    rows.push({
+      id: uuid(),
+      procName: procs[i % procs.length],
+      status: statuses[i],
+      details: statuses[i]==='Failed' ? 'Process definition not found on target' : statuses[i]==='Terminated' ? 'Instance terminated — no active tokens' : '-',
+      migratedAt: `07 Oct 2025, ${String(11+Math.trunc(i/6)).padStart(2,'0')}:${String(i*3%60).padStart(2,'0')} PM`,
+    });
+  }
+  return rows;
+})();
 
 // Workspaces grouped by environment — users switch context from the logo menu.
 const WORKSPACES = {
@@ -481,13 +598,24 @@ function App(){
   const cache = useRef({});
   // Refs so the export-completion timeout reads live UI state (not stale closures).
   const bellOpenRef = useRef(false);
-  const watchRef = useRef(null); // id of the job whose "Preparing…" modal is still open
+  const watchRef = useRef(null);    // id of the export job whose "Preparing…" modal is still open
+  const migWatchRef = useRef(null); // id of the migration whose "In progress…" modal is still open
   useEffect(()=>{ bellOpenRef.current = bellOpen; }, [bellOpen]);
 
+  /* --- Migration state --- */
+  const [migrations, setMigrations] = useState([]);
+  const [migModal, setMigModal] = useState(null);
+  const [migDetailId, setMigDetailId] = useState(null);
+  // migModal: null | {step:'setup'} | {step:'summary',src,tgt} | {step:'processing',id,src,tgt}
+
   const downloadJob = jobs.find(j=>j.id===downloadJobId) || null;
-  const unread = jobs.filter(j=>jobReady(j) && !j.read && !j.dismissed).length;
+  const unread = [
+    ...jobs.filter(j=>jobReady(j) && !j.read && !j.dismissed),
+    ...migrations.filter(m=>m.state==='COMPLETED' && !m.read && !m.dismissed),
+  ].length;
 
   const dismissToast = (id)=> setToasts(p=>p.filter(x=>x.id!==id));
+  const actOnToast = (t) => { if (t.type==='migration') actOnMigration(t.migId); else actOnJob(t.jobId); };
   const pushToast = (job) => {
     const excl = job.exclusions.length;
     const id = uid();
@@ -502,8 +630,11 @@ function App(){
   };
 
   const markRead = (id) => setJobs(p=>p.map(j=>j.id===id?{...j, read:true}:j));
-  const markAllRead = () => setJobs(p=>p.map(j=>({...j, read:true})));
-  const dismissNote = (id) => setJobs(p=>p.map(j=>j.id===id?{...j, dismissed:true, read:true}:j));
+  const markAllRead = () => { setJobs(p=>p.map(j=>({...j, read:true}))); setMigrations(p=>p.map(m=>({...m, read:true}))); };
+  const dismissNote = (id) => {
+    setJobs(p=>p.map(j=>j.id===id?{...j, dismissed:true, read:true}:j));
+    setMigrations(p=>p.map(m=>m.id===id?{...m, dismissed:true, read:true}:m));
+  };
 
   // Act on a ready export: clean → download the ZIP instantly; with exclusions → open the impact modal.
   const actOnJob = (jobId) => {
@@ -553,10 +684,48 @@ function App(){
     return job;
   };
 
+  /* --- Migration handlers --- */
+  const startMigration = (src, tgt) => {
+    const ctx = { env, workspace, project };
+    const summary = genMigSummary();
+    const id = uid();
+    const mig = { id, type:'migration', opType:'Migration Bulk', opId:hexId(), srcBuild:src, tgtBuild:tgt,
+                  state:'IN_PROGRESS', summary, ctx, read:false, dismissed:false, ts:Date.now() };
+    setMigrations(p=>[mig, ...p]);
+    migWatchRef.current = id; // caller opens the processing modal; we track it here
+    setTimeout(()=>{
+      const finished = { ...mig, state:'COMPLETED' };
+      setMigrations(p=>p.map(m=>m.id===id ? finished : m));
+      // Suppress toast when the processing modal is still open (it switches to detail directly)
+      // or when the bell panel is already showing the result.
+      const watched = migWatchRef.current === id;
+      if (!watched && !bellOpenRef.current){
+        const tid = uid();
+        const total = mig.summary.migrateTo.length;
+        setToasts(p=>[...p, {
+          id:tid, migId:id, type:'migration', variant:'ok',
+          title:'Bulk migration completed',
+          body:`${src} → ${tgt} · ${total} process${total>1?'es':''} migrated`,
+          ctx,
+        }]);
+        setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==tid)), 9000);
+      }
+    }, MIGRATION_PROCESS_MS);
+    return id;
+  };
+
+  const actOnMigration = (migId) => {
+    setMigrations(p=>p.map(m=>m.id===migId?{...m, read:true}:m));
+    setBellOpen(false);
+    setMigDetailId(migId);
+    setView('runtime');
+    setPage('Corrective Actions');
+  };
+
   const switchView = (v) => { setView(v); setPage(v==='runtime'?'Builds':'Processes'); setConsoleOpen(false); };
   const openExportBuild = (b) => setExportSource({ kind:'build', id:'build@'+b.tag, label:'Bizkids '+b.tag, tag:b.tag });
   const selectWorkspace = (e, ws) => { setEnv(e); setWorkspace(ws); setWsMenuOpen(false); };
-  const hasRunning = jobs.some(j=>j.state==='PROCESSING');
+  const hasRunning = jobs.some(j=>j.state==='PROCESSING') || migrations.some(m=>m.state==='IN_PROGRESS');
 
   return (
     <div className="app" onClick={()=>{ if(bellOpen)setBellOpen(false); if(wsMenuOpen)setWsMenuOpen(false); }}>
@@ -573,21 +742,34 @@ function App(){
       />
       {bellOpen &&
         <BellPanel
-          jobs={jobs}
+          jobs={jobs} migrations={migrations}
           onClose={()=>setBellOpen(false)} onMarkAll={markAllRead}
-          onAct={actOnJob} onDismiss={dismissNote}
+          onAct={actOnJob} onActMig={actOnMigration} onDismiss={dismissNote}
           stop={(e)=>e.stopPropagation()}
         />}
 
       <div className="body">
         <Sidebar nav={view==='runtime'?RUNTIME_NAV:NAV} page={page} setPage={setPage} />
         <div className="content">
-          {view==='config'
+          {migDetailId
+            ? (() => {
+                const m = migrations.find(x=>x.id===migDetailId);
+                return m
+                  ? <MigrationDetailPage mig={m} onBack={()=>setMigDetailId(null)} />
+                  : null;
+              })()
+            : view==='config'
             ? (page==='Processes'
                 ? <ProcessesPage onOpenConsole={()=>setConsoleOpen(true)} />
                 : <GenericPage title={page} hasRunning={hasRunning} />)
             : (page==='Builds'
                 ? <BuildsPage onExportBuild={openExportBuild} jobs={jobs} onAct={actOnJob} />
+                : page==='Corrective Actions'
+                ? <CorrectiveActionsPage
+                    migrations={migrations}
+                    onNewMigration={()=>setMigModal({step:'setup'})}
+                    onViewDetail={(id)=>setMigDetailId(id)}
+                  />
                 : <GenericPage title={page} hasRunning={hasRunning} />)}
         </div>
       </div>
@@ -616,7 +798,30 @@ function App(){
           onChangeTarget={()=>{ const j=downloadJob; setDownloadJobId(null); setExportSource(j.source); }}
         />}
 
-      <Toasts toasts={toasts} onAct={actOnJob} onClose={dismissToast} />
+      {migModal?.step==='setup' &&
+        <MigrationSetupModal
+          onClose={()=>setMigModal(null)}
+          onContinue={(src,tgt)=>setMigModal({step:'summary', src, tgt})}
+        />}
+      {migModal?.step==='summary' &&
+        <MigrationSummaryModal
+          src={migModal.src} tgt={migModal.tgt}
+          onBack={()=>setMigModal({step:'setup'})}
+          onStart={()=>{
+            const id = startMigration(migModal.src, migModal.tgt);
+            setMigModal({step:'processing', id, src:migModal.src, tgt:migModal.tgt});
+          }}
+          onClose={()=>setMigModal(null)}
+        />}
+      {migModal?.step==='processing' &&
+        <MigrationProcessingModal
+          migId={migModal.id} src={migModal.src} tgt={migModal.tgt}
+          migrations={migrations}
+          onClose={()=>{ migWatchRef.current=null; setMigModal(null); }}
+          onComplete={(id)=>{ migWatchRef.current=null; setMigModal(null); setMigDetailId(id); setPage('Corrective Actions'); setView('runtime'); }}
+        />}
+
+      <Toasts toasts={toasts} onAct={actOnToast} onClose={dismissToast} />
       <div className="proto-stamp">Prototype · mocked backend</div>
     </div>
   );
@@ -1041,49 +1246,67 @@ function WorkspaceMenu({ env, workspace, onSelect, stop }){
 }
 
 /* ============================ Bell panel — unified notification center ============================ */
-// One feed. Each item shows status + read/unread + its own action.
-// Today every item is an export; other kinds (e.g. licence expiry) would branch in NotifItem.
-function notifStatus(job){
-  switch(job.state){
+// One feed — exports and migrations unified. Other kinds (licence expiry, etc.) branch in NotifItem.
+function notifStatus(item){
+  if (item.type === 'migration'){
+    switch(item.state){
+      case 'IN_PROGRESS': return { cls:'proc', icon:I.control, title:'Bulk migration in progress…' };
+      case 'COMPLETED':   return { cls:'ok',   icon:I.check,   title:'Bulk migration completed' };
+      case 'FAILED':      return { cls:'err',  icon:I.x,       title:'Bulk migration failed' };
+    }
+  }
+  switch(item.state){
     case 'PROCESSING':            return { cls:'proc', icon:I.clock, title:'Preparing export…' };
-    case 'READY_WITH_EXCLUSIONS': return { cls:'warn', icon:I.warn,  title:`Export ready — ${job.exclusions.length} resource${job.exclusions.length>1?'s':''} excluded` };
+    case 'READY_WITH_EXCLUSIONS': return { cls:'warn', icon:I.warn,  title:`Export ready — ${(item.exclusions||[]).length} resource${(item.exclusions||[]).length>1?'s':''} excluded` };
     case 'FAILED':                return { cls:'err',  icon:I.x,     title:'Export failed' };
     default:                      return { cls:'ok',   icon:I.check, title:'Export ready to download' };
   }
 }
 
-function NotifItem({ job, onAct, onDismiss }){
-  const st = notifStatus(job);
-  const ready = jobReady(job);
-  const unread = ready && !job.read;
+function NotifItem({ item, onAct, onActMig, onDismiss }){
+  const st = notifStatus(item);
+  const isMig = item.type === 'migration';
+  const isProcessing = item.state === 'PROCESSING' || item.state === 'IN_PROGRESS';
+  const isReady = isMig ? item.state==='COMPLETED' : jobReady(item);
+  const unread = isReady && !item.read;
+  const subtitle = isMig
+    ? `${item.srcBuild} → ${item.tgtBuild} · ${item.summary.migrateTo.length} process${item.summary.migrateTo.length>1?'es':''}`
+    : jobLabel(item) + (item.fromCache?' · reused':'');
+  const handleClick = () => { if (!isReady) return; isMig ? onActMig(item.id) : onAct(item.id); };
   return (
     <div className={'nitem'+(unread?' unread':'')}>
       {/* context header */}
       <div className="nrow1">
-        {job.ctx && <>
-          <span className={'env-badge sm '+envTone(job.ctx.env)}>{job.ctx.env}</span>
-          <span className="nmeta">{job.ctx.workspace} · <span className="nproj">{I.folder}{job.ctx.project}</span></span>
+        {item.ctx && <>
+          <span className={'env-badge sm '+envTone(item.ctx.env)}>{item.ctx.env}</span>
+          <span className="nmeta">{item.ctx.workspace} · <span className="nproj">{I.folder}{item.ctx.project}</span></span>
         </>}
-        <span className="ntime">{relTime(job.ts)}</span>
-        {job.state!=='PROCESSING' &&
-          <button className="ndismiss" title="Dismiss" onClick={(e)=>{e.stopPropagation();onDismiss(job.id);}}>{I.x}</button>}
+        <span className="ntime">{relTime(item.ts)}</span>
+        {!isProcessing &&
+          <button className="ndismiss" title="Dismiss" onClick={(e)=>{e.stopPropagation();onDismiss(item.id);}}>{I.x}</button>}
       </div>
       {/* notification body */}
-      <div className="nrow2" onClick={ready?()=>onAct(job.id):undefined} style={{cursor:ready?'pointer':'default'}}>
-        <span className={'nicon '+st.cls}>{st.icon}</span>
+      <div className="nrow2" onClick={handleClick} style={{cursor:isReady?'pointer':'default'}}>
+        <span className={'nicon '+st.cls}>{isProcessing && isMig ? <span className="mini-spin" style={{width:16,height:16}}></span> : st.icon}</span>
         <div className="ntext">
           <div className="t">{st.title}</div>
-          <div className="s">{jobLabel(job)}{job.fromCache?' · reused':''}</div>
+          <div className="s">{subtitle}</div>
         </div>
         <div className="nright">
-          {job.state==='PROCESSING' &&
+          {/* export actions */}
+          {!isMig && item.state==='PROCESSING' &&
             <span className="nproc"><span className="mini-spin"></span> Preparing</span>}
-          {job.state==='READY' &&
-            <button className="nbtn" onClick={(e)=>{e.stopPropagation();onAct(job.id);}}>{I.dl} Download</button>}
-          {job.state==='READY_WITH_EXCLUSIONS' &&
-            <button className="nbtn warn" onClick={(e)=>{e.stopPropagation();onAct(job.id);}}>{I.dl} Review</button>}
-          {job.state==='FAILED' &&
-            <span className="chip fail">Failed</span>}
+          {!isMig && item.state==='READY' &&
+            <button className="nbtn" onClick={(e)=>{e.stopPropagation();onAct(item.id);}}>{I.dl} Download</button>}
+          {!isMig && item.state==='READY_WITH_EXCLUSIONS' &&
+            <button className="nbtn warn" onClick={(e)=>{e.stopPropagation();onAct(item.id);}}>{I.dl} Review</button>}
+          {!isMig && item.state==='FAILED' && <span className="chip fail">Failed</span>}
+          {/* migration actions */}
+          {isMig && item.state==='IN_PROGRESS' &&
+            <span className="nproc"><span className="mini-spin"></span> In Progress</span>}
+          {isMig && item.state==='COMPLETED' &&
+            <button className="nbtn" onClick={(e)=>{e.stopPropagation();onActMig(item.id);}}>View</button>}
+          {isMig && item.state==='FAILED' && <span className="chip fail">Failed</span>}
         </div>
       </div>
     </div>
@@ -1091,12 +1314,16 @@ function NotifItem({ job, onAct, onDismiss }){
 }
 
 const NOTIF_FILTERS = [['ALL','All'],['SANDBOX','Sandbox'],['STAGING','Staging'],['PRODUCTION','Production']];
-function BellPanel({ jobs, onClose, onMarkAll, onAct, onDismiss, stop }){
+function BellPanel({ jobs, migrations, onClose, onMarkAll, onAct, onActMig, onDismiss, stop }){
   const [filter, setFilter] = useState('ALL');
-  const feed = jobs.filter(j=>!j.dismissed);
-  const countFor = (e) => feed.filter(j=> e==='ALL' || (j.ctx && j.ctx.env===e)).length;
-  const shown = feed.filter(j=> filter==='ALL' || (j.ctx && j.ctx.env===filter));
-  const anyUnread = feed.some(j=>jobReady(j) && !j.read);
+  const feed = [...jobs, ...migrations]
+    .filter(item=>!item.dismissed)
+    .sort((a,b)=>b.ts-a.ts);
+  const countFor = (e) => feed.filter(item=> e==='ALL' || (item.ctx && item.ctx.env===e)).length;
+  const shown = feed.filter(item=> filter==='ALL' || (item.ctx && item.ctx.env===filter));
+  const anyUnread = feed.some(item=>
+    item.type==='migration' ? (item.state==='COMPLETED' && !item.read) : (jobReady(item) && !item.read)
+  );
   return (
     <div className="bell-panel" onClick={stop}>
       <div className="bp-head">
@@ -1113,7 +1340,7 @@ function BellPanel({ jobs, onClose, onMarkAll, onAct, onDismiss, stop }){
       <div className="nlist">
         {shown.length===0 &&
           <div className="empty">{feed.length===0 ? 'No notifications yet.' : 'Nothing in this environment.'}</div>}
-        {shown.map(j=> <NotifItem key={j.id} job={j} onAct={onAct} onDismiss={onDismiss} />)}
+        {shown.map(item=> <NotifItem key={item.id} item={item} onAct={onAct} onActMig={onActMig} onDismiss={onDismiss} />)}
       </div>
     </div>
   );
@@ -1134,12 +1361,524 @@ function Toasts({ toasts, onAct, onClose }){
                 <span>{t.ctx.workspace} · {t.ctx.project}</span>
               </div>}
             <div className="ta">
-              <button className="primary" onClick={()=>{onAct(t.jobId);onClose(t.id);}}>{t.excluded?'Review & download':'Download'}</button>
+              <button className="primary" onClick={()=>{onAct(t);onClose(t.id);}}>
+                {t.type==='migration' ? 'View results' : t.excluded ? 'Review & download' : 'Download'}
+              </button>
             </div>
           </div>
           <button className="tx" onClick={()=>onClose(t.id)}>{I.x}</button>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ============================ Corrective Actions page ============================ */
+function OpStatusPill({ status, state }){
+  if (state==='IN_PROGRESS') return <span className="status-pill in-progress"><span className="mini-spin" style={{width:11,height:11}}></span> In Progress</span>;
+  if (status==='Completed')  return <span className="status-pill completed">{I.check} Completed</span>;
+  if (status==='Failed')     return <span className="status-pill failed">{I.x} Failed</span>;
+  if (status==='In Progress')return <span className="status-pill in-progress">In Progress</span>;
+  return <span className="status-pill">{status}</span>;
+}
+
+function CorrectiveActionsPage({ migrations, onNewMigration, onViewDetail }){
+  const [ddOpen, setDdOpen] = useState(false);
+  const [detailMig, setDetailMig] = useState(null);
+  useEffect(()=>{
+    if (!ddOpen) return;
+    const close = ()=>setDdOpen(false);
+    const tid = setTimeout(()=>document.addEventListener('click', close), 0);
+    return ()=>{ clearTimeout(tid); document.removeEventListener('click', close); };
+  }, [ddOpen]);
+
+  const fmtDate = (ts) => {
+    const d = new Date(ts);
+    return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ', ' +
+           d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  };
+
+  const liveOps = migrations.map(m=>({
+    id: m.opId, opType: m.opType, srcBuild: m.srcBuild, tgtBuild: m.tgtBuild,
+    status: m.state==='IN_PROGRESS'?'In Progress':m.state==='COMPLETED'?'Completed':'Failed',
+    state: m.state, updatedAt: fmtDate(m.ts), live:true, migId:m.id,
+  }));
+  const allOps = [...liveOps, ...INITIAL_OPS];
+
+  return (
+    <div>
+      <div className="page-head">
+        <h1>Corrective Actions</h1>
+        <div style={{display:'flex',gap:10,alignItems:'center'}}>
+          <div className="search">{I.search}<input placeholder="Search by UUID or Key Identifier" /></div>
+          <div className="dropdown-wrap" onClick={e=>e.stopPropagation()}>
+            <button className="btn-blue" onClick={()=>setDdOpen(o=>!o)}>{I.plus}</button>
+            {ddOpen &&
+              <div className="dropdown-menu">
+                <div className="dropdown-item" onClick={()=>{setDdOpen(false);onNewMigration();}}>
+                  {I.control} Migrate Bulk
+                </div>
+                <div className="dropdown-item" onClick={()=>setDdOpen(false)}>{I.arrowR} Move Token Bulk</div>
+                <div className="dropdown-item" onClick={()=>setDdOpen(false)}>{I.edit} Change Variables</div>
+              </div>}
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Operation Type ⇅</th><th>Operation ID ⇅</th><th>Source Build ⇅</th>
+              <th>Target Build ⇅</th><th>Operation Status ⇅</th><th>Updated at ⇅</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {allOps.map((op,i)=>(
+              <tr key={i}
+                  style={{cursor: op.live && op.state==='COMPLETED' ? 'pointer' : 'default'}}
+                  onClick={op.live && op.state==='COMPLETED' ? ()=>onViewDetail(op.migId) : undefined}>
+                <td className="row-name">{op.opType}</td>
+                <td><div className="ca-op-id">{op.id.slice(0,8)}… {I.copy}</div></td>
+                <td>{op.srcBuild!=='-' ? <span className="build-ver">{I.branch2} {op.srcBuild}</span> : <span style={{color:'var(--muted)'}}>-</span>}</td>
+                <td>{op.tgtBuild && op.tgtBuild!=='-' ? <span className="build-ver">{I.branch2} {op.tgtBuild}</span> : <span style={{color:'var(--muted)'}}>-</span>}</td>
+                <td><OpStatusPill status={op.status} state={op.state} /></td>
+                <td style={{color:'#697586'}}>{op.updatedAt}</td>
+                <td><button className="mini" onClick={e=>{
+                  e.stopPropagation();
+                  if (op.live) {
+                    const m = migrations.find(x=>x.id===op.migId);
+                    if (m) setDetailMig(m);
+                  }
+                }}>{I.kebab}</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {detailMig && <MigrationDetailModal mig={detailMig} onClose={()=>setDetailMig(null)} />}
+    </div>
+  );
+}
+
+/* ============================ Migration Step 1 — Setup ============================ */
+function MigrationSetupModal({ onClose, onContinue }){
+  const [srcBuild, setSrcBuild] = useState('3.9');
+  const [tgtBuild, setTgtBuild] = useState('3.9.1');
+  const [srcOpen, setSrcOpen] = useState(false);
+  const [tgtOpen, setTgtOpen] = useState(false);
+  const srcHasInstances = BUILDS_WITH_INSTANCES.has(srcBuild);
+  const canContinue = srcHasInstances && !ALL_BUILDS_EMPTY;
+  return (
+    <div className="modal-scrim" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="mhead">
+          <button className="mclose" onClick={onClose}>{I.x}</button>
+          <h2>Bulk Migration</h2>
+          <p style={{margin:'4px 0 0',fontSize:13.5,color:'#6b7280',textAlign:'center'}}>Only process instances in an active or incident state can be migrated</p>
+        </div>
+        <div className="mbody">
+          <div className="infobox amber" style={{marginBottom:24}}>
+            <span style={{color:'#e0a324',fontSize:16}}>💡</span>
+            <span>Instances running on process definitions that does not exist on the target build can be skipped or moved in <strong>TERMINATED</strong> state and will remain on current build. <strong>Change Source Build Active Policy</strong> in order to prevent new instances to start.</span>
+          </div>
+          {ALL_BUILDS_EMPTY && (
+            <div className="infobox" style={{marginBottom:16,background:'#fff5f0',borderColor:'#f0956d',color:'#7a3a1a'}}>
+              <span style={{color:'#e06030',flexShrink:0}}>{I.warn}</span>
+              <span>No builds currently have running instances. Migration requires at least one active or incident process instance.</span>
+            </div>
+          )}
+          <div className="mig-fields">
+            <div style={{position:'relative'}}>
+              <div className="field-label">Source Build <span className="info-icon" data-tooltip="Only active or incident instances can be migrated">i</span></div>
+              <div className="select" onClick={()=>{setSrcOpen(o=>!o);setTgtOpen(false);}}>
+                <span className="build-ver" style={!srcHasInstances?{color:'#b0b8c4'}:{}}>{I.branch2} {srcBuild}</span>{I.chev}
+              </div>
+              {srcOpen && (
+                <div className="dd">
+                  {MIGRATION_BUILDS.map(b=>{
+                    const hasInst = BUILDS_WITH_INSTANCES.has(b);
+                    return (
+                      <div
+                        key={b}
+                        className={'dd-item'+(b===srcBuild&&hasInst?' sel':'')+(hasInst?'':' disabled')}
+                        data-tooltip={!hasInst ? 'No running instances on this build' : undefined}
+                        onClick={hasInst ? ()=>{setSrcBuild(b);setSrcOpen(false);} : undefined}
+                      >
+                        <span className="build-ver">{I.branch2} {b}</span>
+                        {!hasInst && <span className="dd-item-no-inst">No instances</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="field-label">Target Build</div>
+              <div className="select" onClick={()=>{setTgtOpen(o=>!o);setSrcOpen(false);}}>
+                <span className="build-ver">{I.branch2} {tgtBuild}</span>{I.chev}
+              </div>
+              {tgtOpen && <div className="dd">{MIGRATION_BUILDS.filter(b=>b!==srcBuild).map(b=>(
+                <div key={b} className={'dd-item'+(b===tgtBuild?' sel':'')} onClick={()=>{setTgtBuild(b);setTgtOpen(false);}}>
+                  <span className="build-ver">{I.branch2} {b}</span>
+                </div>))}</div>}
+            </div>
+          </div>
+          <div className="mfoot">
+            <button className="btn-ghost" onClick={onClose}>Cancel</button>
+            <button
+              className="btn-blue"
+              onClick={canContinue ? ()=>onContinue(srcBuild,tgtBuild) : undefined}
+              style={!canContinue ? {opacity:0.45,cursor:'not-allowed'} : {}}
+            >Continue</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================ Migration Step 2 — Summary ============================ */
+function MigrationSummaryModal({ src, tgt, onBack, onStart, onClose }){
+  const summary = genMigSummary();
+  const [open, setOpen] = useState({migrate:true, terminate:true, leaveOn:true});
+  const tog = k => setOpen(p=>({...p,[k]:!p[k]}));
+
+  const Group = ({k, label, count, children}) => (
+    <div className="mig-group">
+      <div className="mig-group-head" onClick={()=>tog(k)}>
+        <span className={'mig-chev '+(open[k]?'open':'closed')}>{I.chev}</span>
+        <span style={{flex:1}}>{label}</span>
+        <span className="gc">{count} process{count!==1?'es':''}</span>
+      </div>
+      {open[k] && children}
+    </div>
+  );
+  const PRow = ({name, desc, icon}) => (
+    <div className="mig-proc-row">
+      <span className="mig-proc-name">{icon==='folder' ? I.folder : I.proc} {name}</span>
+      <span className="mig-proc-desc">{desc}</span>
+    </div>
+  );
+
+  return (
+    <div className="modal-scrim" onClick={onClose}>
+      <div className="modal" style={{width:600,maxWidth:'96vw'}} onClick={e=>e.stopPropagation()}>
+        <div className="mhead">
+          <button className="mclose" onClick={onClose}>{I.x}</button>
+          <h2>Bulk Migration Summary</h2>
+          <div className="mig-subtitle">
+            Migrate running instances from
+            <span className="build-ver">{I.hammer} {src}</span>
+            {I.arrowR}
+            <span className="build-ver">{I.hammer} {tgt}</span>
+          </div>
+        </div>
+        <div className="mbody">
+          <p style={{margin:'0 0 12px',color:'#546070',fontSize:13.5}}>When you start the operation the following will happen:</p>
+          <Group k="migrate" label={<>Migrate to <span className="build-ver" style={{marginLeft:6}}>{I.hammer} {tgt}</span></>} count={summary.migrateTo.length}>
+            {summary.migrateTo.map((p,i)=><PRow key={i} name={p.name} desc={p.desc} icon={p.icon}/>)}
+          </Group>
+          <Group k="terminate" label="Terminate running instances" count={summary.terminate.length}>
+            {summary.terminate.map((p,i)=><PRow key={i} name={p.name} desc={p.desc} icon={p.icon}/>)}
+          </Group>
+          <Group k="leaveOn" label={<>Leave on <span className="build-ver" style={{marginLeft:6}}>{I.hammer} {src}</span></>} count={summary.leaveOn.length}>
+            {summary.leaveOn.map((p,i)=><PRow key={i} name={p.name} desc={p.desc} icon={p.icon}/>)}
+          </Group>
+          <div className="infobox" style={{marginTop:18,background:'#fff5f0',borderColor:'#f0956d',color:'#7a3a1a'}}>
+            <span style={{color:'#e06030',flexShrink:0}}>{I.warn}</span>
+            <span>Affected instances cannot be resumed once the migration runs.</span>
+          </div>
+          <div className="mfoot">
+            <button className="btn-ghost" onClick={onBack}>Back to Setup</button>
+            <button className="btn-blue" onClick={onStart}>{I.control} Start Migration</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================ Migration Processing modal ============================ */
+function MigrationProcessingModal({ migId, src, tgt, migrations, onClose, onComplete }){
+  const [pct, setPct] = useState(4);
+
+  // Animate progress bar
+  useEffect(()=>{
+    setPct(4);
+    const t = setInterval(()=>setPct(p=>Math.min(p + (100/(MIGRATION_PROCESS_MS/250)), 96)), 250);
+    return ()=>clearInterval(t);
+  }, []);
+
+  // Watch for migration completion → switch to detail
+  useEffect(()=>{
+    const m = migrations.find(x=>x.id===migId);
+    if (m && m.state==='COMPLETED') onComplete(migId);
+  }, [migrations, migId]);
+
+  return (
+    <div className="modal-scrim" onClick={onClose}>
+      <div className="modal" style={{width:580,maxWidth:'96vw'}} onClick={e=>e.stopPropagation()}>
+        <div className="mbody" style={{padding:'36px 36px 28px'}}>
+          <div className="proc" style={{paddingTop:0}}>
+            <div className="spinner" style={{width:64,height:64,borderWidth:5,marginBottom:24}}></div>
+            <h2 style={{margin:'0 0 10px',fontSize:22,fontWeight:700,color:'#1f2733'}}>Operation in Progress...</h2>
+            <div className="mig-subtitle" style={{justifyContent:'center',marginBottom:24}}>
+              Migrating running instances from
+              <span className="build-ver">{I.hammer} {src}</span>
+              <span style={{color:'#8c98a8'}}>to</span>
+              <span className="build-ver">{I.hammer} {tgt}</span>
+            </div>
+            <p style={{margin:'0 0 24px',color:'#546070',fontSize:15,lineHeight:1.6,textAlign:'left',maxWidth:'100%'}}>
+              This corrective action may take few minutes. You can close this window and keep working. We'll notify you when it's done.
+            </p>
+            <div className="progress" style={{margin:'0 0 0'}}><div className="bar" style={{width:pct+'%'}}></div></div>
+            <div className="mfoot" style={{justifyContent:'flex-end',width:'100%',marginTop:24}}>
+              <button className="btn-blue" onClick={onClose}>Close - keep working</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================ Migration Detail (from notification) ============================ */
+function MigrationDetailModal({ mig, onClose }){
+  const { summary, srcBuild, tgtBuild, ctx } = mig;
+  const total = summary.migrateTo.length;
+  return (
+    <div className="modal-scrim" onClick={onClose}>
+      <div className="modal" style={{width:600,maxWidth:'96vw'}} onClick={e=>e.stopPropagation()}>
+        <div className="mhead" style={{alignItems:'flex-start'}}>
+          <button className="mclose" onClick={onClose}>{I.x}</button>
+          <h2 style={{fontSize:19}}>Migration Details</h2>
+          {ctx &&
+            <div className="dl-ctx">
+              <span className={'env-badge sm '+envTone(ctx.env)}>{ctx.env}</span>
+              <span className="dl-ctx-t">{ctx.workspace} · <span className="nproj">{I.folder}{ctx.project}</span></span>
+            </div>}
+          <div className="mig-subtitle">
+            <span className="build-ver">{I.branch2} {srcBuild}</span>
+            {I.arrowR}
+            <span className="build-ver">{I.branch2} {tgtBuild}</span>
+          </div>
+        </div>
+        <div className="mbody">
+          <div className="ok-banner" style={{marginBottom:16}}>
+            {I.check}
+            <span>Migration completed — <b>{total}</b> process{total!==1?'es':''} migrated to <b>{tgtBuild}</b>.</span>
+          </div>
+          <div className="excl-head">Migrated to {tgtBuild} <span className="cnt">({summary.migrateTo.length})</span></div>
+          {summary.migrateTo.map((p,i)=>(
+            <div className="mig-proc-row" key={i}>
+              <span className="mig-proc-name">{I.proc} {p.name}</span>
+              <span className="mig-proc-desc">{p.desc}</span>
+            </div>
+          ))}
+          {summary.terminate.length>0 && <>
+            <div className="excl-head" style={{marginTop:14}}>Terminated <span className="cnt">({summary.terminate.length})</span></div>
+            {summary.terminate.map((p,i)=>(
+              <div className="mig-proc-row" key={i}>
+                <span className="mig-proc-name">{I.proc} {p.name}</span>
+                <span className="mig-proc-desc">{p.desc}</span>
+              </div>
+            ))}
+          </>}
+          {summary.leaveOn.length>0 && <>
+            <div className="excl-head" style={{marginTop:14}}>Left on {srcBuild} <span className="cnt">({summary.leaveOn.length})</span></div>
+            {summary.leaveOn.map((p,i)=>(
+              <div className="mig-proc-row" key={i}>
+                <span className="mig-proc-name">{I.proc} {p.name}</span>
+                <span className="mig-proc-desc">{p.desc}</span>
+              </div>
+            ))}
+          </>}
+          <div className="mfoot"><button className="btn-ghost" onClick={onClose}>Close</button></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================ Migration Detail Page ============================ */
+function InstStatusPill({ status }){
+  const cls = status==='Success'?'success':status==='Failed'?'failed':'terminated';
+  const dot = status==='Success'?'#1f7a4d':status==='Failed'?'#d6453a':'#b6891f';
+  return (
+    <span className={'inst-pill '+cls}>
+      <span style={{width:7,height:7,borderRadius:'50%',background:dot,display:'inline-block'}}/>
+      {status}
+    </span>
+  );
+}
+
+function MigrationDetailPage({ mig, onBack }){
+  const { srcBuild, tgtBuild, opId, ts } = mig;
+  const [search, setSearch] = React.useState('');
+  const [page, setPage] = React.useState(1);
+  const [statusFilter, setStatusFilter] = React.useState(null);
+  const PAGE_SIZE = 20;
+
+  const success = MOCK_INSTANCES.filter(r=>r.status==='Success').length;
+  const failed  = MOCK_INSTANCES.filter(r=>r.status==='Failed').length;
+  const term    = MOCK_INSTANCES.filter(r=>r.status==='Terminated').length;
+  const total   = MOCK_INSTANCES.length;
+  const pctS = Math.round(success/total*100);
+  const pctF = Math.round(failed/total*100);
+  const pctT = 100 - pctS - pctF;
+
+  const filtered = MOCK_INSTANCES.filter(r=>
+    (!search || r.id.includes(search) || r.procName.includes(search.toLowerCase())) &&
+    (!statusFilter || r.status === statusFilter)
+  );
+
+  const startTs = ts ? new Date(ts) : new Date('2025-10-07T23:40:00');
+  const endTs   = new Date(startTs.getTime() + 8431);
+  const fmtDate = (d) => d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ', ' +
+    d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:true}).replace(/^0/,'').replace(' am',' AM').replace(' pm',' PM');
+  const durMs = endTs - startTs;
+  const durStr = durMs < 60000 ? `${Math.round(durMs/1000)}s` : `${Math.round(durMs/60000)}m ${Math.round((durMs%60000)/1000)}s`;
+
+  return (
+    <div style={{padding:'24px 28px',flex:1,overflowY:'auto',minHeight:0}}>
+      {/* Breadcrumb */}
+      <div className="mig-detail-breadcrumb">
+        <button className="back-btn" onClick={onBack}>{I.arrowL} Operations</button>
+        <span className="sep">/</span>
+        <span className="crumb-cur">Migration <span className="crumb-id">{opId||'e4d7d1a2'}…</span></span>
+      </div>
+
+      {/* Summary card */}
+      <div className="mig-summary-card">
+        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',padding:'24px 28px',gap:24}}>
+          {/* Left: title + meta */}
+          <div style={{flex:1,minWidth:0}}>
+            <h2 style={{fontSize:20,fontWeight:700,color:'#1f2733',margin:'0 0 10px 0'}}>Bulk Migration</h2>
+            <div className="mig-meta-row">
+              <div className="mig-meta-item">
+                <span style={{fontSize:11,fontWeight:700,color:'#8c98a8',letterSpacing:'.04em'}}>Operation ID</span>
+                <b>{opId||'e4d7d1a2'}</b>
+                <span style={{color:'#8c98a8',cursor:'pointer',display:'inline-flex'}}>{I.copy}</span>
+              </div>
+              <div className="mig-meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <span>{fmtDate(startTs)}</span>
+              </div>
+              <div className="mig-meta-item">
+                {I.clock}
+                <span>Ran in {durStr}</span>
+              </div>
+            </div>
+          </div>
+          {/* Right: build chips */}
+          <div className="mig-build-row" style={{flexShrink:0}}>
+            <div className="mig-build-box">
+              <div className="mig-build-label">Source Build</div>
+              <div className="mig-build-chip">{I.gitBranch} {srcBuild}</div>
+            </div>
+            <div style={{color:'#8c98a8',margin:'0 4px',paddingTop:20}}>{I.arrowR}</div>
+            <div className="mig-build-box">
+              <div className="mig-build-label">Target Build</div>
+              <div className="mig-build-chip">{I.gitBranch} {tgtBuild}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Instances table */}
+      <div className="card" style={{padding:0,overflow:'hidden'}}>
+        <div className="inst-table-head">
+          <div>
+            <div style={{marginBottom:4}}>
+              <span style={{fontWeight:700,fontSize:15,color:'#1f2733'}}>Process Instances</span>
+            </div>
+            <div style={{fontSize:12.5,color:'var(--muted)',whiteSpace:'nowrap'}}>
+              Per-instance result of this migration run. Failed and terminated instances can be retried individually.
+            </div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{position:'relative'}}>
+              <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#8c98a8',pointerEvents:'none'}}>{I.search}</span>
+              <input
+                style={{paddingLeft:32,paddingRight:10,height:34,border:'1px solid var(--border)',borderRadius:8,fontSize:13,width:220,outline:'none',background:'#fafbfc'}}
+                placeholder="Search instances…"
+                value={search}
+                onChange={e=>{setSearch(e.target.value);setPage(1);}}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Outcome — between header and table */}
+        <div style={{padding:'16px 22px',borderBottom:'1px solid var(--border)',background:'#fafbfc'}}>
+          <div className="outcome-label" style={{marginBottom:8}}>
+            <span>Outcome</span>
+            <span className="outcome-total"><b>{total}</b> total</span>
+          </div>
+          <div className="outcome-bar" style={{marginBottom:12}}>
+            <div style={{width:pctS+'%',background:'#1f7a4d'}}/>
+            <div style={{width:pctF+'%',background:'#d6453a'}}/>
+            <div style={{width:pctT+'%',background:'#e2a81c'}}/>
+          </div>
+          <div className="outcome-stats-row">
+            {[
+              {label:'Success',   n:success, pct:pctS, dot:'#1f7a4d', bg:'#e7f6ee'},
+              {label:'Failed',    n:failed,  pct:pctF, dot:'#d6453a', bg:'#fdeceb'},
+              {label:'Terminated',n:term,    pct:pctT, dot:'#e2a81c', bg:'#fdf7e6'},
+            ].map(s=>{
+              const active = statusFilter===s.label;
+              return (
+                <div
+                  className="outcome-stat"
+                  key={s.label}
+                  onClick={()=>{ setStatusFilter(f=>f===s.label?null:s.label); setPage(1); }}
+                  style={{cursor:'pointer',padding:'5px 10px',borderRadius:8,transition:'background .15s',
+                    background: active ? s.bg : 'transparent',
+                    outline: active ? `1.5px solid ${s.dot}40` : 'none'}}
+                >
+                  <div className="outcome-dot" style={{background:s.dot}}/>
+                  <span className="ol" style={{fontWeight:active?700:undefined}}>{s.label}</span>
+                  <span className="ov">{s.n}</span>
+                  <span className="op">({s.pct}%)</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{overflowX:'auto'}}>
+        <table style={{width:'100%',minWidth:680,borderCollapse:'collapse',fontSize:13}}>
+          <thead>
+            <tr style={{background:'#f7f8fa',borderBottom:'1px solid var(--border)'}}>
+              {['Process Instance UUID','Process Name','Status','Details','Migrated At'].map(h=>(
+                <th key={h} style={{padding:'10px 14px',textAlign:'left',fontWeight:600,fontSize:11.5,color:'#697586',letterSpacing:'.04em',textTransform:'uppercase',whiteSpace:'nowrap'}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE).map((r,i)=>(
+              <tr key={r.id} style={{borderBottom:'1px solid #f0f2f5',transition:'background .12s'}}
+                  onMouseEnter={e=>e.currentTarget.style.background='#fafbff'}
+                  onMouseLeave={e=>e.currentTarget.style.background=''}>
+                <td style={{padding:'11px 14px',fontFamily:'SF Mono,ui-monospace,monospace',fontSize:12,color:'#697586'}}>{r.id.slice(0,20)}…</td>
+                <td style={{padding:'11px 14px',fontWeight:500,color:'#222b38'}}>{r.procName}</td>
+                <td style={{padding:'11px 14px'}}><InstStatusPill status={r.status}/></td>
+                <td style={{padding:'11px 14px',color:r.status==='Success'?'#8c98a8':'#c0392b',fontSize:12.5}}>{r.details}</td>
+                <td style={{padding:'11px 14px',color:'#697586',whiteSpace:'nowrap'}}>{r.migratedAt}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        </div>
+        <div className="inst-footer">
+          <span>Showing {Math.min(PAGE_SIZE, filtered.length)} of {filtered.length} instances</span>
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <button className="page-btn" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{opacity:page===1?.4:1}}>‹</button>
+            <span className="page-cur">{page}</span>
+            <button className="page-btn" onClick={()=>setPage(p=>Math.min(Math.ceil(filtered.length/PAGE_SIZE),p+1))} disabled={page>=Math.ceil(filtered.length/PAGE_SIZE)} style={{opacity:page>=Math.ceil(filtered.length/PAGE_SIZE)?.4:1}}>›</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
