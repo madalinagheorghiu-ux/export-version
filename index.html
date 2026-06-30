@@ -302,10 +302,10 @@
   .proto-stamp{position:fixed;right:16px;bottom:16px;z-index:50;font-size:11px;font-weight:600;color:#8a94a3;background:#fff;border:1px solid var(--border);border-radius:999px;padding:5px 11px;box-shadow:var(--shadow-sm);opacity:.9}
 
   /* ---------- Corrective Actions ---------- */
-  .status-pill{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:600;white-space:nowrap}
-  .status-pill.in-progress{background:#eef4ff;color:#2a5fb0}
-  .status-pill.completed{background:#e7f6ee;color:#1f7a4d}
-  .status-pill.failed{background:#fdeceb;color:#d6453a}
+  .status-pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:700;white-space:nowrap}
+  .status-pill.in-progress{background:#e7e9f0;color:#3c4654}
+  .status-pill.completed{background:#e6f4ec;color:#2e7d52}
+  .status-pill.failed{background:#fbe7e3;color:#cf4332}
   .ca-op-id{font-family:'SF Mono',ui-monospace,monospace;font-size:12px;color:#697586;display:flex;align-items:center;gap:5px}
   .build-ver{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:#33404f}
   .build-ver svg{color:#7e8a9a}
@@ -350,8 +350,9 @@
   .outcome-total{font-size:13px;color:var(--muted)}
   .outcome-total b{color:#1f2733;font-size:15px;font-weight:700}
   .outcome-bar{height:8px;border-radius:999px;overflow:hidden;display:flex;margin-bottom:14px;background:#eef0f3}
-  .outcome-stats-row{display:flex;gap:24px;flex-wrap:wrap}
-  .outcome-stat{display:flex;align-items:center;gap:8px}
+  .outcome-stats-row{display:flex;gap:14px;flex-wrap:wrap}
+  .outcome-stat{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 10px;border-radius:8px;transition:background .15s}
+  .outcome-stat:hover{background:#eef0f3}
   .outcome-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
   .outcome-stat .ol{font-size:13px;color:#3c4654}
   .outcome-stat .ov{font-weight:700;font-size:13.5px;margin-left:4px}
@@ -364,19 +365,22 @@
   .inst-footer{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;border-top:1px solid var(--border-2);font-size:13px;color:var(--muted)}
   .page-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid var(--border);border-radius:8px;background:#fff;color:#697586;cursor:pointer;font-size:16px}
   .page-cur{display:inline-flex;align-items:center;padding:4px 12px;background:var(--blue);color:#fff;border-radius:7px;font-size:12.5px;font-weight:600}
+  .col-head-cell{display:flex;align-items:center;gap:5px;position:relative;text-transform:none;letter-spacing:0}
+  .col-sort{display:inline-flex;align-items:center;gap:4px;cursor:pointer;user-select:none;font-weight:600;font-size:11.5px;color:#697586;letter-spacing:.04em;text-transform:uppercase}
+  .col-sort:hover{color:#1f2733}
+  .col-sort .sarrow{display:inline-flex;transition:transform .15s}
+  .col-sort .sarrow-asc{transform:rotate(180deg)}
+  .col-filter-btn{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#b6bfca;padding:3px;border-radius:5px}
+  .col-filter-btn:hover{background:#e9ecf1;color:#697586}
+  .col-filter-btn.active{color:var(--blue)}
+  .col-filter-dd{position:absolute;top:24px;left:0;z-index:60;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);padding:6px;min-width:200px;max-height:260px;overflow:auto}
+  .col-filter-item{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;font-size:12.5px;color:#3c4654;font-weight:500;cursor:pointer;text-transform:none;letter-spacing:0;white-space:nowrap}
+  .col-filter-item:hover{background:#f4f5f7}
+  .col-filter-item input{accent-color:var(--blue);width:14px;height:14px;cursor:pointer}
+  .col-filter-clear{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--blue);font-weight:600;font-size:12px;padding:7px 9px;border-top:1px solid var(--border-2);margin-top:4px}
 
   /* ---------- Migration Configuration page ---------- */
-  .mig-cfg-readiness{min-width:288px;flex-shrink:0}
-  .mig-cfg-rl{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
-  .mig-cfg-rl .lbl{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
-  .mig-cfg-rl .cnt{font-size:12.5px;color:#3c4654;display:inline-flex;align-items:center;gap:6px}
-  .mig-cfg-rl .cnt b{color:#1f2733;font-weight:700}
-  .mig-readbar{display:flex;height:7px;border-radius:4px;overflow:hidden;margin-bottom:14px;gap:2px}
-  .mig-readbar>div{height:100%}
-  .mig-read-legend{display:flex;flex-direction:column;gap:9px}
-  .mig-read-item{display:flex;align-items:center;gap:9px;font-size:13px;color:#3c4654}
-  .mig-read-item .rdot{width:17px;height:17px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
-  .mig-read-item .rn{margin-left:auto;font-weight:700;color:#1f2733}
+  .mig-needs-decision{font-size:11px;font-weight:600;color:#c2392e;background:#fdeceb;border-radius:6px;padding:2px 9px;white-space:nowrap}
   .mig-pbadge{display:inline-flex;align-items:center;gap:5px;background:#eef0f3;border-radius:6px;padding:2px 8px;font-size:11.5px;font-weight:600;color:#5b6573}
   .mig-status-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 12px;font-size:12px;font-weight:600;white-space:nowrap}
   .mig-proc-card{border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;background:#fff}
@@ -487,6 +491,8 @@ const I = {
   proc:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>,
   token:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m8 3 4 8 5-5 5 15H2L7 11Z"/></svg>,
   trash:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+  caret:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>,
+  filter:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></svg>,
 };
 
 /* ============================ Static nav ============================ */
@@ -520,6 +526,7 @@ const ALL_BUILDS_EMPTY = MIGRATION_BUILDS.every(b => !BUILDS_WITH_INSTANCES.has(
 const INITIAL_OPS = [
   { id:'e4d7d1a1', opType:'Migration Bulk', srcBuild:'3.9', tgtBuild:'3.9.1', status:'In Progress',  updatedAt:'07 Oct 2025, 11:40 PM' },
   { id:'e4d7d1a2', opType:'Migration Bulk', srcBuild:'3.9', tgtBuild:'3.9.1', status:'Completed',    updatedAt:'07 Oct 2025, 11:40 PM' },
+  { id:'e4d7d1a4', opType:'Migration Bulk', srcBuild:'3.9', tgtBuild:'3.10',  status:'Failed',       updatedAt:'07 Oct 2025, 11:38 PM' },
   { id:'e4d7d1a3', opType:'Move Token',     srcBuild:'3.9', tgtBuild:'-',     status:'Completed',    updatedAt:'07 Oct 2025, 11:40 PM' },
 ];
 const genMigSummary = () => ({
@@ -558,17 +565,24 @@ const hexId = () => Math.random().toString(16).slice(2,10);
 const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
   const r = Math.trunc(Math.random()*16); return (c==='x'?r:(r&0x3|0x8)).toString(16);
 });
+const ROOT_INSTANCES = 20;   // top-level instances (5 processes); each may spawn child instances
 const MOCK_INSTANCES = (() => {
   const rows = [];
   const procs = ['property_details','onboarding','kyc_flow','loan_application','account_opening'];
-  const statuses = ['Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Success','Failed','Failed','Failed','Terminated'];
-  for (let i=0; i<20; i++){
+  // 245 total instances (incl. child/subprocess) across 20 root instances / 5 processes.
+  // 208 succeeded, 37 failed. 2 successful instances had their status changed to TERMINATED.
+  const TOTAL = 245, FAILED = 37;
+  const termIdx = new Set([40, 121]);
+  for (let i=0; i<TOTAL; i++){
+    const status = i < FAILED ? 'Failed' : 'Success';
     rows.push({
       id: uuid(),
       procName: procs[i % procs.length],
-      status: statuses[i],
-      details: statuses[i]==='Failed' ? 'Process definition not found on target' : statuses[i]==='Terminated' ? 'Instance terminated — no active tokens' : '-',
-      migratedAt: `07 Oct 2025, ${String(11+Math.trunc(i/6)).padStart(2,'0')}:${String(i*3%60).padStart(2,'0')} PM`,
+      status,
+      details: status==='Failed' ? 'Process definition not found on target'
+             : termIdx.has(i) ? 'Status changed to TERMINATED'
+             : '-',
+      migratedAt: `07 Oct 2025, ${String(1+(Math.trunc(i/21)%12)).padStart(2,'0')}:${String((i*7)%60).padStart(2,'0')} PM`,
     });
   }
   return rows;
@@ -823,6 +837,7 @@ function App(){
             ? <MigrationConfigPage
                 src={migConfig.src} tgt={migConfig.tgt}
                 onBack={()=>{ setMigConfig(null); setMigModal({step:'setup'}); }}
+                onCancel={()=>setMigConfig(null)}
                 onContinue={()=>{ const c=migConfig; setMigConfig(null); setMigModal({step:'summary', src:c.src, tgt:c.tgt}); }}
               />
             : migDetailId
@@ -1449,10 +1464,9 @@ function Toasts({ toasts, onAct, onClose }){
 
 /* ============================ Corrective Actions page ============================ */
 function OpStatusPill({ status, state }){
-  if (state==='IN_PROGRESS') return <span className="status-pill in-progress"><span className="mini-spin" style={{width:11,height:11}}></span> In Progress</span>;
-  if (status==='Completed')  return <span className="status-pill completed">{I.check} Completed</span>;
-  if (status==='Failed')     return <span className="status-pill failed">{I.x} Failed</span>;
-  if (status==='In Progress')return <span className="status-pill in-progress">In Progress</span>;
+  if (state==='IN_PROGRESS' || status==='In Progress') return <span className="status-pill in-progress"><span className="mini-spin" style={{width:12,height:12}}></span> In Progress</span>;
+  if (status==='Completed')  return <span className="status-pill completed">Completed</span>;
+  if (status==='Failed')     return <span className="status-pill failed">Failed</span>;
   return <span className="status-pill">{status}</span>;
 }
 
@@ -1787,18 +1801,35 @@ function InstStatusPill({ status }){
 }
 
 /* ============================ Migration Step 1.5 — Configuration (full page) ============================ */
-function MigrationConfigPage({ src, tgt, onBack, onContinue }){
-  const [open, setOpen] = useState({ property_details:true, mortgage_process:true, process_1:true });
-  const [notFound, setNotFound] = useState({});
+function MigrationConfigPage({ src, tgt, onBack, onCancel, onContinue }){
+  const all = MIG_CONFIG_PROCESSES;
+  // Auto-expand cards that need attention (mapping + not found); collapse ready.
+  const [open, setOpen] = useState(() => {
+    const o = {}; all.forEach(p=>{ if(p.status!=='ready') o[p.id]=true; }); return o;
+  });
+  const [notFound, setNotFound] = useState({});   // no default — explicit choice required
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState(null);
   const tog = id => setOpen(p=>({...p,[id]:!p[id]}));
-  const choiceOf = id => notFound[id] || 'terminate';
+  const choiceOf = id => notFound[id];
 
-  const procs = MIG_CONFIG_PROCESSES;
-  const readyN    = procs.filter(p=>p.status==='ready').length;
-  const mappingN  = procs.filter(p=>p.status==='mapping').length;
-  const notfoundN = procs.filter(p=>p.status==='notfound').length;
-  const total = procs.length;
+  const readyN    = all.filter(p=>p.status==='ready').length;
+  const mappingN  = all.filter(p=>p.status==='mapping').length;
+  const notfoundN = all.filter(p=>p.status==='notfound').length;
+  const total = all.length;
   const instCount = 20;
+  const pendingDecisions = all.filter(p=>p.status==='notfound' && !notFound[p.id]).length;
+  const canContinue = pendingDecisions === 0;
+
+  const procs = all.filter(p =>
+    (!statusFilter || p.status===statusFilter) &&
+    (!search || p.name.toLowerCase().includes(search.toLowerCase()))
+  );
+  const READY_STATS = [
+    { label:'Ready to migrate',    key:'ready',    n:readyN,    dot:'#1f7a4d', bg:'#e7f6ee' },
+    { label:'Need node mapping',   key:'mapping',  n:mappingN,  dot:'#e2a81c', bg:'#fdf7e6' },
+    { label:'Not found on target', key:'notfound', n:notfoundN, dot:'#d6453a', bg:'#fdeceb' },
+  ];
 
   const NodeSel = ({icon, label, editable}) => (
     <div className={'mig-node-sel'+(editable?' editable':'')}>
@@ -1836,62 +1867,99 @@ function MigrationConfigPage({ src, tgt, onBack, onContinue }){
       <div className="mig-detail-breadcrumb">
         <button className="back-btn" onClick={onBack}>{I.arrowL} Process Instances</button>
         <span className="sep">/</span>
-        <span className="crumb-cur">Bulk Migration</span>
+        <span className="crumb-cur">Migration Configuration</span>
       </div>
 
-      {/* Header card: identity + readiness */}
-      <div className="card" style={{padding:'24px 28px',marginBottom:16,display:'flex',gap:32,justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap'}}>
-        <div style={{flex:1,minWidth:300}}>
-          <h2 style={{fontSize:21,fontWeight:700,margin:'0 0 6px'}}>Bulk Migration</h2>
-          <p style={{margin:'0 0 18px',color:'var(--muted)',fontSize:13.5,lineHeight:1.55,maxWidth:560}}>
-            Review how each process and its running instances will move from the source build to the target build. Nothing runs until you start the operation.
-          </p>
-          <div className="mig-build-row">
+      {/* Header card — mirrors the Migration Status header */}
+      <div className="mig-summary-card">
+        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',padding:'24px 28px',gap:24,flexWrap:'wrap'}}>
+          <div style={{flex:1,minWidth:280}}>
+            <h2 style={{fontSize:20,fontWeight:700,color:'#1f2733',margin:'0 0 8px 0'}}>Migration Configuration</h2>
+            <p style={{margin:0,color:'var(--muted)',fontSize:13.5,lineHeight:1.55,maxWidth:560}}>
+              Review how each process and its running instances will move from the source build to the target build. Nothing runs until you start the operation.
+            </p>
+          </div>
+          <div className="mig-build-row" style={{flexShrink:0}}>
             <div className="mig-build-box">
               <div className="mig-build-label">Source Build</div>
               <div className="mig-build-chip">{I.gitBranch} {src}</div>
             </div>
-            <div style={{color:'#8c98a8',paddingTop:20}}>{I.arrowR}</div>
+            <div style={{color:'#8c98a8',margin:'0 4px',paddingTop:20}}>{I.arrowR}</div>
             <div className="mig-build-box">
               <div className="mig-build-label">Target Build</div>
               <div className="mig-build-chip">{I.gitBranch} {tgt}</div>
             </div>
           </div>
         </div>
-        <div className="mig-cfg-readiness">
-          <div className="mig-cfg-rl">
-            <span className="lbl">Readiness</span>
-            <span className="cnt"><b>{total}</b>&nbsp;processes&nbsp;·&nbsp;~&nbsp;<b>{instCount}</b>&nbsp;instances <span className="info-icon" data-tooltip="Readiness is computed per process from node mapping and target availability">i</span></span>
-          </div>
-          <div className="mig-readbar">
-            <div style={{flex:readyN,    background:'#1f7a4d'}}/>
-            <div style={{flex:mappingN,  background:'#e2a81c'}}/>
-            <div style={{flex:notfoundN, background:'#d6453a'}}/>
-          </div>
-          <div className="mig-read-legend">
-            <div className="mig-read-item"><span className="rdot" style={{background:'#e7f6ee',color:'#1f7a4d'}}>{I.check}</span> Ready to migrate <span className="rn">{readyN}</span></div>
-            <div className="mig-read-item"><span className="rdot" style={{background:'#fdf7e6',color:'#a9750f'}}>{I.warn}</span> Need node mapping <span className="rn">{mappingN}</span></div>
-            <div className="mig-read-item"><span className="rdot" style={{background:'#fdeceb',color:'#c2392e'}}>{I.x}</span> Not found on target <span className="rn">{notfoundN}</span></div>
-          </div>
-        </div>
       </div>
 
-      {/* Processes */}
-      <div className="card" style={{padding:'22px 24px'}}>
-        <h3 style={{fontSize:16,fontWeight:700,margin:'0 0 4px'}}>Processes with running instances</h3>
-        <p style={{margin:'0 0 18px',color:'var(--muted)',fontSize:13,lineHeight:1.55}}>
-          Below are the processes with running instances on the source build. Check the node mapping and the destination of active tokens. <span className="doclink">Review the documentation</span> for limitations and how to monitor an operation.
-        </p>
+      {/* Processes card */}
+      <div className="card" style={{padding:0,overflow:'hidden'}}>
+        <div className="inst-table-head">
+          <div>
+            <div style={{marginBottom:4}}>
+              <span style={{fontWeight:700,fontSize:15,color:'#1f2733'}}>Processes with running instances</span>
+            </div>
+            <div style={{fontSize:12.5,color:'var(--muted)',lineHeight:1.5,maxWidth:620}}>
+              Below are the processes with running instances on the source build. Check the node mapping and the destination of active tokens. <span className="doclink">Review the documentation</span> for limitations and how to monitor an operation.
+            </div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{position:'relative'}}>
+              <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#8c98a8',pointerEvents:'none'}}>{I.search}</span>
+              <input
+                style={{paddingLeft:32,paddingRight:10,height:34,border:'1px solid var(--border)',borderRadius:8,fontSize:13,width:220,outline:'none',background:'#fafbfc'}}
+                placeholder="Search processes…"
+                value={search}
+                onChange={e=>setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
 
+        {/* Readiness — interactive filter, mirrors Outcome on Migration Status */}
+        <div style={{padding:'16px 22px',borderBottom:'1px solid var(--border)',background:'#fafbfc'}}>
+          <div className="outcome-label" style={{marginBottom:8}}>
+            <span>Readiness</span>
+            <span className="outcome-total"><b>{total}</b> processes&nbsp;·&nbsp;~{instCount} root instances <span className="info-icon" data-tooltip="Root instances are top-level process instances; child / subprocess instances are migrated together with their parent.">i</span></span>
+          </div>
+          <div className="outcome-bar" style={{marginBottom:12}}>
+            <div style={{width:(readyN/total*100)+'%',background:'#1f7a4d'}}/>
+            <div style={{width:(mappingN/total*100)+'%',background:'#e2a81c'}}/>
+            <div style={{width:(notfoundN/total*100)+'%',background:'#d6453a'}}/>
+          </div>
+          <div className="outcome-stats-row">
+            {READY_STATS.map(s=>{
+              const active = statusFilter===s.key;
+              return (
+                <div className="outcome-stat" key={s.key}
+                  onClick={()=>setStatusFilter(f=>f===s.key?null:s.key)}
+                  style={active ? {background:s.bg, outline:`1.5px solid ${s.dot}40`} : undefined}>
+                  <div className="outcome-dot" style={{background:s.dot}}/>
+                  <span className="ol" style={{fontWeight:active?700:undefined}}>{s.label}</span>
+                  <span className="ov">{s.n}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Process list */}
+        <div style={{padding:'16px 22px 20px'}}>
+        {procs.length===0 && (
+          <div style={{padding:'22px 0',textAlign:'center',color:'var(--muted)',fontSize:13}}>No processes match the current filter.</div>
+        )}
         {procs.map(p=>{
           const st = MIG_STATUS[p.status];
           const isOpen = !!open[p.id];
+          const undecided = p.status==='notfound' && !notFound[p.id];
           return (
             <div className="mig-proc-card" key={p.id}>
               <div className="mig-proc-head" onClick={()=>tog(p.id)}>
                 <span style={{fontWeight:600,fontSize:14,color:'#1f2733'}}>{p.name}</span>
                 <span className="mig-pbadge">{p.badgeIcon==='box'?I.box:I.folder} {p.badge}</span>
                 <span style={{flex:1}}/>
+                {undecided && <span className="mig-needs-decision">Needs a decision</span>}
                 <span className="mig-status-pill" style={{background:st.bg,color:st.color}}>{I[st.icon]} {st.label}</span>
                 <span className={'pchev'+(isOpen?' open':'')}>{I.chev}</span>
               </div>
@@ -1950,11 +2018,20 @@ function MigrationConfigPage({ src, tgt, onBack, onContinue }){
             </div>
           );
         })}
+        </div>
       </div>
 
       {/* Footer */}
-      <div style={{display:'flex',justifyContent:'flex-end',marginTop:18}}>
-        <button className="btn-blue" onClick={onContinue}>Check Operation Summary {I.arrowR}</button>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:18,gap:16,flexWrap:'wrap'}}>
+        <div style={{fontSize:13,display:'flex',alignItems:'center',gap:8,color: pendingDecisions>0 ? '#c2392e' : 'var(--muted)'}}>
+          {pendingDecisions>0
+            ? <><span style={{display:'inline-flex',color:'#c2392e'}}>{I.warn}</span><span><b>{pendingDecisions}</b> process{pendingDecisions!==1?'es':''} need{pendingDecisions===1?'s':''} a decision before you can continue.</span></>
+            : <><span style={{display:'inline-flex',color:'#1f7a4d'}}>{I.check}</span><span>All processes reviewed — ready to continue.</span></>}
+        </div>
+        <div style={{display:'flex',gap:10}}>
+          <button className="btn-ghost" onClick={onCancel}>Cancel</button>
+          <button className="btn-blue" onClick={canContinue?onContinue:undefined} style={!canContinue?{opacity:.45,cursor:'not-allowed'}:{}}>Check Operation Summary {I.arrowR}</button>
+        </div>
       </div>
     </div>
   );
@@ -1962,23 +2039,77 @@ function MigrationConfigPage({ src, tgt, onBack, onContinue }){
 
 function MigrationDetailPage({ mig, onBack }){
   const { srcBuild, tgtBuild, opId, ts } = mig;
-  const [search, setSearch] = React.useState('');
-  const [page, setPage] = React.useState(1);
-  const [statusFilter, setStatusFilter] = React.useState(null);
-  const PAGE_SIZE = 20;
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState({ col:'status', dir:'asc' });   // status asc = errors first
+  const [colFilters, setColFilters] = useState({ procName:[], status:[], details:[] });
+  const [openFilter, setOpenFilter] = useState(null);
+  const [visible, setVisible] = useState(10);
 
   const success = MOCK_INSTANCES.filter(r=>r.status==='Success').length;
   const failed  = MOCK_INSTANCES.filter(r=>r.status==='Failed').length;
-  const term    = MOCK_INSTANCES.filter(r=>r.status==='Terminated').length;
   const total   = MOCK_INSTANCES.length;
+  const procCount = new Set(MOCK_INSTANCES.map(r=>r.procName)).size;
   const pctS = Math.round(success/total*100);
-  const pctF = Math.round(failed/total*100);
-  const pctT = 100 - pctS - pctF;
+  const pctF = 100 - pctS;
+
+  const distinct = col => [...new Set(MOCK_INSTANCES.map(r=>r[col]))];
+  const toggleColFilter = (col, v) => setColFilters(f=>{
+    const cur = f[col]; const next = cur.includes(v) ? cur.filter(x=>x!==v) : [...cur, v];
+    return {...f, [col]:next};
+  });
+  const toggleSort = col => setSort(s => s.col===col ? {col, dir: s.dir==='asc'?'desc':'asc'} : {col, dir:'asc'});
 
   const filtered = MOCK_INSTANCES.filter(r=>
     (!search || r.id.includes(search) || r.procName.includes(search.toLowerCase())) &&
-    (!statusFilter || r.status === statusFilter)
+    (colFilters.procName.length===0 || colFilters.procName.includes(r.procName)) &&
+    (colFilters.status.length===0   || colFilters.status.includes(r.status)) &&
+    (colFilters.details.length===0  || colFilters.details.includes(r.details))
   );
+  const statusRank = s => s==='Failed' ? 0 : 1;   // errors first
+  const sorted = [...filtered].sort((a,b)=>{
+    let r = 0;
+    if (sort.col==='status')        r = statusRank(a.status) - statusRank(b.status);
+    else if (sort.col==='procName') r = a.procName.localeCompare(b.procName);
+    else if (sort.col==='details')  r = a.details.localeCompare(b.details);
+    return sort.dir==='desc' ? -r : r;
+  });
+  const shown = sorted.slice(0, visible);
+
+  // reset the infinite-scroll window whenever the result set changes
+  useEffect(()=>{ setVisible(10); }, [search, sort, colFilters]);
+  // load more rows as the table scrolls toward the bottom
+  const onTableScroll = e => {
+    const el = e.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) setVisible(v=>Math.min(v+10, sorted.length));
+  };
+
+  const thStyle = {padding:'10px 14px',textAlign:'left',fontWeight:600,fontSize:11.5,color:'#697586',letterSpacing:'.04em',textTransform:'uppercase',whiteSpace:'nowrap',background:'#f7f8fa',borderBottom:'1px solid var(--border)'};
+  const ColHeader = ({col, label}) => {
+    const active = sort.col===col;
+    const fActive = colFilters[col].length>0;
+    return (
+      <th style={{...thStyle, textTransform:'none', letterSpacing:0}}>
+        <div className="col-head-cell">
+          <span className="col-sort" onClick={()=>toggleSort(col)}>
+            {label}
+            <span className={'sarrow'+(active&&sort.dir==='asc'?' sarrow-asc':'')} style={{color: active?'var(--blue)':'#c2cad4'}}>{I.caret}</span>
+          </span>
+          <span className={'col-filter-btn'+(fActive?' active':'')} onClick={()=>setOpenFilter(o=>o===col?null:col)}>{I.filter}</span>
+          {openFilter===col && (
+            <div className="col-filter-dd">
+              {distinct(col).map(v=>(
+                <label className="col-filter-item" key={v}>
+                  <input type="checkbox" checked={colFilters[col].includes(v)} onChange={()=>toggleColFilter(col,v)} />
+                  <span>{v||'—'}</span>
+                </label>
+              ))}
+              {fActive && <button className="col-filter-clear" onClick={()=>setColFilters(f=>({...f,[col]:[]}))}>Clear filter</button>}
+            </div>
+          )}
+        </div>
+      </th>
+    );
+  };
 
   const startTs = ts ? new Date(ts) : new Date('2025-10-07T23:40:00');
   const endTs   = new Date(startTs.getTime() + 8431);
@@ -2001,7 +2132,10 @@ function MigrationDetailPage({ mig, onBack }){
         <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',padding:'24px 28px',gap:24}}>
           {/* Left: title + meta */}
           <div style={{flex:1,minWidth:0}}>
-            <h2 style={{fontSize:20,fontWeight:700,color:'#1f2733',margin:'0 0 10px 0'}}>Bulk Migration</h2>
+            <div style={{display:'flex',alignItems:'center',gap:12,margin:'0 0 10px 0',flexWrap:'wrap'}}>
+              <h2 style={{fontSize:20,fontWeight:700,color:'#1f2733',margin:0}}>Migration Status</h2>
+              <OpStatusPill status={mig.state==='COMPLETED'?'Completed':mig.state==='FAILED'?'Failed':'In Progress'} state={mig.state} />
+            </div>
             <div className="mig-meta-row">
               <div className="mig-meta-item">
                 <span style={{fontSize:11,fontWeight:700,color:'#8c98a8',letterSpacing:'.04em'}}>Operation ID</span>
@@ -2041,7 +2175,7 @@ function MigrationDetailPage({ mig, onBack }){
               <span style={{fontWeight:700,fontSize:15,color:'#1f2733'}}>Process Instances</span>
             </div>
             <div style={{fontSize:12.5,color:'var(--muted)',whiteSpace:'nowrap'}}>
-              Per-instance result of this migration run. Failed and terminated instances can be retried individually.
+              Per-instance result of this migration run. Failed instances can be retried individually.
             </div>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -2061,28 +2195,24 @@ function MigrationDetailPage({ mig, onBack }){
         <div style={{padding:'16px 22px',borderBottom:'1px solid var(--border)',background:'#fafbfc'}}>
           <div className="outcome-label" style={{marginBottom:8}}>
             <span>Outcome</span>
-            <span className="outcome-total"><b>{total}</b> total</span>
+            <span className="outcome-total"><b>{total}</b> instances <span style={{color:'var(--muted)',fontWeight:400}}>({procCount} processes&nbsp;·&nbsp;{ROOT_INSTANCES} root instances)</span></span>
           </div>
           <div className="outcome-bar" style={{marginBottom:12}}>
             <div style={{width:pctS+'%',background:'#1f7a4d'}}/>
             <div style={{width:pctF+'%',background:'#d6453a'}}/>
-            <div style={{width:pctT+'%',background:'#e2a81c'}}/>
           </div>
           <div className="outcome-stats-row">
             {[
-              {label:'Success',   n:success, pct:pctS, dot:'#1f7a4d', bg:'#e7f6ee'},
-              {label:'Failed',    n:failed,  pct:pctF, dot:'#d6453a', bg:'#fdeceb'},
-              {label:'Terminated',n:term,    pct:pctT, dot:'#e2a81c', bg:'#fdf7e6'},
+              {label:'Success', n:success, pct:pctS, dot:'#1f7a4d', bg:'#e7f6ee'},
+              {label:'Failed',  n:failed,  pct:pctF, dot:'#d6453a', bg:'#fdeceb'},
             ].map(s=>{
-              const active = statusFilter===s.label;
+              const active = colFilters.status.includes(s.label);
               return (
                 <div
                   className="outcome-stat"
                   key={s.label}
-                  onClick={()=>{ setStatusFilter(f=>f===s.label?null:s.label); setPage(1); }}
-                  style={{cursor:'pointer',padding:'5px 10px',borderRadius:8,transition:'background .15s',
-                    background: active ? s.bg : 'transparent',
-                    outline: active ? `1.5px solid ${s.dot}40` : 'none'}}
+                  onClick={()=>toggleColFilter('status', s.label)}
+                  style={active ? {background:s.bg, outline:`1.5px solid ${s.dot}40`} : undefined}
                 >
                   <div className="outcome-dot" style={{background:s.dot}}/>
                   <span className="ol" style={{fontWeight:active?700:undefined}}>{s.label}</span>
@@ -2094,39 +2224,42 @@ function MigrationDetailPage({ mig, onBack }){
           </div>
         </div>
 
-        <div style={{overflowX:'auto'}}>
+        <div onScroll={onTableScroll} style={{maxHeight:380,overflowY:'auto',overflowX:'auto'}}>
         <table style={{width:'100%',minWidth:680,borderCollapse:'collapse',fontSize:13}}>
-          <thead>
+          <thead style={{position:'sticky',top:0,zIndex:1}}>
             <tr style={{background:'#f7f8fa',borderBottom:'1px solid var(--border)'}}>
-              {['Process Instance UUID','Process Name','Status','Details','Migrated At'].map(h=>(
-                <th key={h} style={{padding:'10px 14px',textAlign:'left',fontWeight:600,fontSize:11.5,color:'#697586',letterSpacing:'.04em',textTransform:'uppercase',whiteSpace:'nowrap'}}>{h}</th>
-              ))}
+              <th style={thStyle}>Process Instance UUID</th>
+              <ColHeader col="procName" label="Process Name"/>
+              <ColHeader col="status" label="Status"/>
+              <ColHeader col="details" label="Details"/>
+              <th style={thStyle}>Migrated At</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE).map((r,i)=>(
+            {shown.map((r)=>(
               <tr key={r.id} style={{borderBottom:'1px solid #f0f2f5',transition:'background .12s'}}
                   onMouseEnter={e=>e.currentTarget.style.background='#fafbff'}
                   onMouseLeave={e=>e.currentTarget.style.background=''}>
                 <td style={{padding:'11px 14px',fontFamily:'SF Mono,ui-monospace,monospace',fontSize:12,color:'#697586'}}>{r.id.slice(0,20)}…</td>
                 <td style={{padding:'11px 14px',fontWeight:500,color:'#222b38'}}>{r.procName}</td>
                 <td style={{padding:'11px 14px'}}><InstStatusPill status={r.status}/></td>
-                <td style={{padding:'11px 14px',color:r.status==='Success'?'#8c98a8':'#c0392b',fontSize:12.5}}>{r.details}</td>
+                <td style={{padding:'11px 14px',color:r.details==='-'?'#8c98a8':r.status==='Failed'?'#c0392b':'#9a6a16',fontSize:12.5}}>{r.details}</td>
                 <td style={{padding:'11px 14px',color:'#697586',whiteSpace:'nowrap'}}>{r.migratedAt}</td>
               </tr>
             ))}
+            {shown.length===0 && (
+              <tr><td colSpan={5} style={{padding:'26px 14px',textAlign:'center',color:'var(--muted)',fontSize:13}}>No instances match the current filters.</td></tr>
+            )}
           </tbody>
         </table>
         </div>
         <div className="inst-footer">
-          <span>Showing {Math.min(PAGE_SIZE, filtered.length)} of {filtered.length} instances</span>
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <button className="page-btn" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{opacity:page===1?.4:1}}>‹</button>
-            <span className="page-cur">{page}</span>
-            <button className="page-btn" onClick={()=>setPage(p=>Math.min(Math.ceil(filtered.length/PAGE_SIZE),p+1))} disabled={page>=Math.ceil(filtered.length/PAGE_SIZE)} style={{opacity:page>=Math.ceil(filtered.length/PAGE_SIZE)?.4:1}}>›</button>
-          </div>
+          <span>Showing <b>{shown.length}</b> of {sorted.length} instances{sorted.length!==total ? ` (filtered from ${total})` : ''}</span>
+          <span style={{color:'var(--muted)'}}>{total} instances total</span>
         </div>
       </div>
+
+      {openFilter && <div onClick={()=>setOpenFilter(null)} style={{position:'fixed',inset:0,zIndex:55}}/>}
     </div>
   );
 }
