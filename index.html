@@ -350,9 +350,12 @@
   .outcome-total{font-size:13px;color:var(--muted)}
   .outcome-total b{color:#1f2733;font-size:15px;font-weight:700}
   .outcome-bar{height:8px;border-radius:999px;overflow:hidden;display:flex;margin-bottom:14px;background:#eef0f3}
-  .outcome-stats-row{display:flex;gap:14px;flex-wrap:wrap}
-  .outcome-stat{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 10px;border-radius:8px;transition:background .15s}
-  .outcome-stat:hover{background:#eef0f3}
+  .outcome-stats-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .outcome-stat{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:#fff;transition:background .15s,border-color .15s,box-shadow .15s}
+  .outcome-stat:hover{background:#f4f5f7;border-color:#c9d0d8;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+  .outcome-stat.sel{font-weight:700}
+  .filter-lead{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--muted);margin-right:2px}
+  .chip-clear{margin-left:3px;font-size:14px;line-height:1;font-weight:700;opacity:.55;display:inline-flex}
   .outcome-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
   .outcome-stat .ol{font-size:13px;color:#3c4654}
   .outcome-stat .ov{font-weight:700;font-size:13.5px;margin-left:4px}
@@ -1929,15 +1932,17 @@ function MigrationConfigPage({ src, tgt, onBack, onCancel, onContinue }){
             <div style={{width:(notfoundN/total*100)+'%',background:'#d6453a'}}/>
           </div>
           <div className="outcome-stats-row">
+            <span className="filter-lead">{I.filter} Filter:</span>
             {READY_STATS.map(s=>{
               const active = statusFilter===s.key;
               return (
-                <div className="outcome-stat" key={s.key}
+                <div className={'outcome-stat'+(active?' sel':'')} key={s.key}
                   onClick={()=>setStatusFilter(f=>f===s.key?null:s.key)}
-                  style={active ? {background:s.bg, outline:`1.5px solid ${s.dot}40`} : undefined}>
+                  style={active ? {background:s.bg, borderColor:s.dot} : undefined}>
                   <div className="outcome-dot" style={{background:s.dot}}/>
-                  <span className="ol" style={{fontWeight:active?700:undefined}}>{s.label}</span>
+                  <span className="ol">{s.label}</span>
                   <span className="ov">{s.n}</span>
+                  {active && <span className="chip-clear" style={{color:s.dot}}>×</span>}
                 </div>
               );
             })}
@@ -2202,6 +2207,7 @@ function MigrationDetailPage({ mig, onBack }){
             <div style={{width:pctF+'%',background:'#d6453a'}}/>
           </div>
           <div className="outcome-stats-row">
+            <span className="filter-lead">{I.filter} Filter:</span>
             {[
               {label:'Success', n:success, pct:pctS, dot:'#1f7a4d', bg:'#e7f6ee'},
               {label:'Failed',  n:failed,  pct:pctF, dot:'#d6453a', bg:'#fdeceb'},
@@ -2209,15 +2215,16 @@ function MigrationDetailPage({ mig, onBack }){
               const active = colFilters.status.includes(s.label);
               return (
                 <div
-                  className="outcome-stat"
+                  className={'outcome-stat'+(active?' sel':'')}
                   key={s.label}
                   onClick={()=>toggleColFilter('status', s.label)}
-                  style={active ? {background:s.bg, outline:`1.5px solid ${s.dot}40`} : undefined}
+                  style={active ? {background:s.bg, borderColor:s.dot} : undefined}
                 >
                   <div className="outcome-dot" style={{background:s.dot}}/>
-                  <span className="ol" style={{fontWeight:active?700:undefined}}>{s.label}</span>
+                  <span className="ol">{s.label}</span>
                   <span className="ov">{s.n}</span>
                   <span className="op">({s.pct}%)</span>
+                  {active && <span className="chip-clear" style={{color:s.dot}}>×</span>}
                 </div>
               );
             })}
