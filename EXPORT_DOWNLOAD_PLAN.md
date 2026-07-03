@@ -240,13 +240,14 @@ Each instance within a completed migration has its own outcome: **Success**, **F
 
    > **Status:** ✅ Decided — **switched to Option A (inline validation) as shipped.** Option B (disabled items) was built first, then replaced: all builds are now freely selectable. The default source is the **first build (`3.7`)**, which has running instances. Selecting a build with no running instances (mock: `3.9`) shows an **inline error** — red border on the select, a red error icon **inside the field** (right of the chevron), and helper text *"No running process instances on this build."* **Continue is disabled** while an errored build is selected and re-enables on a valid one. Rationale for the change: all builds visible/selectable is simpler and matches the requested behaviour; error-prevention is preserved by gating Continue. The `(i)` icon next to "Source Build" keeps the styled tooltip *"Only active or incident instances can be migrated."*
 
-2. **Summary modal (Step 2)**
-   - Shows a grouped breakdown of what the migration will do, organised into three collapsible sections:
-     - **Migrate to {targetBuild}** — processes whose instances will move.
-     - **Terminate** — processes whose instances will move to `TERMINATED` state.
-     - **Leave on {sourceBuild}** — processes that stay untouched on the source.
-   - Each section is collapsible (chevron toggle). Each row shows process name + a short description.
-   - Actions: **Back** (returns to Setup) · **Start Migration** (launches the job) · **Cancel**.
+2. **Summary modal (Step 2)** — "Migration plan:"
+   - Shows the breakdown as **two collapsible grey cards**, each: a caret · **title + build-version pill** (e.g. *Migrate to `3.9.1`*) · right-aligned **`N processes`** count. Rows sit under a **left rail** (vertical accent line):
+     - **Migrate to {targetBuild}** (default **expanded**) — the on-target processes; rows show **icon + name only**.
+     - **Remain on {sourceBuild}** (default **collapsed**) — the not-migrated processes (left + terminated); rows show **icon + name + a right-aligned fate description** (*"…stay on the source build, untouched."* / *"…move to a TERMINATED state."*). Titled "Remain on" rather than "Leave on" because the group also contains terminated processes.
+   - **Process names + counts come from the Configuration page** (`genMigSummary` derived from `MIG_CONFIG_PROCESSES`): on-target = migrate (3), not-found = not migrated (2).
+   - **32px breathing room** between the title area (header), the body (cards), and the CTA row.
+   - Warning banner: *"Once started, the migration cannot be stopped or canceled."*
+   - Actions: **Back to Setup** (returns to Setup) · **Start Migration** (launches the job).
 
 3. **Processing modal**
    - Mirrors the "Preparing your export…" pattern: animated progress bar, spinner, copy *"Migrating from {src} to {tgt}. This may take a few minutes. Close — keep working."*
@@ -339,6 +340,7 @@ The recreated-node exception: if a configurator deletes a node by mistake and re
 - The **New node** column is a **functional dropdown**, **empty by default** (`Select new node`); its **first option is `last visited node`** (the fallback), followed by target nodes.
 - Column headers carry build tags (`Current node ⌥ {src}` / `New node ⌥ {tgt}`) in the same small style used by Set tokens destination.
 - **Self-resolving status:** once every unmatched node has a New node selected, the chip flips to green *"All nodes mapped"*, the hint disappears, the process's **status pill flips to Ready**, and the **Readiness card counts + bar update live**.
+- **Readiness filter reacts to live counts:** a Readiness chip whose count is **0** is **disabled** (dashed, greyed, non-clickable — it would only ever show an empty list). And if the user resolves the **last** process in the currently-filtered bucket (e.g. maps the last "Need node mapping" process), that filter **auto-clears** so the just-resolved card stays visible under the full list instead of vanishing into a "no processes match" empty state.
 
 **Set tokens destination (post-migration)** (shown for every on-target process; no "Optional" chip, no info tooltip):
 - Subtitle: *"If tokens are blocked on a node, move all tokens waiting on it to another node on {target} — forward or back — based on your fix."*
@@ -444,6 +446,8 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 | 2026-07-03 | **Node mapping "Map nodes" is state-driven and self-resolving.** Ready processes show *"nothing to map"*; attention processes show unmatched-node rows with a warning hint under the title + **New-node dropdowns** (first option "last visited node", empty by default). "Review/Show auto-mapped" toggles were removed. **Mapping every unmatched node flips the process to Ready and updates the Readiness card counts/bar live.** | ✅ Decided |
 | 2026-07-03 | **Move tokens → "Set tokens destination (post-migration)".** Functional node dropdowns, build tags after each label, one header row (no repeated labels), no default row, right-aligned "+ Move Token". "Not found on target" uses a ban icon. | ✅ Decided |
 | 2026-07-03 | **Migration Configuration layout:** card title + Readiness filter + footer CTA are pinned; the process list scrolls inside its own region (page itself doesn't scroll). | ✅ Decided |
+| 2026-07-03 | **Readiness filter reacts to live counts.** A chip with count 0 is disabled (dashed/greyed, non-clickable). If the active filter's bucket empties (last process in it just resolved), the filter auto-clears so the resolved card stays visible instead of dropping into an empty state. | ✅ Decided |
+| 2026-07-03 | **Bulk Migration Summary redesign → two-card layout (final).** Grey collapsible cards: caret · title + build-version pill · right-aligned `N processes`; rows under a left rail. **Migrate to {tgt}** (expanded, icon+name only) and **Remain on {src}** (collapsed, icon+name+fate description grouping the left + terminated processes — "Remain on" not "Leave on" since it includes terminated processes). Names/counts sourced from the Configuration page (`genMigSummary` ← `MIG_CONFIG_PROCESSES`). 32px between title/body/CTA. Warning → *"Once started, the migration cannot be stopped or canceled."* Supersedes the three-card badge version explored earlier the same day. | ✅ Decided |
 
 ## Open questions
 
