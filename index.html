@@ -198,6 +198,7 @@
   .dd-item[data-tooltip]:hover::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);background:#1f2733;color:#fff;padding:5px 10px;border-radius:6px;font-size:11.5px;white-space:nowrap;z-index:200;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
   .info-icon{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1.5px solid #6b7280;font-size:10px;color:#6b7280;cursor:default;font-style:normal;font-weight:600;margin-left:4px;vertical-align:middle;position:relative}
   .info-icon[data-tooltip]:hover::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% + 7px);transform:translateX(-50%);background:#1f2733;color:#fff;padding:5px 10px;border-radius:6px;font-size:11.5px;white-space:nowrap;z-index:200;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+  .info-icon.wrap[data-tooltip]:hover::after{white-space:normal;width:260px;text-align:left;line-height:1.45;font-weight:400}
   .toggle-row{display:flex;align-items:center;gap:11px;margin-top:22px}
   .switch{width:38px;height:22px;border-radius:999px;background:#cdd4dd;position:relative;transition:background .15s;border:0;flex:0 0 auto}
   .switch.on{background:var(--blue)}
@@ -321,6 +322,7 @@
   .mig-chev{display:inline-flex;color:#8c98a8;transition:transform .15s}
   .mig-chev.open{transform:rotate(0deg)}
   .mig-chev.closed{transform:rotate(-90deg)}
+  .mig-subgroup{display:flex;align-items:center;font-size:11.5px;font-weight:700;color:#8c98a8;letter-spacing:.03em;text-transform:uppercase;margin:14px 0 4px}
   .mig-proc-row{display:flex;align-items:center;justify-content:space-between;padding:10px 4px 10px 22px;border-bottom:1px solid var(--border-2);font-size:13px;gap:12px}
   .mig-proc-row:last-child{border-bottom:0}
   .mig-proc-name{display:flex;align-items:center;gap:8px;font-weight:500;color:#222b38;min-width:0}
@@ -414,6 +416,24 @@
   .mig-radio-opt .rd{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45}
   .doclink{color:var(--blue);cursor:pointer}
   .doclink:hover{text-decoration:underline}
+  /* Node mapping vs Move tokens redesign */
+  .mig-framing{font-size:12.5px;color:#546070;line-height:1.55;background:#f7f8fa;border:1px solid var(--border-2);border-radius:9px;padding:10px 13px;margin:8px 0 4px}
+  .mig-framing .mig-link-btn{margin-left:6px}
+  .mig-link-btn{border:0;background:transparent;color:var(--blue);font-weight:600;font-size:12.5px;padding:0;cursor:pointer}
+  .mig-link-btn:hover{text-decoration:underline}
+  .mig-diff-box{font-size:12.5px;color:#3c4654;line-height:1.5;background:#eef4ff;border:1px solid #d3e0fb;border-radius:9px;padding:11px 13px;margin:8px 0 4px}
+  .mig-section-head{display:flex;align-items:center;gap:10px;margin:20px 0 4px;flex-wrap:wrap}
+  .map-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 11px;font-size:11.5px;font-weight:600;white-space:nowrap}
+  .map-chip svg{width:14px;height:14px}
+  .map-chip.ok{background:#e7f6ee;color:#1f7a4d}
+  .map-chip.warn{background:#fdf7e6;color:#a9750f}
+  .map-chip.neutral{background:#eef0f3;color:#5b6573}
+  .mig-map-empty{font-size:12.5px;color:#8c98a8;padding:3px 0 2px}
+  .mig-unmatched{border:1px solid #f0d9ad;background:#fffdf7;border-radius:9px;padding:11px 12px;margin-bottom:10px}
+  .mig-unmatched-hint{display:flex;gap:7px;align-items:flex-start;font-size:12px;color:#8a6a16;line-height:1.45;margin-top:9px}
+  .mig-unmatched-hint svg{width:15px;height:15px;flex-shrink:0;color:#c99a2e;margin-top:1px}
+  .mig-token-empty{font-size:12px;color:#9aa4b2;font-style:italic;line-height:1.5;padding:2px 0}
+  .mig-token-helper{font-size:11.5px;color:#8c98a8;margin:3px 0 0}
 </style>
 </head>
 <body>
@@ -495,6 +515,8 @@ const I = {
   token:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m8 3 4 8 5-5 5 15H2L7 11Z"/></svg>,
   trash:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
   caret:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>,
+  errCircle:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4.5"/><path d="M12 16h.01"/></svg>,
+  ban:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>,
   filter:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></svg>,
 };
 
@@ -523,8 +545,9 @@ const BUILDS = [ { tag:'1.6.2' }, { tag:'1.6.1' }, { tag:'1.1.6' }, { tag:'1.1.2
 /* --- Corrective Actions mock data --- */
 const MIGRATION_PROCESS_MS = 8000;
 const MIGRATION_BUILDS = ['3.7', '3.8', '3.9', '3.9.1', '3.10'];
-// Mock: which builds have at least one running (active/incident) instance
-const BUILDS_WITH_INSTANCES = new Set(['3.8', '3.9', '3.9.1']);
+// Mock: which builds have at least one running (active/incident) instance.
+// 3.9 (the 3rd option) has none — selecting it surfaces the inline error.
+const BUILDS_WITH_INSTANCES = new Set(['3.7', '3.8', '3.9.1', '3.10']);
 const ALL_BUILDS_EMPTY = MIGRATION_BUILDS.every(b => !BUILDS_WITH_INSTANCES.has(b));
 const INITIAL_OPS = [
   { id:'e4d7d1a1', opType:'Migration Bulk', srcBuild:'3.9', tgtBuild:'3.9.1', status:'In Progress',  updatedAt:'07 Oct 2025, 11:40 PM' },
@@ -546,24 +569,35 @@ const genMigSummary = () => ({
 const MIG_STATUS = {
   ready:    { label:'Ready',               color:'#1f7a4d', bg:'#e7f6ee', icon:'check' },
   mapping:  { label:'Need node mapping',   color:'#a9750f', bg:'#fdf7e6', icon:'warn'  },
-  notfound: { label:'Not found on target', color:'#c2392e', bg:'#fdeceb', icon:'x'     },
+  notfound: { label:'Not found on target', color:'#c2392e', bg:'#fdeceb', icon:'ban'   },
 };
+// status → readiness pill (ready / mapping / notfound).
+// mappingState → node-mapping section detail: 'unchanged' | 'auto' | 'attention'.
+// nodeMap rows: { from, fromIcon, to, matched, reason }.  moveTokens: node-level { blockedNode, resumeNode }.
 const MIG_CONFIG_PROCESSES = [
   { id:'property_details', name:'Property_details', badge:'mastercopy',  badgeIcon:'box',    status:'ready',
-    moveTokens:[{ from:'Receive_Message_07', to:'User_Task_004' }] },
-  { id:'mortgage_process', name:'Mortgage_Process', badge:'Local',       badgeIcon:'folder', status:'mapping',
+    mappingState:'unchanged',
+    moveTokens:[] },
+  { id:'client_profile',   name:'Client_Profile',   badge:'client_data', badgeIcon:'box',    status:'ready',
+    mappingState:'auto',
     nodeMap:[
-      { from:'User_Task_001',       fromIcon:'proc'  },
+      { from:'User_Task_001',      fromIcon:'proc',  to:'User_Task_001',      matched:true },
+      { from:'Receive_Message_02', fromIcon:'token', to:'Receive_Message_02', matched:true },
+    ],
+    moveTokens:[] },
+  { id:'mortgage_process', name:'Mortgage_Process', badge:'Local',       badgeIcon:'folder', status:'mapping',
+    mappingState:'attention',
+    nodeMap:[
       { from:'Receive_Message_06',  fromIcon:'token' },
+      { from:'User_Task_003',       fromIcon:'proc' },
       { from:'Parallel_Gateway_001',fromIcon:'control' },
     ],
-    moveTokens:[{ from:'Receive_Message_07', to:'User_Task_004' }] },
-  { id:'client_profile',   name:'Client_Profile',   badge:'client_data', badgeIcon:'box',    status:'mapping',
-    nodeMap:[{ from:'User_Task_001', fromIcon:'proc' }],
     moveTokens:[] },
   { id:'process_1',        name:'process_1',        badge:'Local',       badgeIcon:'folder', status:'notfound' },
   { id:'process_2',        name:'process_2',        badge:'Local',       badgeIcon:'folder', status:'notfound' },
 ];
+const MOVE_TOKEN_NODES = ['User_Task_001','Receive_Message_06','Parallel_Gateway_001','Receive_Message_07','User_Task_004','Send_Task_02','Service_Task_09','End_Event_01'];
+const MAP_TARGET_NODES = ['last visited node','User_Task_004','Send_Task_02'];   // first option is the fallback
 const hexId = () => Math.random().toString(16).slice(2,10);
 const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
   const r = Math.trunc(Math.random()*16); return (c==='x'?r:(r&0x3|0x8)).toString(16);
@@ -1553,12 +1587,11 @@ function CorrectiveActionsPage({ migrations, onNewMigration, onViewDetail }){
 
 /* ============================ Migration Step 1 — Setup ============================ */
 function MigrationSetupModal({ onClose, onContinue }){
-  const [srcBuild, setSrcBuild] = useState('3.9');
+  const [srcBuild, setSrcBuild] = useState(MIGRATION_BUILDS[0]);   // default to first build (3.7 — has instances)
   const [tgtBuild, setTgtBuild] = useState('3.9.1');
   const [srcOpen, setSrcOpen] = useState(false);
   const [tgtOpen, setTgtOpen] = useState(false);
-  const srcHasInstances = BUILDS_WITH_INSTANCES.has(srcBuild);
-  const canContinue = srcHasInstances && !ALL_BUILDS_EMPTY;
+  const srcError = !BUILDS_WITH_INSTANCES.has(srcBuild);   // no running instances on the selected build
   return (
     <div className="modal-scrim" onClick={onClose}>
       <div className="modal" onClick={e=>e.stopPropagation()}>
@@ -1572,36 +1605,26 @@ function MigrationSetupModal({ onClose, onContinue }){
             <span style={{color:'#e0a324',fontSize:16}}>💡</span>
             <span>Instances running on process definitions that does not exist on the target build can be skipped or moved in <strong>TERMINATED</strong> state and will remain on current build. <strong>Change Source Build Active Policy</strong> in order to prevent new instances to start.</span>
           </div>
-          {ALL_BUILDS_EMPTY && (
-            <div className="infobox" style={{marginBottom:16,background:'#fff5f0',borderColor:'#f0956d',color:'#7a3a1a'}}>
-              <span style={{color:'#e06030',flexShrink:0}}>{I.warn}</span>
-              <span>No builds currently have running instances. Migration requires at least one active or incident process instance.</span>
-            </div>
-          )}
           <div className="mig-fields">
             <div style={{position:'relative'}}>
               <div className="field-label">Source Build <span className="info-icon" data-tooltip="Only active or incident instances can be migrated">i</span></div>
-              <div className="select" onClick={()=>{setSrcOpen(o=>!o);setTgtOpen(false);}}>
-                <span className="build-ver" style={!srcHasInstances?{color:'#b0b8c4'}:{}}>{I.branch2} {srcBuild}</span>{I.chev}
+              <div className="select" style={srcError?{borderColor:'#d6453a'}:undefined} onClick={()=>{setSrcOpen(o=>!o);setTgtOpen(false);}}>
+                <span className="build-ver">{I.branch2} {srcBuild}</span>
+                <span style={{display:'flex',alignItems:'center',gap:8}}>
+                  {srcError && <span style={{color:'#d6453a',display:'inline-flex'}}>{I.errCircle}</span>}
+                  {I.chev}
+                </span>
               </div>
               {srcOpen && (
                 <div className="dd">
-                  {MIGRATION_BUILDS.map(b=>{
-                    const hasInst = BUILDS_WITH_INSTANCES.has(b);
-                    return (
-                      <div
-                        key={b}
-                        className={'dd-item'+(b===srcBuild&&hasInst?' sel':'')+(hasInst?'':' disabled')}
-                        data-tooltip={!hasInst ? 'No running instances on this build' : undefined}
-                        onClick={hasInst ? ()=>{setSrcBuild(b);setSrcOpen(false);} : undefined}
-                      >
-                        <span className="build-ver">{I.branch2} {b}</span>
-                        {!hasInst && <span className="dd-item-no-inst">No instances</span>}
-                      </div>
-                    );
-                  })}
+                  {MIGRATION_BUILDS.map(b=>(
+                    <div key={b} className={'dd-item'+(b===srcBuild?' sel':'')} onClick={()=>{setSrcBuild(b);setSrcOpen(false);}}>
+                      <span className="build-ver">{I.branch2} {b}</span>
+                    </div>
+                  ))}
                 </div>
               )}
+              {srcError && <div style={{color:'#d6453a',fontSize:12.5,marginTop:7}}>No running process instances on this build</div>}
             </div>
             <div>
               <div className="field-label">Target Build</div>
@@ -1618,8 +1641,8 @@ function MigrationSetupModal({ onClose, onContinue }){
             <button className="btn-ghost" onClick={onClose}>Cancel</button>
             <button
               className="btn-blue"
-              onClick={canContinue ? ()=>onContinue(srcBuild,tgtBuild) : undefined}
-              style={!canContinue ? {opacity:0.45,cursor:'not-allowed'} : {}}
+              onClick={srcError ? undefined : ()=>onContinue(srcBuild,tgtBuild)}
+              style={srcError ? {opacity:0.45,cursor:'not-allowed'} : undefined}
             >Continue</button>
           </div>
         </div>
@@ -1631,7 +1654,7 @@ function MigrationSetupModal({ onClose, onContinue }){
 /* ============================ Migration Step 2 — Summary ============================ */
 function MigrationSummaryModal({ src, tgt, onBack, onStart, onClose }){
   const summary = genMigSummary();
-  const [open, setOpen] = useState({migrate:true, terminate:true, leaveOn:true});
+  const [open, setOpen] = useState({migrate:true, notMigrated:false});
   const tog = k => setOpen(p=>({...p,[k]:!p[k]}));
 
   const Group = ({k, label, count, children}) => (
@@ -1669,11 +1692,11 @@ function MigrationSummaryModal({ src, tgt, onBack, onStart, onClose }){
           <Group k="migrate" label={<>Migrate to <span className="build-ver" style={{marginLeft:6}}>{I.hammer} {tgt}</span></>} count={summary.migrateTo.length}>
             {summary.migrateTo.map((p,i)=><PRow key={i} name={p.name} desc={p.desc} icon={p.icon}/>)}
           </Group>
-          <Group k="terminate" label="Terminate running instances" count={summary.terminate.length}>
-            {summary.terminate.map((p,i)=><PRow key={i} name={p.name} desc={p.desc} icon={p.icon}/>)}
-          </Group>
-          <Group k="leaveOn" label={<>Leave on <span className="build-ver" style={{marginLeft:6}}>{I.hammer} {src}</span></>} count={summary.leaveOn.length}>
-            {summary.leaveOn.map((p,i)=><PRow key={i} name={p.name} desc={p.desc} icon={p.icon}/>)}
+          <Group k="notMigrated" label="Not migrated to target build" count={summary.terminate.length + summary.leaveOn.length}>
+            <div className="mig-subgroup">Terminate running instances</div>
+            {summary.terminate.map((p,i)=><PRow key={'t'+i} name={p.name} desc={p.desc} icon={p.icon}/>)}
+            <div className="mig-subgroup">Leave on <span className="build-ver" style={{marginLeft:4}}>{I.hammer} {src}</span></div>
+            {summary.leaveOn.map((p,i)=><PRow key={'l'+i} name={p.name} desc={p.desc} icon={p.icon}/>)}
           </Group>
           <div className="infobox" style={{marginTop:18,background:'#fff5f0',borderColor:'#f0956d',color:'#7a3a1a'}}>
             <span style={{color:'#e06030',flexShrink:0}}>{I.warn}</span>
@@ -1803,6 +1826,147 @@ function InstStatusPill({ status }){
   );
 }
 
+/* ============================ Migration Configuration — process card bodies ============================ */
+function NodeSelect({ icon, label, editable, muted }){
+  return (
+    <div className={'mig-node-sel'+(editable?' editable':'')} style={muted?{color:'#aab2bd'}:undefined}>
+      <span className="nn">{icon?I[icon]:null} {label}</span>
+      {editable ? I.chev : null}
+    </div>
+  );
+}
+function NodeDropdown({ value, placeholder, icon, options, onChange }){
+  const [open, setOpen] = useState(false);
+  const isPlaceholder = !value;
+  return (
+    <div>
+      <div className="mig-node-sel editable" style={isPlaceholder?{color:'#aab2bd'}:undefined} onClick={()=>setOpen(o=>!o)}>
+        <span className="nn">{icon?I[icon]:null} {value || placeholder}</span>
+        {I.chev}
+      </div>
+      {open && (
+        <div className="dd" style={{maxHeight:210,overflowY:'auto'}}>
+          {options.map(o=>(
+            <div key={o} className={'dd-item'+(o===value?' sel':'')} onClick={()=>{onChange(o);setOpen(false);}}>
+              <span className="build-ver">{icon?I[icon]:null} {o}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+function MapTable({ rows, src, tgt }){
+  return (
+    <>
+      <div className="mig-nodemap-row" style={{marginBottom:7}}>
+        <div className="mig-col-head">Current node <span className="bchip">{I.gitBranch} {src}</span></div>
+        <span/>
+        <div className="mig-col-head">New node <span className="bchip">{I.gitBranch} {tgt}</span></div>
+      </div>
+      {rows.map((n,i)=>(
+        <div className="mig-nodemap-row" key={i}>
+          <NodeSelect icon={n.fromIcon} label={n.from} editable/>
+          <span style={{color:'#c2cad4',textAlign:'center'}}>{I.arrowR}</span>
+          <NodeSelect label={n.to || 'last visited node'} editable/>
+        </div>
+      ))}
+    </>
+  );
+}
+function MoveTokensSection({ p, src, tgt, first }){
+  const [tokens, setTokens] = useState(p.moveTokens || []);
+  const add = () => setTokens(t=>[...t, { blockedNode:'', resumeNode:'' }]);
+  const remove = i => setTokens(t=>t.filter((_,idx)=>idx!==i));
+  const setNode = (i, field, val) => setTokens(t=>t.map((row,idx)=>idx===i?{...row,[field]:val}:row));
+  return (
+    <>
+      <div className="mig-section-head" style={{marginTop: first?4:22}}>
+        <span className="mig-sub-label" style={{margin:0}}>Set tokens destination (post-migration)</span>
+        <button className="mig-choose" style={{marginLeft:'auto',padding:0}} onClick={add}>{I.plus} Move Token</button>
+      </div>
+      <div className="mig-sub-desc">If tokens are blocked on a node, move all tokens waiting on it to another node on {tgt} — forward or back — based on your fix.</div>
+      {tokens.length>0 && (
+        <>
+            {/* header row (labels + build tags), shown once */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 26px 1fr 40px',gap:10,marginBottom:7}}>
+              <div className="mig-col-head" style={{textTransform:'none',fontSize:11.5,color:'#5b6573'}}>Blocked on node <span className="bchip">{I.gitBranch} {src}</span></div>
+              <span/>
+              <div className="mig-col-head" style={{textTransform:'none',fontSize:11.5,color:'#5b6573'}}>Resume at node <span className="bchip">{I.gitBranch} {tgt}</span></div>
+              <span/>
+            </div>
+            {tokens.map((t,i)=>(
+              <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 26px 1fr 40px',alignItems:'start',gap:10,marginBottom:8}}>
+                <NodeDropdown value={t.blockedNode} placeholder="Select node" icon="token" options={MOVE_TOKEN_NODES} onChange={(v)=>setNode(i,'blockedNode',v)}/>
+                <span style={{color:'#c2cad4',textAlign:'center',paddingTop:11}}>{I.arrowR}</span>
+                <NodeDropdown value={t.resumeNode} placeholder="Select node" icon="proc" options={MOVE_TOKEN_NODES} onChange={(v)=>setNode(i,'resumeNode',v)}/>
+                <button className="mig-token-trash" style={{marginTop:3}} title="Remove" onClick={()=>remove(i)}>{I.trash}</button>
+              </div>
+            ))}
+            <div className="mig-token-helper">All tokens currently on the selected node will be moved.</div>
+        </>
+      )}
+    </>
+  );
+}
+function NotFoundBody({ p, src, tgt, choice, onChoice }){
+  return (
+    <>
+      <div className="mig-sub-label">Process not found on target build</div>
+      <div className="mig-sub-desc">This process doesn't exist on target build {tgt}, so its running instances can't be migrated. Choose what happens to them.</div>
+      <div className="mig-radio-grp">
+        <div className={'mig-radio-opt'+(choice==='terminate'?' sel':'')} onClick={()=>onChoice('terminate')}>
+          <span className="mig-radio-dot"/>
+          <div><div className="rt">Terminate all running instances</div><div className="rd">Move every instance on this process to TERMINATED state.</div></div>
+        </div>
+        <div className={'mig-radio-opt'+(choice==='leave'?' sel':'')} onClick={()=>onChoice('leave')}>
+          <span className="mig-radio-dot"/>
+          <div><div className="rt">Leave on current build</div><div className="rd">Instances stay on Build {src} untouched and keep running.</div></div>
+        </div>
+      </div>
+    </>
+  );
+}
+function ProcessCardBody({ p, src, tgt, sel, onSel }){
+  const nodeMap = p.nodeMap || [];
+  const unmatched = nodeMap.filter(n=>!n.matched);
+  const needsMapping = p.status==='mapping';             // attention — the diagram differs
+  const unmapped = unmatched.filter((_,i)=>!sel[i]).length;
+  const allMapped = needsMapping && unmapped===0;
+
+  return (
+    <>
+      <div className="mig-section-head" style={{marginTop:16}}>
+        <span className="mig-sub-label" style={{margin:0}}>Map nodes</span>
+        {needsMapping && (allMapped
+          ? <span className="map-chip ok">{I.check} All nodes mapped</span>
+          : <span className="map-chip warn">{I.warn} {unmapped} node{unmapped!==1?'s':''} need{unmapped===1?'s':''} your attention</span>)}
+      </div>
+      {needsMapping ? (
+        <>
+          {!allMapped && <div className="mig-unmatched-hint" style={{marginTop:5,marginBottom:12}}>{I.warn}<span>These nodes no longer exist on {tgt}. If a node was recreated, its ID changed so it can't match automatically — pick the new node, or it falls back to the last visited node.</span></div>}
+          <div className="mig-nodemap-row" style={{margin:'8px 0 7px'}}>
+            <div className="mig-col-head" style={{textTransform:'none',fontSize:11.5,color:'#5b6573'}}>Current node <span className="bchip">{I.gitBranch} {src}</span></div>
+            <span/>
+            <div className="mig-col-head" style={{textTransform:'none',fontSize:11.5,color:'#5b6573'}}>New node <span className="bchip">{I.gitBranch} {tgt}</span></div>
+          </div>
+          {unmatched.map((n,i)=>(
+            <div className="mig-nodemap-row" key={i} style={{alignItems:'start',marginBottom:8}}>
+              <NodeSelect icon={n.fromIcon} label={n.from} editable/>
+              <span style={{color:'#c2cad4',textAlign:'center',paddingTop:11}}>{I.arrowR}</span>
+              <NodeDropdown value={sel[i]||''} placeholder="Select new node" options={MAP_TARGET_NODES} onChange={(v)=>onSel(i,v)}/>
+            </div>
+          ))}
+        </>
+      ) : (
+        <div className="mig-map-empty" style={{marginTop:2}}>The process is identical on both builds — nothing to map.</div>
+      )}
+
+      <MoveTokensSection p={p} src={src} tgt={tgt}/>
+    </>
+  );
+}
+
 /* ============================ Migration Step 1.5 — Configuration (full page) ============================ */
 function MigrationConfigPage({ src, tgt, onBack, onCancel, onContinue }){
   const all = MIG_CONFIG_PROCESSES;
@@ -1810,22 +1974,30 @@ function MigrationConfigPage({ src, tgt, onBack, onCancel, onContinue }){
   const [open, setOpen] = useState(() => {
     const o = {}; all.forEach(p=>{ if(p.status!=='ready') o[p.id]=true; }); return o;
   });
-  const [notFound, setNotFound] = useState({});   // no default — explicit choice required
+  const [notFound, setNotFound] = useState({});   // defaults to 'terminate' via choiceOf
+  const [mapSel, setMapSel] = useState({});       // { procId: { nodeIdx: newNode } } — mapping selections
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(null);
   const tog = id => setOpen(p=>({...p,[id]:!p[id]}));
-  const choiceOf = id => notFound[id];
+  const choiceOf = id => notFound[id] || 'terminate';
+  const setSel = (id, idx, val) => setMapSel(m=>({...m, [id]:{...(m[id]||{}), [idx]:val}}));
 
-  const readyN    = all.filter(p=>p.status==='ready').length;
-  const mappingN  = all.filter(p=>p.status==='mapping').length;
+  // A "need mapping" process becomes Ready once every unmatched node has a new node selected.
+  const effStatus = (p) => {
+    if (p.status!=='mapping') return p.status;
+    const unmatched = (p.nodeMap||[]).filter(n=>!n.matched);
+    const sel = mapSel[p.id] || {};
+    return (unmatched.length>0 && unmatched.every((_,i)=>sel[i])) ? 'ready' : 'mapping';
+  };
+
+  const readyN    = all.filter(p=>effStatus(p)==='ready').length;
+  const mappingN  = all.filter(p=>effStatus(p)==='mapping').length;
   const notfoundN = all.filter(p=>p.status==='notfound').length;
   const total = all.length;
   const instCount = 20;
-  const pendingDecisions = all.filter(p=>p.status==='notfound' && !notFound[p.id]).length;
-  const canContinue = pendingDecisions === 0;
 
   const procs = all.filter(p =>
-    (!statusFilter || p.status===statusFilter) &&
+    (!statusFilter || effStatus(p)===statusFilter) &&
     (!search || p.name.toLowerCase().includes(search.toLowerCase()))
   );
   const READY_STATS = [
@@ -1834,38 +2006,8 @@ function MigrationConfigPage({ src, tgt, onBack, onCancel, onContinue }){
     { label:'Not found on target', key:'notfound', n:notfoundN, dot:'#d6453a', bg:'#fdeceb' },
   ];
 
-  const NodeSel = ({icon, label, editable}) => (
-    <div className={'mig-node-sel'+(editable?' editable':'')}>
-      <span className="nn">{icon?I[icon]:null} {label}</span>
-      {editable ? I.chev : null}
-    </div>
-  );
-  const MoveTokens = ({p}) => (
-    <>
-      <div className="mig-sub-label">Move tokens</div>
-      <div className="mig-sub-desc">
-        Select current node and target node and move all running tokens from one node to another after migration on target build. <span className="info-icon" data-tooltip="Tokens waiting on the source node are moved to the chosen target node after migration">i</span>
-      </div>
-      {p.moveTokens.map((t,i)=>(
-        <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 26px 1fr 40px',alignItems:'end',gap:10,marginBottom:6}}>
-          <div>
-            <div className="mig-col-head" style={{textTransform:'none',fontSize:11.5,color:'#5b6573'}}>Current Node</div>
-            <NodeSel icon="token" label={t.from} editable/>
-          </div>
-          <span style={{color:'#c2cad4',textAlign:'center',paddingBottom:10}}>{I.arrowR}</span>
-          <div>
-            <div className="mig-col-head" style={{textTransform:'none',fontSize:11.5,color:'#5b6573'}}>Target Node</div>
-            <NodeSel icon="proc" label={t.to} editable/>
-          </div>
-          <button className="mig-token-trash" title="Remove">{I.trash}</button>
-        </div>
-      ))}
-      <button className="mig-choose">{I.plus} Choose Node</button>
-    </>
-  );
-
   return (
-    <div style={{padding:'24px 28px',flex:1,overflowY:'auto',minHeight:0}}>
+    <div style={{padding:'24px 28px',height:'100%',display:'flex',flexDirection:'column',minHeight:0}}>
       {/* Breadcrumb */}
       <div className="mig-detail-breadcrumb">
         <button className="back-btn" onClick={onBack}>{I.arrowL} Process Instances</button>
@@ -1878,8 +2020,8 @@ function MigrationConfigPage({ src, tgt, onBack, onCancel, onContinue }){
         <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',padding:'24px 28px',gap:24,flexWrap:'wrap'}}>
           <div style={{flex:1,minWidth:280}}>
             <h2 style={{fontSize:20,fontWeight:700,color:'#1f2733',margin:'0 0 8px 0'}}>Migration Configuration</h2>
-            <p style={{margin:0,color:'var(--muted)',fontSize:13.5,lineHeight:1.55,maxWidth:560}}>
-              Review how each process and its running instances will move from the source build to the target build. Nothing runs until you start the operation.
+            <p style={{margin:0,color:'var(--muted)',fontSize:12.5,lineHeight:1.5,maxWidth:600}}>
+              Define how active process instances will move from the source build to the target build. For guidance, check <span className="doclink">documentation</span>. No changes are applied until you start the corrective action.
             </p>
           </div>
           <div className="mig-build-row" style={{flexShrink:0}}>
@@ -1897,14 +2039,14 @@ function MigrationConfigPage({ src, tgt, onBack, onCancel, onContinue }){
       </div>
 
       {/* Processes card */}
-      <div className="card" style={{padding:0,overflow:'hidden'}}>
+      <div className="card" style={{padding:0,overflow:'hidden',flex:1,minHeight:0,display:'flex',flexDirection:'column'}}>
         <div className="inst-table-head">
           <div>
             <div style={{marginBottom:4}}>
               <span style={{fontWeight:700,fontSize:15,color:'#1f2733'}}>Processes with running instances</span>
             </div>
             <div style={{fontSize:12.5,color:'var(--muted)',lineHeight:1.5,maxWidth:620}}>
-              Below are the processes with running instances on the source build. Check the node mapping and the destination of active tokens. <span className="doclink">Review the documentation</span> for limitations and how to monitor an operation.
+              Review node mapping and set where active tokens should be placed after migration.
             </div>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -1924,7 +2066,7 @@ function MigrationConfigPage({ src, tgt, onBack, onCancel, onContinue }){
         <div style={{padding:'16px 22px',borderBottom:'1px solid var(--border)',background:'#fafbfc'}}>
           <div className="outcome-label" style={{marginBottom:8}}>
             <span>Readiness</span>
-            <span className="outcome-total"><b>{total}</b> processes&nbsp;·&nbsp;~{instCount} root instances <span className="info-icon" data-tooltip="Root instances are top-level process instances; child / subprocess instances are migrated together with their parent.">i</span></span>
+            <span className="outcome-total"><b>{total}</b> processes&nbsp;·&nbsp;{instCount} root instances <span className="info-icon" data-tooltip="Root instances are top-level process instances; child / subprocess instances are migrated together with their parent.">i</span></span>
           </div>
           <div className="outcome-bar" style={{marginBottom:12}}>
             <div style={{width:(readyN/total*100)+'%',background:'#1f7a4d'}}/>
@@ -1950,74 +2092,27 @@ function MigrationConfigPage({ src, tgt, onBack, onCancel, onContinue }){
         </div>
 
         {/* Process list */}
-        <div style={{padding:'16px 22px 20px'}}>
+        <div style={{padding:'16px 22px 20px',flex:1,minHeight:0,overflowY:'auto'}}>
         {procs.length===0 && (
           <div style={{padding:'22px 0',textAlign:'center',color:'var(--muted)',fontSize:13}}>No processes match the current filter.</div>
         )}
         {procs.map(p=>{
-          const st = MIG_STATUS[p.status];
+          const st = MIG_STATUS[effStatus(p)];
           const isOpen = !!open[p.id];
-          const undecided = p.status==='notfound' && !notFound[p.id];
           return (
             <div className="mig-proc-card" key={p.id}>
               <div className="mig-proc-head" onClick={()=>tog(p.id)}>
                 <span style={{fontWeight:600,fontSize:14,color:'#1f2733'}}>{p.name}</span>
                 <span className="mig-pbadge">{p.badgeIcon==='box'?I.box:I.folder} {p.badge}</span>
                 <span style={{flex:1}}/>
-                {undecided && <span className="mig-needs-decision">Needs a decision</span>}
                 <span className="mig-status-pill" style={{background:st.bg,color:st.color}}>{I[st.icon]} {st.label}</span>
                 <span className={'pchev'+(isOpen?' open':'')}>{I.chev}</span>
               </div>
               {isOpen && (
                 <div className="mig-proc-body">
-                  {p.status==='ready' && (
-                    <>
-                      <div className="mig-sub-label">Node mapping between builds</div>
-                      <div className="mig-sub-desc" style={{display:'flex',alignItems:'center',gap:6,color:'#1f7a4d',marginBottom:4}}>
-                        {I.check} All nodes mapped <span className="info-icon" data-tooltip="Every node in the source process has a matching node on the target build">i</span>
-                      </div>
-                      <MoveTokens p={p}/>
-                    </>
-                  )}
-                  {p.status==='mapping' && (
-                    <>
-                      <div className="mig-sub-label">Node mapping between builds</div>
-                      <div className="mig-sub-desc">
-                        Some nodes in the process from source build do not exist on target build. Missing nodes will be automatically mapped on the last visited node on the process on target build. <span className="doclink">Review the nodes mapping documentation</span> <span className="info-icon" data-tooltip="Unmapped source nodes fall back to the last visited node on the target">i</span>
-                      </div>
-                      <div className="mig-nodemap-row" style={{marginBottom:7}}>
-                        <div className="mig-col-head">Process Nodes <span className="bchip">{I.gitBranch} {src}</span></div>
-                        <span/>
-                        <div className="mig-col-head">Process Nodes <span className="bchip">{I.gitBranch} {tgt}</span></div>
-                      </div>
-                      {p.nodeMap.map((n,i)=>(
-                        <div className="mig-nodemap-row" key={i}>
-                          <NodeSel icon={n.fromIcon} label={n.from} editable/>
-                          <span style={{color:'#c2cad4',textAlign:'center'}}>{I.arrowR}</span>
-                          <NodeSel label="last visited node" editable/>
-                        </div>
-                      ))}
-                      <MoveTokens p={p}/>
-                    </>
-                  )}
-                  {p.status==='notfound' && (
-                    <>
-                      <div className="mig-sub-label">Process not found on target build</div>
-                      <div className="mig-sub-desc">
-                        This process doesn't exist on target build {tgt}, so its running instances can't be migrated. Choose what happens to them.
-                      </div>
-                      <div className="mig-radio-grp">
-                        <div className={'mig-radio-opt'+(choiceOf(p.id)==='terminate'?' sel':'')} onClick={()=>setNotFound(s=>({...s,[p.id]:'terminate'}))}>
-                          <span className="mig-radio-dot"/>
-                          <div><div className="rt">Terminate all running instances</div><div className="rd">Move every instance on this process to TERMINATED state.</div></div>
-                        </div>
-                        <div className={'mig-radio-opt'+(choiceOf(p.id)==='leave'?' sel':'')} onClick={()=>setNotFound(s=>({...s,[p.id]:'leave'}))}>
-                          <span className="mig-radio-dot"/>
-                          <div><div className="rt">Leave on current build</div><div className="rd">Instances stay on Build {src} untouched and keep running.</div></div>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                  {p.status==='notfound'
+                    ? <NotFoundBody p={p} src={src} tgt={tgt} choice={choiceOf(p.id)} onChoice={(v)=>setNotFound(s=>({...s,[p.id]:v}))}/>
+                    : <ProcessCardBody p={p} src={src} tgt={tgt} sel={mapSel[p.id]||{}} onSel={(idx,val)=>setSel(p.id,idx,val)}/>}
                 </div>
               )}
             </div>
@@ -2027,16 +2122,9 @@ function MigrationConfigPage({ src, tgt, onBack, onCancel, onContinue }){
       </div>
 
       {/* Footer */}
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:18,gap:16,flexWrap:'wrap'}}>
-        <div style={{fontSize:13,display:'flex',alignItems:'center',gap:8,color: pendingDecisions>0 ? '#c2392e' : 'var(--muted)'}}>
-          {pendingDecisions>0
-            ? <><span style={{display:'inline-flex',color:'#c2392e'}}>{I.warn}</span><span><b>{pendingDecisions}</b> process{pendingDecisions!==1?'es':''} need{pendingDecisions===1?'s':''} a decision before you can continue.</span></>
-            : <><span style={{display:'inline-flex',color:'#1f7a4d'}}>{I.check}</span><span>All processes reviewed — ready to continue.</span></>}
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          <button className="btn-ghost" onClick={onCancel}>Cancel</button>
-          <button className="btn-blue" onClick={canContinue?onContinue:undefined} style={!canContinue?{opacity:.45,cursor:'not-allowed'}:{}}>Check Operation Summary {I.arrowR}</button>
-        </div>
+      <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',marginTop:18,gap:10}}>
+        <button className="btn-ghost" onClick={onCancel}>Cancel</button>
+        <button className="btn-blue" onClick={onContinue}>Check Operation Summary {I.arrowR}</button>
       </div>
     </div>
   );

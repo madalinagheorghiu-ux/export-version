@@ -301,6 +301,58 @@ Feed action on a completed migration: "View results" → opens Migration Detail 
 - `migWatchRef` tracks whether the processing modal is still open (mirrors `watchRef` for exports) for toast suppression.
 - `MOCK_INSTANCES` (20 rows, deterministically seeded at page load) is the shared fixture used by all Migration Detail Pages in the prototype.
 
+### 9.4 Node mapping vs Move tokens — clarity redesign
+
+**Product challenge.** On the Migration Configuration page the two controls inside a process card — *Node mapping between builds* and *Move tokens* — look like equal siblings, but they answer completely different questions and have opposite defaults. Users can't tell what each is for or which they must act on.
+
+**The two concepts.**
+
+| | **Node mapping** | **Move tokens** |
+|---|---|---|
+| Perspective | **Process / structural** (design-time) | **Runtime / intent** |
+| Premise | The diagram changed between builds | The user *knows* tokens are blocked on a node |
+| Unit | Node → node correspondence | **All tokens blocked on a chosen node** → target node |
+| Token-aware? | **No** — mapped even if no tokens sit there | **Yes** — the whole point is stuck tokens |
+| Default | Automatic → last visited node | None — opt in |
+| Required? | **Conditional** — only when source and target diagrams differ; identical processes need no mapping | **No** (optional) |
+
+In one line each:
+- **Node mapping = recreate the process on the target so running instances keep a valid path** (structural, token-agnostic, mostly automatic — act only on unmatched nodes).
+- **Move tokens = reposition tokens blocked on a node, by intent** (runtime, node-level bulk, always optional).
+
+The recreated-node exception: if a configurator deletes a node by mistake and recreates it — even with the same name — the new node has a different **node ID**, so it will **not** map automatically. This is the main case where the user must intervene.
+
+**Ordering argument — keep mapping first, re-weight instead of reorder.**
+- **Why mapping stays first (dependency, not preference):** move tokens' "resume at node" target can only be a node that exists on the target build — that node-space is exactly what mapping establishes. Mapping is upstream. Unresolved mapping is also a *silent risk*: if a recreated node fell back to "last visited node" and the user reroutes tokens before noticing, they move tokens relative to a mislabeled node. **Correctness before intent.**
+- **Why it feels like move tokens should win:** mapping is usually automatic (zero effort), while move tokens is the deliberate thing the user came to do. The fix is **prominence, not position** — the checkout pattern: "confirm address" precedes "place order," but the order button is the loud one.
+- **Rejected alternative:** conditional ordering (move tokens first only when mapping is clean). A section that changes position by state is disorienting; stable order + prominence gets the same benefit without the instability.
+
+**Design (state-driven mapping, prominent move tokens).**
+
+*Node mapping* carries a single status chip that escalates, and is only heavy when it must be:
+
+| State | Trigger | Treatment | Copy |
+|---|---|---|---|
+| Nothing to map | Diagrams identical | Collapsed, quiet ✓ | *"No node changes between builds — nothing to map."* |
+| Auto-mapped | Diagrams differ, all matched | Collapsed with "Review mapping" toggle | *"All changed nodes matched automatically."* |
+| Needs attention | Diagrams differ, ≥1 unmatched | Expanded; unmatched rows only (auto-mapped behind "Show auto-mapped") | *"N changed nodes need your attention."* |
+
+- **Node mapping subtitle:** *"Recreate the process on {target} for running instances by mapping each current node to its new node. Unmatched nodes fall back to the last visited node."*
+- **Unmatched row:** reason + manual target picker + fallback note — *"`{node}` no longer exists on {target}. If you recreated it, its node ID changed, so it can't match automatically — pick the new node, or it falls back to the last visited node."*
+- **Move tokens:** **Optional** chip; subtitle *"If tokens are blocked on a node, move all tokens waiting on it to another node on {target} — forward or back — based on your fix."* Columns relabelled **"Blocked on node" → "Resume at node"** with helper *"All tokens currently on this node will be moved."* Default empty state shows a faint example — *"e.g. you corrected a validation task — send tokens blocked before it back to it, or forward past it."* Action: `+ Add token move`.
+- **Framing line** atop the expanded card + a **"What's the difference?"** inline expander with the two-liner.
+- **Prominence rule:** mapping auto/nothing-to-map → collapses to a status line so move tokens becomes the dominant block; mapping needs-attention → it expands and leads.
+
+**Prototype build steps.**
+1. Extend `MIG_CONFIG_PROCESSES` mock: `mappingState: 'unchanged' | 'auto' | 'attention'`, per-node `{ from, to, matched, reason }`, node-level `moveTokens: [{ blockedNode, resumeNode }]`; include one process demonstrating the recreated-node exception.
+2. Add the framing line + "What's the difference?" expander.
+3. Rewrite the node-mapping block: status chip, conditional collapse, unmatched-only rows with the recreated-node hint + manual picker.
+4. Rewrite the move-tokens block: Optional chip, relabel, helper, example empty state.
+5. Apply the prominence/collapse behaviour.
+6. CSS: mapping status-chip variants, "auto" row tag, subgroup labels, expander.
+
+**Out of scope (mocked).** Real diagram-diff detection, actual node IDs / token counts, and backend behaviour are simulated with mock states; the prototype demonstrates the *interaction and framing*, not live mapping logic.
+
 ---
 
 ## 10. UX explorations — where the notification + download live
