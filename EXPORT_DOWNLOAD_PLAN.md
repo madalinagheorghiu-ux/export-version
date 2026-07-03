@@ -238,7 +238,7 @@ Each instance within a completed migration has its own outcome: **Success**, **F
    - ❌ If *all* builds are ineligible, the dropdown alone is not enough — requires an additional callout above the field.
    - **Safeguard:** when every build is ineligible, show a callout above the picker (*"No builds currently have running instances. Migration requires at least one active or incident instance."*) so the user is never left with a fully-disabled dropdown and no explanation.
 
-   > **Status:** ✅ Decided — **Option B implemented.** Mock data: `3.8`, `3.9`, `3.9.1` have running instances; `3.7` and `3.10` do not. Both tooltips use the same styled dark CSS `::after` pseudo-element (not browser-native `title`): the `(i)` icon shows *"Only active or incident instances can be migrated"*; disabled items show *"No running instances on this build"* with an inline *"No instances"* tag for always-visible discoverability. Safeguard: when `ALL_BUILDS_EMPTY` is true, an orange callout appears above the Source Build field. Continue is disabled (opacity + `not-allowed`) while an invalid source is selected.
+   > **Status:** ✅ Decided — **switched to Option A (inline validation) as shipped.** Option B (disabled items) was built first, then replaced: all builds are now freely selectable. The default source is the **first build (`3.7`)**, which has running instances. Selecting a build with no running instances (mock: `3.9`) shows an **inline error** — red border on the select, a red error icon **inside the field** (right of the chevron), and helper text *"No running process instances on this build."* **Continue is disabled** while an errored build is selected and re-enables on a valid one. Rationale for the change: all builds visible/selectable is simpler and matches the requested behaviour; error-prevention is preserved by gating Continue. The `(i)` icon next to "Source Build" keeps the styled tooltip *"Only active or incident instances can be migrated."*
 
 2. **Summary modal (Step 2)**
    - Shows a grouped breakdown of what the migration will do, organised into three collapsible sections:
@@ -327,31 +327,35 @@ The recreated-node exception: if a configurator deletes a node by mistake and re
 - **Why it feels like move tokens should win:** mapping is usually automatic (zero effort), while move tokens is the deliberate thing the user came to do. The fix is **prominence, not position** — the checkout pattern: "confirm address" precedes "place order," but the order button is the loud one.
 - **Rejected alternative:** conditional ordering (move tokens first only when mapping is clean). A section that changes position by state is disorienting; stable order + prominence gets the same benefit without the instability.
 
-**Design (state-driven mapping, prominent move tokens).**
+**Shipped design.** The concepts and ordering rationale above hold; the visual model was simplified during implementation (the framing line, the "What's the difference?" expander, and the "Review/Show auto-mapped" toggles were all removed as clutter). Each process card is expandable and shows two sections in dependency order — **Map nodes** first, then **Set tokens destination** — plus the not-found variant.
 
-*Node mapping* carries a single status chip that escalates, and is only heavy when it must be:
+**Map nodes** (shown for every process that exists on the target):
 
-| State | Trigger | Treatment | Copy |
-|---|---|---|---|
-| Nothing to map | Diagrams identical | Collapsed, quiet ✓ | *"No node changes between builds — nothing to map."* |
-| Auto-mapped | Diagrams differ, all matched | Collapsed with "Review mapping" toggle | *"All changed nodes matched automatically."* |
-| Needs attention | Diagrams differ, ≥1 unmatched | Expanded; unmatched rows only (auto-mapped behind "Show auto-mapped") | *"N changed nodes need your attention."* |
+| Process state | What shows |
+|---|---|
+| **Ready** (identical or auto-mapped) | Just the line *"The process is identical on both builds — nothing to map."* No table, no toggles. |
+| **Needs attention** (≥1 unmatched node) | Amber chip *"N nodes need your attention"*; a **warning hint under the title** — *"These nodes no longer exist on {target}. If a node was recreated, its ID changed so it can't match automatically — pick the new node, or it falls back to the last visited node."*; then `Current node [src] → New node [tgt]` rows. |
 
-- **Node mapping subtitle:** *"Recreate the process on {target} for running instances by mapping each current node to its new node. Unmatched nodes fall back to the last visited node."*
-- **Unmatched row:** reason + manual target picker + fallback note — *"`{node}` no longer exists on {target}. If you recreated it, its node ID changed, so it can't match automatically — pick the new node, or it falls back to the last visited node."*
-- **Move tokens:** **Optional** chip; subtitle *"If tokens are blocked on a node, move all tokens waiting on it to another node on {target} — forward or back — based on your fix."* Columns relabelled **"Blocked on node" → "Resume at node"** with helper *"All tokens currently on this node will be moved."* Default empty state shows a faint example — *"e.g. you corrected a validation task — send tokens blocked before it back to it, or forward past it."* Action: `+ Add token move`.
-- **Framing line** atop the expanded card + a **"What's the difference?"** inline expander with the two-liner.
-- **Prominence rule:** mapping auto/nothing-to-map → collapses to a status line so move tokens becomes the dominant block; mapping needs-attention → it expands and leads.
+- The **New node** column is a **functional dropdown**, **empty by default** (`Select new node`); its **first option is `last visited node`** (the fallback), followed by target nodes.
+- Column headers carry build tags (`Current node ⌥ {src}` / `New node ⌥ {tgt}`) in the same small style used by Set tokens destination.
+- **Self-resolving status:** once every unmatched node has a New node selected, the chip flips to green *"All nodes mapped"*, the hint disappears, the process's **status pill flips to Ready**, and the **Readiness card counts + bar update live**.
 
-**Prototype build steps.**
-1. Extend `MIG_CONFIG_PROCESSES` mock: `mappingState: 'unchanged' | 'auto' | 'attention'`, per-node `{ from, to, matched, reason }`, node-level `moveTokens: [{ blockedNode, resumeNode }]`; include one process demonstrating the recreated-node exception.
-2. Add the framing line + "What's the difference?" expander.
-3. Rewrite the node-mapping block: status chip, conditional collapse, unmatched-only rows with the recreated-node hint + manual picker.
-4. Rewrite the move-tokens block: Optional chip, relabel, helper, example empty state.
-5. Apply the prominence/collapse behaviour.
-6. CSS: mapping status-chip variants, "auto" row tag, subgroup labels, expander.
+**Set tokens destination (post-migration)** (shown for every on-target process; no "Optional" chip, no info tooltip):
+- Subtitle: *"If tokens are blocked on a node, move all tokens waiting on it to another node on {target} — forward or back — based on your fix."*
+- **No row by default.** `+ Move Token` (right-aligned in the section title row) adds a row.
+- Rows use **functional node dropdowns**; a **single header row** shows `Blocked on node [src] → Resume at node [tgt]` with build tags (labels are **not** repeated per row); each row has a remove (trash) control.
+- Helper under the rows: *"All tokens currently on the selected node will be moved."*
 
-**Out of scope (mocked).** Real diagram-diff detection, actual node IDs / token counts, and backend behaviour are simulated with mock states; the prototype demonstrates the *interaction and framing*, not live mapping logic.
+**Not found on target** (process missing on the target build): a **ban icon** on the status pill, the line *"This process doesn't exist on target build {target}, so its running instances can't be migrated…"*, and a radio choice — **Terminate all running instances** (preselected) / **Leave on current build**.
+
+**Layout.** The card title + Readiness filter zone are pinned at the top and the footer CTA (Cancel · Check Operation Summary) is pinned at the bottom; the **process list scrolls inside** its own region (the page itself does not scroll).
+
+**Prototype implementation notes.**
+- `MIG_CONFIG_PROCESSES`: each process has `status` (`ready` / `mapping` / `notfound`), `mappingState` (`unchanged` / `auto` / `attention`), `nodeMap: [{ from, fromIcon, matched }]`, and node-level `moveTokens: [{ blockedNode, resumeNode }]`.
+- `MAP_TARGET_NODES` = `['last visited node', …]` (fallback first); `MOVE_TOKEN_NODES` = node pool for the token dropdowns.
+- Mapping selections are lifted to the page (`mapSel` keyed by process + node index); `effStatus(p)` returns `ready` once all unmatched nodes are selected, driving both the pill and the Readiness counts.
+
+**Out of scope (mocked).** Real diagram-diff detection, actual node IDs / token counts, and backend behaviour are simulated; the prototype demonstrates the *interaction and framing*, not live mapping logic.
 
 ---
 
@@ -435,7 +439,11 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 | 2026-06-30 | **Outcome zone lives inside the Instances card**, between the card header and the table — not in the summary card. Summary card is identity-only (title, meta, builds). Instances card has three zones: header · outcome · table. | ✅ Decided |
 | 2026-06-30 | **Status filter on instances table.** Clicking Success / Failed / Terminated in the Outcome zone filters the table to that status. Active chip gets coloured background highlight. Click again to clear. No badge shown in the "Instances" heading — the highlighted chip is the only filter indicator. Resets page to 1. | ✅ Decided |
 | 2026-06-30 | **Migrations surface in the unified bell feed** alongside exports — proving the "extensible by type" design. Feed item action "View results" → navigates to Runtime → Corrective Actions + opens Migration Detail Page. | ✅ Decided |
-| 2026-06-30 | **Source build with no running instances (Setup modal) — Option B chosen.** Builds with no running instances are shown in the Source Build dropdown but grayed out and non-selectable; hovering shows a styled tooltip ("No running instances on this build") + always-visible "No instances" inline tag. The `(i)` icon next to "Source Build" uses the same styled tooltip ("Only active or incident instances can be migrated"). Safeguard: if all builds are empty, an orange callout replaces per-item tooltips as the primary signal. Continue is disabled while an ineligible source is selected. | ✅ Decided |
+| 2026-06-30 | **Source build with no running instances (Setup modal) — Option B chosen.** Builds with no running instances are shown in the Source Build dropdown but grayed out and non-selectable; hovering shows a styled tooltip ("No running instances on this build") + always-visible "No instances" inline tag. The `(i)` icon next to "Source Build" uses the same styled tooltip ("Only active or incident instances can be migrated"). Safeguard: if all builds are empty, an orange callout replaces per-item tooltips as the primary signal. Continue is disabled while an ineligible source is selected. | ⛔ Superseded (see 2026-07-03) |
+| 2026-07-03 | **Source build validation switched to Option A.** All builds selectable; default = first build (`3.7`, has instances). Selecting a no-instance build (`3.9`) shows an inline error: red border + error icon **inside the field** + helper "No running process instances on this build". **Continue is disabled** until a valid build is chosen. Replaces the Option B disabled-items approach. | ✅ Decided |
+| 2026-07-03 | **Node mapping "Map nodes" is state-driven and self-resolving.** Ready processes show *"nothing to map"*; attention processes show unmatched-node rows with a warning hint under the title + **New-node dropdowns** (first option "last visited node", empty by default). "Review/Show auto-mapped" toggles were removed. **Mapping every unmatched node flips the process to Ready and updates the Readiness card counts/bar live.** | ✅ Decided |
+| 2026-07-03 | **Move tokens → "Set tokens destination (post-migration)".** Functional node dropdowns, build tags after each label, one header row (no repeated labels), no default row, right-aligned "+ Move Token". "Not found on target" uses a ban icon. | ✅ Decided |
+| 2026-07-03 | **Migration Configuration layout:** card title + Readiness filter + footer CTA are pinned; the process list scrolls inside its own region (page itself doesn't scroll). | ✅ Decided |
 
 ## Open questions
 
@@ -444,4 +452,4 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 - **Color-bar semantics** — if/when color coding returns: severity (fully excluded vs. partially affected) vs. resource category vs. decorative; add a legend if meaningful.
 - **Artifact TTL** — exact retention window (24h / 48h / 72h).
 - **Exclusion report export** — include CSV/JSON download in v1 or later?
-- ~~**Bulk Migration — source build with no running instances**~~ — resolved. Option B implemented. See §9.1 and Decision Log.
+- ~~**Bulk Migration — source build with no running instances**~~ — resolved. Shipped with **Option A** (all builds selectable + inline error + Continue gated); Option B was built first then replaced. See §9.1 and Decision Log.
