@@ -1011,7 +1011,7 @@ function Header({ view, onSwitchView, unread, onBranch, onBell, tip, setTip, env
 }
 
 /* ============================ Sidebar ============================ */
-const SECTION_ICONS = { rocket:I.rocket, shield:I.shield, monitor:I.monitor, control:I.control };
+const SECTION_ICONS = { rocket:I.rocket, shield:I.shield, monitor:I.monitor, control:I.control, lifebuoy:I.lifebuoy };
 function Sidebar({ nav, page, setPage }){
   const icon = (ic) => SECTION_ICONS[ic] || navIcon();
   return (
