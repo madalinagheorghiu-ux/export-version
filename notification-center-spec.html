@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Notification Center — Product Specs · FlowX</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#fff; --ink:#1c2430; --muted:#5b6675; --faint:#8a94a3;
+    --border:#e6e8ec; --border-2:#eef0f3; --blue:#1f6feb; --blue-soft:#eaf1fe;
+    --green:#2e9e6b; --amber:#c2921f; --amber-bg:#fdf7e6; --red:#d6453a;
+    --code-bg:#f2f4f7; --shadow:0 1px 2px rgba(16,24,40,.05);
+    --maxw:920px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f1420; --panel:#161c28; --ink:#e7ecf2; --muted:#9aa6b6; --faint:#6f7c8d;
+      --border:#26303f; --border-2:#1f2836; --blue-soft:#152742; --code-bg:#1b2331; --amber-bg:#2a2413; --shadow:none; }
+  }
+  :root[data-theme="dark"]{ --bg:#0f1420; --panel:#161c28; --ink:#e7ecf2; --muted:#9aa6b6; --faint:#6f7c8d;
+    --border:#26303f; --border-2:#1f2836; --blue-soft:#152742; --code-bg:#1b2331; --amber-bg:#2a2413; --shadow:none; }
+  :root[data-theme="light"]{ --bg:#f6f7f9; --panel:#fff; --ink:#1c2430; --muted:#5b6675; --faint:#8a94a3;
+    --border:#e6e8ec; --border-2:#eef0f3; --blue-soft:#eaf1fe; --code-bg:#f2f4f7; --amber-bg:#fdf7e6; }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:48px 24px 96px}
+
+  header.doc{border-bottom:1px solid var(--border);padding-bottom:26px;margin-bottom:10px}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--blue)}
+  h1{font-size:32px;line-height:1.2;margin:10px 0 8px;letter-spacing:-.02em}
+  .lede{color:var(--muted);font-size:16px;max-width:66ch;margin:0}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .tag{font-size:12px;font-weight:600;background:var(--blue-soft);color:var(--blue);border-radius:999px;padding:4px 11px}
+  .tag.n{background:var(--code-bg);color:var(--muted)}
+
+  h2{font-size:22px;margin:46px 0 6px;letter-spacing:-.01em;scroll-margin-top:20px}
+  h2 .num{color:var(--faint);font-weight:600;margin-right:8px}
+  h3{font-size:16px;margin:26px 0 6px}
+  p{margin:10px 0}
+  a{color:var(--blue)}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  strong{font-weight:650}
+  code{background:var(--code-bg);border-radius:5px;padding:1px 6px;font-size:.86em;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  hr{border:0;border-top:1px solid var(--border);margin:40px 0}
+
+  .callout{border:1px solid var(--border);border-left:3px solid var(--blue);background:var(--panel);
+    border-radius:10px;padding:14px 16px;margin:18px 0;box-shadow:var(--shadow)}
+  .callout.amber{border-left-color:var(--amber)}
+  .callout .k{font-weight:700;font-size:13px;letter-spacing:.02em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
+
+  .tablewrap{overflow-x:auto;margin:16px 0;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px;background:var(--panel)}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border-2);vertical-align:top}
+  thead th{background:var(--code-bg);font-size:12px;letter-spacing:.03em;color:var(--muted);font-weight:700;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  td.t{font-weight:600;white-space:nowrap}
+  .pill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap}
+  .pill.ok{background:rgba(46,158,107,.14);color:var(--green)}
+  .pill.warn{background:rgba(194,146,31,.16);color:var(--amber)}
+  .pill.err{background:rgba(214,69,58,.14);color:var(--red)}
+  .pill.prog{background:var(--code-bg);color:var(--muted)}
+  .mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.9em}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr}}
+  .card{border:1px solid var(--border);border-radius:12px;padding:16px 18px;background:var(--panel);box-shadow:var(--shadow)}
+  .card h4{margin:0 0 4px;font-size:14.5px}
+  .card p{margin:0;color:var(--muted);font-size:13.5px}
+
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-size:13px;line-height:1.5;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;margin:16px 0}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin:22px 0;box-shadow:var(--shadow)}
+  .toc ol{columns:2;column-gap:28px;margin:6px 0 0;font-size:14px}
+  @media(max-width:680px){.toc ol{columns:1}}
+  .toc a{text-decoration:none;color:var(--ink)}
+  .toc a:hover{color:var(--blue)}
+  .proto-note{font-size:13px;color:var(--faint);margin-top:2px}
+  footer.doc{margin-top:56px;border-top:1px solid var(--border);padding-top:20px;color:var(--faint);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <div class="eyebrow">Product Specs</div>
+  <h1>Notification Center &amp; long-running-process notifications</h1>
+  <p class="lede">The mechanism and surface that tells a user “your thing is ready / done / failed”
+  wherever they are in the FlowX Designer — a single, reusable pattern that already hosts exports,
+  imports, bulk migration, bulk user import and KB downloads.</p>
+  <div class="meta">
+    <span class="tag">FlowX Designer</span>
+    <span class="tag n">Status: prototype-backed</span>
+    <span class="tag n">Last updated: 2026-08-03</span>
+    <span class="tag n">Owner: Product / Design</span>
+  </div>
+</header>
+
+<div class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#goals">Problem &amp; goals</a></li>
+    <li><a href="#model">The model: job → statuses</a></li>
+    <li><a href="#types">Operation types &amp; titles</a></li>
+    <li><a href="#subtitle">Subtitle &amp; CTA per status</a></li>
+    <li><a href="#anatomy">Center anatomy</a></li>
+    <li><a href="#width">Width &amp; sizing</a></li>
+    <li><a href="#scope">Scope: org vs environment</a></li>
+    <li><a href="#toast">Toast</a></li>
+    <li><a href="#nav">Navigating from a notification</a></li>
+    <li><a href="#failure">Failure handling</a></li>
+    <li><a href="#edge">Edge cases</a></li>
+    <li><a href="#future">Future &amp; open questions</a></li>
+  </ol>
+</div>
+
+<h2 id="goals"><span class="num">1</span>Problem &amp; goals</h2>
+<p>Some operations are <strong>long-running</strong> (an export can take up to ~15&nbsp;min; a bulk
+migration runs seconds-to-minutes). The user must be free to <strong>close the launching modal,
+navigate, refresh, or leave and come back</strong> — and still be told, reliably, when the operation
+changes state. A toast alone isn’t enough: it’s ephemeral and easily missed.</p>
+<div class="grid2">
+  <div class="card"><h4>Reach the user anywhere</h4><p>The indicator lives in the always-mounted app shell, not in the operation’s modal.</p></div>
+  <div class="card"><h4>Never lose a notification</h4><p>Persisted server-side, pushed in real time, pulled on reconnect.</p></div>
+  <div class="card"><h4>Actionable</h4><p>Each item carries the next step — download / view / review / retry — not just a status.</p></div>
+  <div class="card"><h4>Extensible by type</h4><p>One feed, many operation kinds, without a redesign per kind.</p></div>
+  <div class="card"><h4>Unambiguous context</h4><p>Every notification says <em>where</em> it belongs (environment / workspace / project, or organization).</p></div>
+  <div class="card"><h4>No dedicated page</h4><p>The panel is the home; per-item detail is surfaced in the operation’s own modals.</p></div>
+</div>
+
+<h2 id="model"><span class="num">2</span>The model: an async job whose state changes are the notifications</h2>
+<p>Every operation is modelled as a <strong>server-side job with a lifecycle</strong>. The notification
+is the messenger that announces a transition; the follow-up action (download / view / review / retry)
+is a separate interaction against the job’s result.</p>
+<pre>REQUESTED ──► IN&nbsp;PROGRESS ──► SUCCESS
+                    │        └──► WARNING   (done-with-caveats, or needs-review-to-proceed)
+                    └────────────► FAILED   (retryable)</pre>
+<p>Beyond <em>in&nbsp;progress</em>, every terminal notification resolves to exactly one of three
+<strong>statuses</strong>, which drive the icon, colour and CTA:</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Status</th><th>Meaning</th><th>Icon / colour</th><th>Default CTA</th></tr></thead>
+  <tbody>
+    <tr><td class="t"><span class="pill prog">In&nbsp;progress</span></td><td>Running; not done yet.</td><td>Spinner · neutral</td><td>—</td></tr>
+    <tr><td class="t"><span class="pill ok">Success</span></td><td>Completed cleanly.</td><td>Check · green</td><td><strong>Download</strong> or <strong>View</strong></td></tr>
+    <tr><td class="t"><span class="pill warn">Warning</span></td><td>Two flavours — <em>completed with warnings</em>, <em>or</em> not completed yet but can proceed if the user accepts the impact.</td><td>Triangle · amber</td><td><strong>Review</strong> or <strong>View</strong></td></tr>
+    <tr><td class="t"><span class="pill err">Failed</span></td><td>Did not complete; can be retried.</td><td>✕ · red</td><td><strong>Retry</strong></td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="types"><span class="num">3</span>Operation types &amp; notification titles</h2>
+<p>Seven long-running operations ride on this mechanism today. The <strong>naming convention</strong>:</p>
+<ul>
+  <li>Title = <code>{subject} {outcome}</code>. The <strong>subject stays identical across all statuses of a type</strong>; only the outcome word changes, so the same operation reads consistently as it moves success → warning → failed.</li>
+  <li><strong>Counts, versions and names never go in the title</strong> — they belong in the subtitle. The one exception is the <strong>warning count</strong> (it is the point of the warning).</li>
+  <li>Two success verbs by category: operations that <strong>produce a file</strong> → “ready to download”; operations that <strong>apply a change</strong> → past participle (“imported” / “migrated”).</li>
+  <li>Status drives icon + colour + CTA; the title’s outcome word matches the status.</li>
+</ul>
+
+<div class="tablewrap"><table>
+  <thead><tr><th>#</th><th>Operation type</th><th>In&nbsp;progress</th><th><span class="pill ok">Success</span></th><th><span class="pill warn">Warning</span></th><th><span class="pill err">Failed</span></th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td class="t">Export Build</td><td>Preparing build export…</td><td>Build export ready to download</td><td>Build export ready — {N} excluded</td><td>Build export failed</td></tr>
+    <tr><td>2</td><td class="t">Export Project Version</td><td>Preparing version export…</td><td>Version export ready to download</td><td>Version export ready — {N} excluded</td><td>Version export failed</td></tr>
+    <tr><td>3</td><td class="t">Import Build</td><td>Importing build…</td><td>Build imported</td><td>Build import needs review — {N} conflicts</td><td>Build import failed</td></tr>
+    <tr><td>4</td><td class="t">Import Project Version</td><td>Importing version…</td><td>Version imported</td><td>Version import needs review — {N} conflicts</td><td>Version import failed</td></tr>
+    <tr><td>5</td><td class="t">Bulk Import End-Users</td><td>Importing end-users…</td><td>End-users imported</td><td>End-users imported — {N} skipped</td><td>End-user import failed</td></tr>
+    <tr><td>6</td><td class="t">Migrate Instances</td><td>Migrating instances…</td><td>Instances migrated</td><td>Instances migrated — {N} failed</td><td>Instance migration failed</td></tr>
+    <tr><td>7</td><td class="t">Download KB Data Source</td><td>Preparing KB data source…</td><td>KB data source ready to download</td><td>KB data source ready — {N} skipped</td><td>KB data source download failed</td></tr>
+  </tbody>
+</table></div>
+
+<div class="callout amber">
+  <div class="k">The warning status is really two flavours</div>
+  <p style="margin:0">They share the amber colour but differ in <strong>whether the operation finished</strong>, which changes the CTA:</p>
+  <ul style="margin:8px 0 0">
+    <li><strong>W-a · needs review / accept impact</strong> (not finished — proceeds only if the user accepts) → types 1, 2, 3, 4 (and 7). Title: “ready — {N} excluded” / “needs review — {N} conflicts”. <strong>CTA = Review</strong> → then Download / Import.</li>
+    <li><strong>W-b · completed with warnings</strong> (finished, with caveats) → types 5, 6. Title: “…ed — {N} skipped / failed”. <strong>CTA = View</strong> (details).</li>
+  </ul>
+</div>
+
+<h2 id="subtitle"><span class="num">4</span>Subtitle &amp; CTA per status</h2>
+<p>The title carries type + outcome; the <strong>subtitle</strong> carries the specifics (what → where, counts),
+and the <strong>action</strong> carries the next step.</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Status</th><th>Subtitle (specifics)</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td class="t"><span class="pill prog">In&nbsp;progress</span></td><td>what → where</td><td>— (spinner)</td></tr>
+    <tr><td class="t"><span class="pill ok">Success — file</span></td><td class="mono">{source} → {target}</td><td><strong>Download</strong> (with ⬇ icon)</td></tr>
+    <tr><td class="t"><span class="pill ok">Success — applied</span></td><td class="mono">{source} → {target} · {N} items</td><td><strong>View</strong></td></tr>
+    <tr><td class="t"><span class="pill warn">Warning W-a</span></td><td>same as success</td><td><strong>Review</strong></td></tr>
+    <tr><td class="t"><span class="pill warn">Warning W-b</span></td><td class="mono">{source} → {target} · {N} affected</td><td><strong>View</strong></td></tr>
+    <tr><td class="t"><span class="pill err">Failed</span></td><td>short cause; “nothing was applied” if atomic</td><td><strong>Retry</strong></td></tr>
+  </tbody>
+</table></div>
+<div class="callout">
+  <div class="k">CTA styling rule</div>
+  <p style="margin:0">Feed &amp; toast actions are <strong>secondary buttons with blue text</strong>. An <strong>icon
+  appears only when the click downloads immediately</strong> (<code>Download</code> → ⬇). Anything that opens a
+  step first (<code>Review</code>, <code>View</code>, <code>Retry</code>) is text-only — so the icon reliably
+  means “one click = file in hand.”</p>
+</div>
+
+<h2 id="anatomy"><span class="num">5</span>Notification center anatomy</h2>
+<h3>Surface</h3>
+<p>A global <strong>bell</strong> in the dark app-shell header with an <strong>unread badge</strong>, always mounted
+and independent of any operation modal. Clicking it opens a <strong>contextual panel</strong> anchored under the
+bell. Live arrivals also raise a <strong>toast</strong>.</p>
+<h3>Panel layout (top → bottom)</h3>
+<ul>
+  <li><strong>Header</strong> — “Notifications” + <strong>Mark all as read</strong> (a text link; <em>disabled, not hidden,</em> when nothing is unread).</li>
+  <li><strong>Search</strong> + a <strong>filter icon</strong> (§7) — the filter is an occasional control, so it collapses to an icon rather than a persistent row. The icon highlights when a filter is active; single-select, so there’s no filter chip.</li>
+  <li><strong>Feed</strong> — one unified list, grouped by time into <strong>Today / This week / Older</strong>.</li>
+  <li><strong>Footer</strong> — “Notifications are kept for 30 days.”</li>
+</ul>
+<h3>Feed item — two rows</h3>
+<ul>
+  <li><strong>Context row:</strong> environment badge (or organization area) · workspace · project · time. A <strong>mark-as-read ✓</strong> appears on hover in a fixed slot <em>before the time</em>, so timestamps stay column-aligned across read and unread rows alike.</li>
+  <li><strong>Status row:</strong> status glyph · title · subtitle · inline action.</li>
+  <li><strong>Status glyph is deliberately discrete</strong> — a small colour-coded check / warning / ✕, <em>not</em> a filled tile — so a column of them stays calm rather than reading as a traffic light.</li>
+  <li><strong>Unread</strong> is a blue left-accent bar (+ the header/badge count).</li>
+</ul>
+
+<h2 id="width"><span class="num">6</span>Width &amp; sizing</h2>
+<p><strong>Recommended panel width: 420&nbsp;px</strong> (min 380 / max 440, responsive; the panel scrolls internally,
+capped ~ 480&nbsp;px tall).</p>
+<p>Reasoning, benchmarked against contextual notification panels in comparable tools:</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Product</th><th>Surface</th><th>Approx. width</th></tr></thead>
+  <tbody>
+    <tr><td class="t">Jira</td><td>Header dropdown</td><td>~400 px</td></tr>
+    <tr><td class="t">Notion</td><td>Inbox side panel</td><td>~420–460 px</td></tr>
+    <tr><td class="t">Slack</td><td>Activity panel</td><td>~400 px</td></tr>
+    <tr><td class="t">GitHub</td><td>Dropdown → links to a full page</td><td>~370 px</td></tr>
+    <tr><td class="t">Linear</td><td>Full-page inbox + panel</td><td>page-width</td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li><strong>Below ~360 px</strong> the two-row item (badge + workspace·project + time on row 1; glyph + title + subtitle + CTA on row 2) truncates and the CTA crowds.</li>
+  <li><strong>Above ~480 px</strong> a bell-anchored dropdown starts to feel like it wants to be a page.</li>
+  <li>Because FlowX has <strong>no dedicated notifications page</strong>, the panel is the primary surface — so lean to the comfortable end (420, not 360).</li>
+  <li>Because <strong>per-item detail lives in the operation’s own modals</strong> (the excluded-resources panel, the migration detail page), the panel does <em>not</em> need to show everything — so it doesn’t need to grow into a page either. 420&nbsp;px is the balance.</li>
+</ul>
+<p class="proto-note">Toasts stay a touch narrower (~360 px) since they’re transient and single-action.</p>
+
+<h2 id="scope"><span class="num">7</span>Scope: organization vs environment type · filtering</h2>
+<p>An organization spans <strong>three environment types</strong> — <code>PRODUCTION</code> / <code>STAGING</code> /
+<code>SANDBOX</code> — plus the org itself. Every notification has one of two scopes:</p>
+<ul>
+  <li><strong>Environment-type scope</strong> — work-in-an-environment kinds (export, import, migration). Stamped with
+  <code>{ env, workspace, project }</code>, shown with the colour-coded environment badge
+  (blue&nbsp;Sandbox · amber&nbsp;Staging · dark&nbsp;Production).</li>
+  <li><strong>Organization scope</strong> — org-wide events that belong to no single environment (e.g. Bulk Import
+  End-Users, licence expiry, billing). Stamped with <code>{ area, target }</code> and shown as a plain
+  <span class="mono">{area} · {target}</span> line (e.g. <span class="mono">Access Management · End-Users</span>) —
+  <strong>no coloured badge</strong> (the absence of an environment badge is itself the “not environment-specific” signal).</li>
+</ul>
+<p>Filtering folds read-state and scope into <strong>one single-select popover</strong> off the filter icon:</p>
+<pre>All notifications
+Unread (N)              ← read-state
+────────────
+Organization           ← org-level items
+────────────
+ENVIRONMENT TYPE
+  Production / Staging / Sandbox</pre>
+<p>One active filter at a time; picking <em>Unread</em> shows unread across every scope. Trade-off: the two axes
+can’t currently be intersected (e.g. “unread Production”) — chosen for simplicity over a separate All/Unread toggle.
+Free-text <strong>search</strong> matches title + source label + context and composes with the filter.</p>
+
+<h2 id="toast"><span class="num">8</span>Toast (live arrival)</h2>
+<p>A toast is <strong>the same object as a feed item, just shorter-lived</strong> — it reuses the exact two-row
+structure, the discrete status glyph, the same colours and the same action rule (⬇&nbsp;Download for a clean
+result, text-only Review / View otherwise). It carries only what’s needed and a status-matched left accent
+(green / amber / red). A toast showing fewer fields than the feed is expected.</p>
+<div class="callout">
+  <div class="k">Don’t double-surface</div>
+  <p style="margin:0">The toast is suppressed when the user is already looking at the result — the center is open,
+  or the launching “Preparing… / In progress” modal for <em>that</em> job is still open (in which case that modal
+  switches straight to the result instead of toasting).</p>
+</div>
+
+<h2 id="nav"><span class="num">9</span>Navigating from a notification</h2>
+<p>A notification <strong>never navigates on its own</strong> — every route is a user click. Acting on one that
+routes to a page can fire while a modal is open (a toast sits above the scrim) or from a config page (the bell is
+reachable there). If the user is <strong>mid-setup</strong> (a migration setup/config, or an export setup), a
+<strong>“Discard unsaved changes?”</strong> guard appears first — <strong>Keep working</strong> stays put and leaves
+the notification unread; <strong>Discard &amp; leave</strong> tears the flow down and routes. A <em>running</em>
+operation’s progress modal is not treated as dirty (it keeps going in the background), and a plain download doesn’t
+navigate at all — so neither prompts.</p>
+<div class="callout amber">
+  <div class="k">Never stack a modal on a modal</div>
+  <p style="margin:0">When the dirty flow is itself a modal, the guard doesn’t open a second scrim on top — the
+  underlying modal is hidden while the confirm shows (its state is preserved), so exactly one surface and one focus
+  target exist at a time. Stacked modals are avoided on purpose (double-dimming + competing focus traps / Esc handling).</p>
+</div>
+
+<h2 id="failure"><span class="num">10</span>Failure handling</h2>
+<p>A <code>FAILED</code> transition raises a notification like any other. For a system-outage failure the copy should:
+name the failure, <strong>reassure that nothing was applied</strong> (the main anxiety with a mid-run failure), and
+offer <strong>Retry</strong>. Keep the wording <strong>identical across toast, feed row, and detail page</strong> so it
+reads as one error, not three. A failed item shows <strong>no status chip</strong> — the red glyph + title already say
+it; the action slot holds Retry.</p>
+<div class="callout">
+  <div class="k">Example — bulk migration, service unavailable</div>
+  <p style="margin:0"><strong>Instance migration failed</strong> — the migration service is temporarily unavailable, so
+  the operation couldn’t run. Your process instances weren’t changed. <strong>Retry</strong> once it’s back.</p>
+</div>
+<p class="proto-note">Only claim “nothing was changed” if the operation is transactional/atomic. If a partial effect is
+possible, soften to “Some items may not have been processed — open details to review before retrying.”</p>
+
+<h2 id="edge"><span class="num">11</span>Edge cases</h2>
+<ul>
+  <li><strong>Concurrent identical requests</strong> — cache key + job lock; the second request attaches to the in-flight job (one notification, not two).</li>
+  <li><strong>Result expiry</strong> — clicking a stale notification shows “expired — re-run”, not a broken action.</li>
+  <li><strong>Source changed after request</strong> — a content-revision in the cache key prevents reuse of a stale artifact (fresh run → fresh notification).</li>
+  <li><strong>Permissions</strong> — re-checked at <em>action</em> time (download / view), not just at request time.</li>
+  <li><strong>Multiple queued operations</strong> — each notification carries a job id + human label to stay distinguishable.</li>
+  <li><strong>Retention</strong> — the center keeps the last <strong>30 days</strong>; the footer states this so the absence of older items reads as policy, not loss.</li>
+</ul>
+
+<h2 id="future"><span class="num">12</span>Future &amp; open questions</h2>
+<div class="grid2">
+  <div class="card"><h4>Retry on failed</h4><p>Wire the Retry action end-to-end (re-run the job from the notification).</p></div>
+  <div class="card"><h4>Archive</h4><p>Reintroduce per-item dismiss as an on-hover archive action, once there’s an archive destination.</p></div>
+  <div class="card"><h4>Deep-link “Go to”</h4><p>Jump to the build / version / project a notification refers to, auto-switching workspace + env.</p></div>
+  <div class="card"><h4>Grouping by workspace</h4><p>Time grouping ships today; workspace grouping is a candidate as volume grows.</p></div>
+  <div class="card"><h4>Priority / severity</h4><p>Errors and licence expiry styled distinctly, optionally pinned.</p></div>
+  <div class="card"><h4>Preferences</h4><p>Mute types, do-not-disturb, optional email/desktop for long-running jobs.</p></div>
+</div>
+<h3>Open questions</h3>
+<ul>
+  <li><strong>Notification infra</strong> — reuse FlowX’s real-time/notification infrastructure vs. a dedicated path (recommend reuse; needs codebase confirmation).</li>
+  <li><strong>Import warnings</strong> — do imports surface a <em>pre-apply</em> review (“N conflicts”, W-a), or auto-apply and report afterward (“imported — N skipped”, W-b)? This flips the titles for types 3–4.</li>
+  <li><strong>Job cancelability</strong> — can an in-flight job be cancelled, or does it run to completion?</li>
+  <li><strong>Artifact / result TTL</strong> — exact retention window and how expiry surfaces in the feed.</li>
+  <li><strong>Per-user vs. shared</strong> — are notifications strictly per-user, or should a shared operation notify a team?</li>
+</ul>
+
+<footer class="doc">
+  Notification Center — Product Specs · FlowX Designer. Prototype-backed working document; titles &amp; behaviours
+  mirror the interactive prototype. Share feedback with Product / Design.
+</footer>
+
+</div>
+</body>
+</html>
