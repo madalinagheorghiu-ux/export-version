@@ -73,6 +73,14 @@
   .seg button.on{background:var(--blue);color:#fff}
   .icon-btn{position:relative;width:34px;height:34px;border-radius:8px;border:1px solid transparent;background:transparent;color:#aeb8c6;display:flex;align-items:center;justify-content:center}
   .icon-btn:hover{background:#161d2b;color:#fff}
+  /* One-shot pulse: fires when an in-progress modal is backgrounded ("Close — keep working"),
+     tying the dismissed modal to the bell as the place to re-check status. */
+  @keyframes bell-pulse{
+    0%   {box-shadow:0 0 0 0 rgba(31,111,235,.55)}
+    70%  {box-shadow:0 0 0 11px rgba(31,111,235,0)}
+    100% {box-shadow:0 0 0 0 rgba(31,111,235,0)}
+  }
+  .icon-btn.pulsing{color:#fff;animation:bell-pulse 1.1s ease-out 3}
   .bell-badge{position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:#e0584d;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--header)}
   .tooltip{position:absolute;top:46px;left:50%;transform:translateX(-50%);background:#fff;color:#333;font-size:11px;padding:3px 8px;border-radius:6px;box-shadow:var(--shadow);white-space:nowrap;pointer-events:none}
   .avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#3a2e00}
@@ -499,6 +507,9 @@ const { useState, useEffect, useRef } = React;
 /* ============================ Mock backend ============================ */
 const SOURCE = { branch:'main', version:'1.6.2', platform:'5.9.X' };
 const PROCESS_MS = 6000; // compressed from "up to 15 min"
+// Minimum time a loading/processing modal stays up, even if the op finishes near-instantly, so it
+// registers as "it started" instead of flashing. Applies to export + migration processing screens.
+const MIN_MODAL_MS = 1000;
 
 const VERSIONS = [
   { id:'5.9.X', label:'5.9.X', current:true },
@@ -814,6 +825,8 @@ function App(){
   const [exportSource, setExportSource] = useState(null); // null | source object
   const [downloadJobId, setDownloadJobId] = useState(null);
   const [bellOpen, setBellOpen] = useState(false);
+  const [bellPulse, setBellPulse] = useState(false);
+  const [pulseKey, setPulseKey] = useState(0);
   const [tipBranch, setTipBranch] = useState(false);
   const [wsMenuOpen, setWsMenuOpen] = useState(false);
   const [env, setEnv] = useState('SANDBOX');
@@ -827,7 +840,20 @@ function App(){
   const bellOpenRef = useRef(false);
   const watchRef = useRef(null);    // id of the export job whose "Preparing…" modal is still open
   const migWatchRef = useRef(null); // id of the migration whose "In progress…" modal is still open
+  const pulseTimer = useRef(null);
   useEffect(()=>{ bellOpenRef.current = bellOpen; }, [bellOpen]);
+
+  // Pulse the bell once — the visual handshake when an in-progress modal is backgrounded, pointing
+  // the user at where the operation now lives. Suppressed if the panel is already open (they can see it).
+  // pulseKey bumps each time so the CSS animation restarts even if re-fired mid-pulse (the bell button
+  // is keyed on it and remounts). No rAF — that gets throttled in a backgrounded tab.
+  const pulseBell = () => {
+    if (bellOpenRef.current) return;
+    if (pulseTimer.current) clearTimeout(pulseTimer.current);
+    setPulseKey(k=>k+1);
+    setBellPulse(true);
+    pulseTimer.current = setTimeout(()=>setBellPulse(false), 3400); // 3 × 1.1s + slack
+  };
 
   /* --- Migration state --- */
   const [migrations, setMigrations] = useState(SEED_MIGRATIONS);
@@ -862,7 +888,19 @@ function App(){
       download: !excl,
     };
     setToasts(p=>[...p, toast]);
-    setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)), 9000);
+    // Auto-dismiss is owned by each <Toast> (5s no-action / 7s with-action, paused on hover/focus/tab-blur).
+  };
+  // Migration completion toast — same shape as a feed item. Reused by completion-while-not-watching
+  // and by backgrounding a migration that already finished (§5.11).
+  const pushMigrationToast = (m) => {
+    const total = m.summary.migrateTo.length;
+    setToasts(p=>[...p, {
+      id:uid(), migId:m.id, type:'migration', ctx:m.ctx,
+      cls:'ok', icon:'check',
+      title:'Instances migrated',
+      subtitle:`${m.srcBuild} → ${m.tgtBuild} · ${total} process${total>1?'es':''}`,
+      action:'View', download:false,
+    }]);
   };
 
   const markRead = (id) => setJobs(p=>p.map(j=>j.id===id?{...j, read:true}:j));
@@ -942,10 +980,12 @@ function App(){
     const key = cacheKey(source, target, includeMedia);
     const cached = cache.current[key];
     if (cached){
-      const job = { id:uid(), source, target, includeMedia, ctx, state:cached.state, exclusions:cached.exclusions, fromCache:true, read:false, ts:Date.now() };
+      // User clicked "Get download" on a cache hit: they're looking right at it and the result comes
+      // back immediately (download fires / review modal opens), so NO toast — that would double-surface
+      // a result they already have (§5.5). It lands in the feed already read, since they just acted on it.
+      const job = { id:uid(), source, target, includeMedia, ctx, state:cached.state, exclusions:cached.exclusions, fromCache:true, read:true, ts:Date.now() };
       setJobs(p=>[job, ...p]);
       closeExport();
-      if (!bellOpenRef.current) pushToast(job);          // suppress toast if the center is open
       if (job.state==='READY_WITH_EXCLUSIONS') setDownloadJobId(job.id);
       else triggerDownload(job);                          // instant + user-initiated
       return job;
@@ -981,18 +1021,7 @@ function App(){
       // Suppress toast when the processing modal is still open (it switches to detail directly)
       // or when the bell panel is already showing the result.
       const watched = migWatchRef.current === id;
-      if (!watched && !bellOpenRef.current){
-        const tid = uid();
-        const total = mig.summary.migrateTo.length;
-        setToasts(p=>[...p, {
-          id:tid, migId:id, type:'migration', ctx,
-          cls:'ok', icon:'check',
-          title:'Instances migrated',
-          subtitle:`${src} → ${tgt} · ${total} process${total>1?'es':''}`,
-          action:'View', download:false,
-        }]);
-        setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==tid)), 9000);
-      }
+      if (!watched && !bellOpenRef.current) pushMigrationToast(finished);
     }, MIGRATION_PROCESS_MS);
     return id;
   };
@@ -1017,7 +1046,7 @@ function App(){
     <div className="app" onClick={()=>{ if(bellOpen)setBellOpen(false); if(wsMenuOpen)setWsMenuOpen(false); }}>
       <Header
         view={view} onSwitchView={switchView}
-        unread={unread}
+        unread={unread} pulse={bellPulse} pulseKey={pulseKey}
         onBranch={()=>setConsoleOpen(true)}
         onBell={(e)=>{e.stopPropagation();setBellOpen(o=>!o);setWsMenuOpen(false);}}
         tip={tipBranch} setTip={setTipBranch}
@@ -1041,7 +1070,7 @@ function App(){
           {migConfig
             ? <MigrationConfigPage
                 src={migConfig.src} tgt={migConfig.tgt}
-                onBack={()=>{ setMigConfig(null); setMigModal({step:'setup'}); }}
+                onBack={()=>{ setMigConfig(null); }}
                 onCancel={()=>setMigConfig(null)}
                 onContinue={()=>{ const c=migConfig; setMigConfig(null); setMigModal({step:'summary', src:c.src, tgt:c.tgt}); }}
               />
@@ -1078,6 +1107,14 @@ function App(){
         <ExportModal
           source={exportSource}
           onClose={closeExport}
+          onBackground={()=>{
+            const j = jobs.find(x=>x.id===watchRef.current); // the export whose Preparing modal is open
+            closeExport();
+            // Backgrounding it: if it already finished in the min-display sliver, the user has stopped
+            // looking → surface the result as a toast; otherwise pulse to point at the still-running op.
+            if (jobReady(j)){ if (!bellOpenRef.current) pushToast(j); }
+            else pulseBell();
+          }}
           onStart={startExport}
           onWatch={(id)=>{ watchRef.current = id; }}
           onReady={onExportReady}
@@ -1111,8 +1148,14 @@ function App(){
         <MigrationProcessingModal
           migId={migModal.id} src={migModal.src} tgt={migModal.tgt}
           migrations={migrations}
-          onClose={()=>{ migWatchRef.current=null; setMigModal(null); }}
-          onComplete={(id)=>{ migWatchRef.current=null; setMigModal(null); setMigDetailId(id); setPage('Corrective Actions'); setView('runtime'); }}
+          onClose={()=>{
+            const m = migrations.find(x=>x.id===migWatchRef.current);
+            migWatchRef.current=null; setMigModal(null);
+            // Same rule as export: finished in the min-display sliver → toast; still running → pulse.
+            if (m && m.state==='COMPLETED'){ if (!bellOpenRef.current) pushMigrationToast(m); }
+            else pulseBell();
+          }}
+          onComplete={(id)=>{ migWatchRef.current=null; setMigModal(null); markOneRead(id); setMigDetailId(id); setPage('Corrective Actions'); setView('runtime'); }}
         />}
 
       {confirmNav &&
@@ -1129,7 +1172,7 @@ function App(){
 }
 
 /* ============================ Header ============================ */
-function Header({ view, onSwitchView, unread, onBranch, onBell, tip, setTip, env, workspace, project, wsMenuOpen, onLogo, onSelectWs }){
+function Header({ view, onSwitchView, unread, pulse, pulseKey, onBranch, onBell, tip, setTip, env, workspace, project, wsMenuOpen, onLogo, onSelectWs }){
   return (
     <div className="header">
       <div style={{position:'relative'}}>
@@ -1157,7 +1200,7 @@ function Header({ view, onSwitchView, unread, onBranch, onBell, tip, setTip, env
         <button className={view==='config'?'on':''} onClick={()=>onSwitchView('config')}>Config</button>
         <button className={view==='runtime'?'on':''} onClick={()=>onSwitchView('runtime')}>Runtime</button>
       </div>
-      <button className="icon-btn" onClick={onBell} title="Notifications">
+      <button key={pulseKey} className={'icon-btn'+(pulse?' pulsing':'')} onClick={onBell} title="Notifications">
         {I.bell}
         {unread>0 && <span className="bell-badge">{unread}</span>}
       </button>
@@ -1342,13 +1385,14 @@ function BranchingConsole({ onClose, onExport }){
 }
 
 /* ============================ Export modal ============================ */
-function ExportModal({ source, onClose, onStart, onWatch, onReady, jobs, cache }){
+function ExportModal({ source, onClose, onBackground, onStart, onWatch, onReady, jobs, cache }){
   const [target, setTarget] = useState('5.9.X');
   const [media, setMedia] = useState(true);
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState('form'); // form | processing
   const [pct, setPct] = useState(0);
   const [watchId, setWatchId] = useState(null);
+  const procShownAt = useRef(0); // when the processing screen appeared (for the min-display guard)
 
   const isBuild = source.kind === 'build';
   const isLower = target !== '5.9.X';
@@ -1356,17 +1400,25 @@ function ExportModal({ source, onClose, onStart, onWatch, onReady, jobs, cache }
 
   useEffect(()=>{
     if (phase!=='processing') return;
+    procShownAt.current = Date.now();
     setPct(4);
     const t = setInterval(()=> setPct(p=> Math.min(p + (100/(PROCESS_MS/250)), 96)), 250);
     return ()=>clearInterval(t);
   }, [phase]);
 
   // While the Preparing modal is open, when this export becomes ready → switch to the download modal.
+  // Held to a MIN_MODAL_MS floor so a fast/cache-warmed result doesn't flash the loading screen.
   useEffect(()=>{
     if (phase!=='processing' || !watchId) return;
     const j = jobs.find(x=>x.id===watchId);
-    if (jobReady(j)) onReady(j);
+    if (!jobReady(j)) return;
+    const wait = Math.max(0, MIN_MODAL_MS - (Date.now()-procShownAt.current));
+    const t = setTimeout(()=>onReady(j), wait);
+    return ()=>clearTimeout(t);
   }, [jobs, watchId, phase]);
+
+  // In the processing phase, any close means "background it" (pulse the bell); in the form it's a plain cancel.
+  const handleClose = () => { if (phase==='processing') (onBackground||onClose)(); else onClose(); };
 
   const onExport = () => {
     if (willHitCache){ onStart(source, target, media); return; } // instant -> modal closes, download opens
@@ -1376,12 +1428,12 @@ function ExportModal({ source, onClose, onStart, onWatch, onReady, jobs, cache }
   };
 
   return (
-    <div className="modal-scrim" onClick={onClose}>
+    <div className="modal-scrim" onClick={handleClose}>
       <div className="modal" onClick={e=>e.stopPropagation()}>
         {phase==='form' ? (
           <>
             <div className="mhead">
-              <button className="mclose" onClick={onClose}>{I.x}</button>
+              <button className="mclose" onClick={handleClose}>{I.x}</button>
               <h2>{isBuild ? 'Export build' : 'Export Version'}</h2>
               <div style={{display:'flex',gap:7,alignItems:'center'}}>
                 {isBuild
@@ -1435,14 +1487,14 @@ function ExportModal({ source, onClose, onStart, onWatch, onReady, jobs, cache }
               </div>
 
               <div className="mfoot">
-                <button className="btn-ghost" onClick={onClose}>Cancel</button>
+                <button className="btn-ghost" onClick={handleClose}>Cancel</button>
                 <button className="btn-blue" onClick={onExport}>{willHitCache?'Get download':'Export'}</button>
               </div>
             </div>
           </>
         ) : (
           <div className="mbody" style={{paddingTop:30}}>
-            <button className="mclose" onClick={onClose}>{I.x}</button>
+            <button className="mclose" onClick={handleClose}>{I.x}</button>
             <div className="proc">
               <div className="spinner"></div>
               <h3>Preparing your export…</h3>
@@ -1450,7 +1502,7 @@ function ExportModal({ source, onClose, onStart, onWatch, onReady, jobs, cache }
               <div className="progress"><div className="bar" style={{width:pct+'%'}}></div></div>
               <div className="sim-note">Simulated: ~6s instead of up to 15 min</div>
               <div className="mfoot" style={{justifyContent:'center',width:'100%'}}>
-                <button className="btn-ghost" onClick={onClose}>Close — keep working</button>
+                <button className="btn-ghost" onClick={handleClose}>Close — keep working</button>
               </div>
             </div>
           </div>
@@ -1780,30 +1832,83 @@ function ConfirmLeaveModal({ label, onKeep, onDiscard }){
 }
 
 /* ============================ Toasts ============================ */
+// Auto-dismiss timing (a live toast should linger long enough to read + act, then get out of the way):
+const TOAST_MS       = 5000; // no-action toast
+const TOAST_MS_CTA   = 7000; // toast carrying a CTA — extra time to reach for it
+const TOAST_GRACE_MS = 1000; // on resume, never leave less than this, so it can't vanish the instant you look away
+
 // A toast mirrors a feed item's structure exactly (context row + status row), just shorter-lived.
+// Each toast owns its own countdown so it can pause independently while the user reads/hovers it.
+function Toast({ t, onAct, onClose }){
+  const duration = t.action ? TOAST_MS_CTA : TOAST_MS;
+  // remaining = ms left on the countdown; when running, startedAt marks when this run began.
+  const remaining = useRef(duration);
+  const startedAt = useRef(0);
+  const timer     = useRef(null);
+  // A set of active reasons to hold the timer (hover, focus, tab hidden); the countdown runs only when it's empty.
+  const holds     = useRef(new Set());
+
+  const clearTimer = ()=>{ if (timer.current){ clearTimeout(timer.current); timer.current=null; } };
+  const run = ()=>{
+    clearTimer();
+    startedAt.current = Date.now();
+    timer.current = setTimeout(()=>onClose(t.id), remaining.current);
+  };
+  const hold = (reason)=>{
+    if (holds.current.size===0 && timer.current){
+      // freeze: bank the time already elapsed on the current run
+      remaining.current = Math.max(0, remaining.current - (Date.now()-startedAt.current));
+      clearTimer();
+    }
+    holds.current.add(reason);
+  };
+  const release = (reason)=>{
+    holds.current.delete(reason);
+    if (holds.current.size===0){
+      // grace so a nearly-expired toast doesn't disappear the instant the cursor/focus leaves
+      remaining.current = Math.max(remaining.current, TOAST_GRACE_MS);
+      run();
+    }
+  };
+
+  useEffect(()=>{
+    run();
+    // Pause while the tab is backgrounded (user is elsewhere), resume when it returns.
+    const onVis = ()=>{ document.hidden ? hold('tab') : release('tab'); };
+    document.addEventListener('visibilitychange', onVis);
+    return ()=>{ clearTimer(); document.removeEventListener('visibilitychange', onVis); };
+  }, []);
+
+  return (
+    <div className={'toast '+(t.cls||'ok')}
+         onMouseEnter={()=>hold('hover')}  onMouseLeave={()=>release('hover')}
+         onFocusCapture={()=>hold('focus')} onBlurCapture={()=>release('focus')}>
+      <div className="nrow1">
+        {t.ctx && <>
+          <span className={'env-badge sm '+envTone(t.ctx.env)}>{t.ctx.env}</span>
+          <span className="nmeta">{t.ctx.workspace} · <span className="nproj">{I.folder}{t.ctx.project}</span></span>
+        </>}
+        <button className="ndismiss" title="Dismiss" style={{marginLeft:'auto'}} onClick={()=>onClose(t.id)}>{I.x}</button>
+      </div>
+      <div className="nrow2">
+        <span className={'nicon '+(t.cls||'ok')}>{I[t.icon]||I.check}</span>
+        <div className="ntext">
+          <div className="t">{t.title}</div>
+          <div className="s">{t.subtitle}</div>
+        </div>
+        {t.action && <div className="nright">
+          <button className="nbtn" onClick={()=>{onAct(t);onClose(t.id);}}>{t.download && I.dl}{t.action}</button>
+        </div>}
+      </div>
+    </div>
+  );
+}
+
 function Toasts({ toasts, onAct, onClose }){
   return (
     <div className="toasts">
       {toasts.map(t=>(
-        <div key={t.id} className={'toast '+(t.cls||'ok')}>
-          <div className="nrow1">
-            {t.ctx && <>
-              <span className={'env-badge sm '+envTone(t.ctx.env)}>{t.ctx.env}</span>
-              <span className="nmeta">{t.ctx.workspace} · <span className="nproj">{I.folder}{t.ctx.project}</span></span>
-            </>}
-            <button className="ndismiss" title="Dismiss" style={{marginLeft:'auto'}} onClick={()=>onClose(t.id)}>{I.x}</button>
-          </div>
-          <div className="nrow2">
-            <span className={'nicon '+(t.cls||'ok')}>{I[t.icon]||I.check}</span>
-            <div className="ntext">
-              <div className="t">{t.title}</div>
-              <div className="s">{t.subtitle}</div>
-            </div>
-            <div className="nright">
-              <button className="nbtn" onClick={()=>{onAct(t);onClose(t.id);}}>{t.download && I.dl}{t.action}</button>
-            </div>
-          </div>
-        </div>
+        <Toast key={t.id} t={t} onAct={onAct} onClose={onClose} />
       ))}
     </div>
   );
@@ -2031,6 +2136,7 @@ function MigrationSummaryModal({ src, tgt, onBack, onStart, onClose }){
 /* ============================ Migration Processing modal ============================ */
 function MigrationProcessingModal({ migId, src, tgt, migrations, onClose, onComplete }){
   const [pct, setPct] = useState(4);
+  const shownAt = useRef(Date.now()); // for the min-display guard
 
   // Animate progress bar
   useEffect(()=>{
@@ -2039,10 +2145,14 @@ function MigrationProcessingModal({ migId, src, tgt, migrations, onClose, onComp
     return ()=>clearInterval(t);
   }, []);
 
-  // Watch for migration completion → switch to detail
+  // Watch for migration completion → switch to detail. Held to MIN_MODAL_MS so a fast migration
+  // doesn't flash this screen; the user still gets an explicit "it started" beat.
   useEffect(()=>{
     const m = migrations.find(x=>x.id===migId);
-    if (m && m.state==='COMPLETED') onComplete(migId);
+    if (!(m && m.state==='COMPLETED')) return;
+    const wait = Math.max(0, MIN_MODAL_MS - (Date.now()-shownAt.current));
+    const t = setTimeout(()=>onComplete(migId), wait);
+    return ()=>clearTimeout(t);
   }, [migrations, migId]);
 
   return (
@@ -2063,7 +2173,7 @@ function MigrationProcessingModal({ migId, src, tgt, migrations, onClose, onComp
             </p>
             <div className="progress" style={{margin:'0 0 0'}}><div className="bar" style={{width:pct+'%'}}></div></div>
             <div className="mfoot" style={{justifyContent:'flex-end',width:'100%',marginTop:24}}>
-              <button className="btn-blue" onClick={onClose}>Close - keep working</button>
+              <button className="btn-blue" onClick={onClose}>Close — keep working</button>
             </div>
           </div>
         </div>
@@ -2336,7 +2446,7 @@ function MigrationConfigPage({ src, tgt, onBack, onCancel, onContinue }){
     <div style={{padding:'24px 28px',height:'100%',display:'flex',flexDirection:'column',minHeight:0}}>
       {/* Breadcrumb */}
       <div className="mig-detail-breadcrumb">
-        <button className="back-btn" onClick={onBack}>{I.arrowL} Process Instances</button>
+        <button className="back-btn" onClick={onBack}>{I.arrowL} Corrective Actions</button>
         <span className="sep">/</span>
         <span className="crumb-cur">Migration Configuration</span>
       </div>
@@ -2543,7 +2653,7 @@ function MigrationDetailPage({ mig, onBack }){
     <div style={{padding:'24px 28px',flex:1,overflowY:'auto',minHeight:0}}>
       {/* Breadcrumb */}
       <div className="mig-detail-breadcrumb">
-        <button className="back-btn" onClick={onBack}>{I.arrowL} Operations</button>
+        <button className="back-btn" onClick={onBack}>{I.arrowL} Corrective Actions</button>
         <span className="sep">/</span>
         <span className="crumb-cur">Migration <span className="crumb-id">{opId||'e4d7d1a2'}…</span></span>
       </div>

@@ -5,11 +5,13 @@
 > "your thing is ready / done / failed" **wherever they are** in the app.
 >
 > This is the reusable pattern extracted from the **Export → Notify → Download** work.
-> Two operations already ride on it — **Export version/build** and **Bulk Migration** —
-> and it is deliberately built to host more (licence expiry, build status, errors, …).
+> Operations already riding on it: **export** (build / project version), **bulk migration**, and
+> **bulk end-user import** (org-level); the naming spec (§5.10) covers the full set of **seven**
+> long-running operations, and the pattern is built to host more (imports, KB-data-source download,
+> licence expiry, …).
 >
-> **Companion doc:** `EXPORT_DOWNLOAD_PLAN.md` (the full export + migration design; this
-> file is the notification slice of it, generalized). · **Last updated:** 2026-08-03
+> **Companion doc:** `EXPORT_DOWNLOAD_PLAN.md`. · **Shareable HTML:** `notification-center-spec.html`.
+> · **Live prototype:** https://madalinagheorghiu-ux.github.io/export-version/ · **Last updated:** 2026-08-05 (toast persistence · in-progress: launch modal, bell pulse & count — §5.5, §5.11)
 
 ---
 
@@ -104,9 +106,10 @@ a dedicated path. Recommendation: **reuse** — pending codebase confirmation.
 
 ### 5.1 Where it lives
 A global **bell** in the dark app-shell header (near `Config / Runtime` / the avatar) —
-**always mounted, independent of any operation modal** — with an **unread badge**. Live
-arrivals also raise a **toast**. Because the bell is global, closing a modal / navigating /
-refreshing never hides the status.
+**always mounted, independent of any operation modal** — with an **unread badge** (which counts
+*unread terminal results only* — never in-progress items; see §5.11) and a **one-shot pulse** that
+signals backgrounded in-progress work (§5.11). Live arrivals also raise a **toast**. Because the bell
+is global, closing a modal / navigating / refreshing never hides the status.
 
 **Panel width — 420px** (min 380 / max 440; scrolls internally, capped ~480px tall). Benchmarked
 against contextual notification panels (Jira ~400, Notion ~420–460, Slack ~400, GitHub ~370 + full
@@ -120,16 +123,16 @@ The center is a **single list**, not one section per operation kind. The operati
 and its *notification* are the **same row**. A `notifStatus`-style helper branches on
 `item.type` to render the right title/icon/action:
 
-| type | state | Feed title | Icon |
+| type | state | Feed title *(exact strings + full 7-type set in §5.10)* | Icon |
 |---|---|---|---|
-| `export` | preparing | Preparing export… | spinner |
-| `export` | ready | Export ready to download | ✅ |
-| `export` | ready w/ exclusions | Export ready — N excluded | ⚠️ |
-| `export` | failed | Export failed | ❌ |
-| `migration` | in progress | Bulk migration in progress… | spinner |
-| `migration` | completed | Bulk migration completed | ✅ |
-| `migration` | failed | Bulk migration failed | ❌ |
-| `org` | bulk import done | Bulk Import End-Users | ✅ |
+| `export` | preparing | Preparing build / version export… | spinner |
+| `export` | ready | Build / Version export ready to download | ✅ |
+| `export` | ready w/ exclusions | … export ready — N excluded | ⚠️ |
+| `export` | failed | … export failed | ❌ |
+| `migration` | in progress | Migrating instances… | spinner |
+| `migration` | completed | Instances migrated | ✅ |
+| `migration` | failed | Instance migration failed | ❌ |
+| `org` | bulk import done | End-users imported | ✅ |
 | `org` | licence | Licence expires in N days | ⚠️ |
 
 > Every terminal item's status icon resolves to exactly one of **success / warning / failed** (in-progress
@@ -153,8 +156,8 @@ Each feed item is **two rows**:
 ### 5.4 Inline action (the payoff)
 Every item ends in an action that points at the same `jobId`:
 - **Clean result** → a direct action, **no modal** (export `READY` → **Download** the ZIP instantly).
-- **Result with a caveat** → opens a **review step first** (export `READY_WITH_EXCLUSIONS` → **Review & download** → excluded-resources panel).
-- **Completed migration** → **View results** → the Migration Detail Page.
+- **Result with a caveat** → the action opens a **review step first** (export `READY_WITH_EXCLUSIONS` → **Review** → excluded-resources panel → download).
+- **Completed migration** → **View** → the Migration Detail Page.
 - **Failed** → **Retry**.
 
 **Action styling.** Feed actions are **secondary buttons with blue text** — consistent, low-weight.
@@ -191,12 +194,32 @@ carries only what's needed (env context, status, title, one-line subtitle, one a
 showing fewer fields than the feed is expected. A status-matched left accent (green / amber / red)
 is the only toast-specific chrome. It points at the same `jobId`.
 
-**Toast suppression — don't double-surface.** The toast is suppressed when the user is
-already looking at the result:
+**Toast suppression — don't double-surface.** The governing rule: **a toast fires only when the
+user ends up *not looking* at the finished result.** So it's suppressed when they are:
 - the **notification center is open** (the feed updates live), **or**
 - the **launching "Preparing…/In progress" modal for that job is still open** — in which case
   that modal **switches straight to the result** (clean → download; caveat → review panel;
-  migration → detail page) instead of toasting.
+  migration → detail page) instead of toasting, **or**
+- taking a **direct, instant action on a cache hit** — clicking **Get download** when *"an identical
+  export already exists, available instantly"* fires the download (or opens the review panel) then and
+  there; that's a foreground result in hand, so **no toast**, and the feed entry lands **already read**.
+
+Conversely, a toast **does** fire whenever the user stops looking at a result — most importantly when
+they **background** an operation via *Close — keep working* and it finishes while they're away (see §5.11).
+
+**Auto-dismiss & persistence.** A toast lingers just long enough to read and reach for its
+action, then clears itself — but it never expires *while the user is engaging with it or away
+from the tab*. Each toast owns its own countdown (they dismiss independently, not as a batch):
+
+- **Duration by weight** — **5s** for a toast with **no action**; **7s** for one carrying a
+  **CTA** (Download / Review / View), which needs the extra beat to be reached.
+- **Paused (frozen, not reset) while** the pointer is **hovering** the toast, keyboard **focus**
+  is inside it, or the **window/tab is blurred** (`visibilitychange` — the user is in another
+  tab or app). Multiple holds can overlap; the countdown resumes only once **all** are released.
+- **Resumes on** mouse-leave / focus-out / window-focus, banking the time already elapsed — with
+  a **minimum 1000ms grace**: on resume the remaining time is floored to 1s so a nearly-expired
+  toast can't vanish the instant the cursor or focus leaves.
+- A **manual ×** dismisses immediately regardless of the timer.
 
 ### 5.6 Filter — read-state + scope (one control)
 Filtering is an **occasional** control, so it collapses to a **filter icon next to search** rather
@@ -304,6 +327,49 @@ file-producing → *"ready to download"*; change-applying → past participle (*
 
 ---
 
+### 5.11 In-progress — the launch modal, the bell pulse, and what the count means
+Long-running ops spend most of their life **in progress**. Four rules keep that phase honest.
+
+**The launch modal is a dismissible confirmation — not a trap, not pure background.** Pressing a
+committing CTA (**Start Migration**, **Export**) opens a small *"…in progress"* modal modelled on
+export's **Preparing…** screen: spinner, what → where, and a **"Close — keep working"** button. It
+exists to (a) confirm an **irreversible** action actually started, and (b) say *"you can leave —
+we'll notify you."* It is **not** a redirect you're stuck in (close it any time) and **not** reduced
+to a bare toast — a toast is too ephemeral to be the *only* acknowledgement that a non-reversible op
+launched. Leaving is non-destructive: a **running** op's modal is never treated as dirty (§5.4), so
+closing it loses nothing. If left open through completion, it **switches straight to the result** (§5.5).
+
+**Minimum on-screen time — ~1s** (`MIN_MODAL_MS`). The launch modal stays up for at least ~1 second
+even if the op finishes near-instantly (cache hit, tiny migration), so it reads as *"it started"*
+instead of flashing. This is the answer to the "if migrations are almost always quick, the modal
+flashes" caveat — a floor, not a fixed wait: a genuinely long op is unaffected.
+
+**The bell pulses when the modal is backgrounded.** Pressing **Close — keep working** fires a
+**one-shot pulse** on the header bell — the visual handshake that ties the just-dismissed modal to
+*where the operation now lives*, answering "where do I check on this?" without words. Suppressed when
+the panel is already open (the user can already see the feed update).
+
+**The unread count never counts in-progress.** The numeric badge means exactly one thing —
+**unread terminal results that need you** (ready / done / failed / org events). A pending entry has
+**no action**: counting it would cry wolf (open the bell, find only a spinner) and double-count at
+completion (does *preparing → ready* bump it a second time?). So in-progress shows **in the feed** (a
+spinner row — discoverable) but **out of the count**; "work is happening" is carried by the **pulse +
+the live row**, never a number. *Activity ≠ unread-actionable.*
+
+**At completion, what happens next hinges on one thing: is the user still looking?**
+- **Routed to the result** (they let the modal switch them to the download / review / detail view) →
+  they're looking → **no toast**, and the entry is written **already read** — kept as history (30-day
+  retention + cross-surface pull, §7) without inflating the count or re-alerting. A record, not a
+  second notification. *(Mirrors export, which marks the job read when its Preparing modal switches to
+  the download modal.)*
+- **Backgrounded it** via *Close — keep working* → they've **stopped** looking → **toast + unread**,
+  exactly like any not-watched completion. This holds even in the **min-display sliver** — if the op
+  finished during that ≤1s hold and the user clicks *Close — keep working* in it, they still get the
+  toast rather than a silent unread row. *(A backgrounded-**and**-still-running op instead pulses the
+  bell; the toast comes later when it completes.)*
+
+---
+
 ## 6. Context on every notification (multi-workspace / multi-environment)
 
 Users switch **workspace + environment** from the logo menu (env groups
@@ -342,7 +408,7 @@ and detail page** so it reads as one error, not three.
 
 Example (bulk migration, service unavailable):
 
-> **Bulk migration failed** — the migration service is temporarily unavailable, so the
+> **Instance migration failed** — the migration service is temporarily unavailable, so the
 > operation couldn't run. Your process instances weren't changed. **Retry** once it's back.
 
 > ⚠️ Only claim "nothing was changed" if the operation is transactional/atomic. If a partial
@@ -384,7 +450,7 @@ the unified feed above; it now hosts both exports and migrations.
 3. **Expiry indicator + Retry** — show artifact TTL; "expired — re-run"; Retry on `FAILED`. (Distinct from the 30-day *notification* retention in §5.7 — this is the *artifact* TTL.)
 4. **Bulk actions** — ✅ *shipped: "Mark all read" + per-item mark-as-read on hover (§5.7).* Still open: "Clear read", "Clear all", multi-select.
 5. **Grouping** — ✅ *shipped: by time (Today / This week / Older) — see §5.7.* Still open: grouping by workspace.
-6. ~~**Unread-only toggle** + search.~~ ✅ *shipped — All/Unread segment + search, see §5.7.*
+6. ~~**Unread-only toggle** + search.~~ ✅ *shipped — **Unread** as a filter option (§5.6) + search (§5.7).*
 7. **Priority / severity** — errors and licence-expiry styled distinctly, optionally pinned. (Licence-expiry now exists as an org-level `warn` item — see §5.9.)
 8. **Persistence** — survive reload/login (backend-backed); a **"See all"** full-page activity view.
 9. **Preferences** — mute types, do-not-disturb; optional email/desktop for long-running jobs.
