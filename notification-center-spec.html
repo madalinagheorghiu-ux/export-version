@@ -95,7 +95,7 @@
   <div class="meta">
     <span class="tag">FlowX Designer</span>
     <span class="tag n">Status: prototype-backed</span>
-    <span class="tag n">Last updated: 2026-08-03</span>
+    <span class="tag n">Last updated: 2026-08-05</span>
     <span class="tag n">Owner: Product / Design</span>
   </div>
 </header>
@@ -111,6 +111,7 @@
     <li><a href="#width">Width &amp; sizing</a></li>
     <li><a href="#scope">Scope: org vs environment</a></li>
     <li><a href="#toast">Toast</a></li>
+    <li><a href="#inprogress">In-progress: launch modal, pulse &amp; count</a></li>
     <li><a href="#nav">Navigating from a notification</a></li>
     <li><a href="#failure">Failure handling</a></li>
     <li><a href="#edge">Edge cases</a></li>
@@ -277,12 +278,83 @@ result, text-only Review / View otherwise). It carries only what’s needed and 
 (green / amber / red). A toast showing fewer fields than the feed is expected.</p>
 <div class="callout">
   <div class="k">Don’t double-surface</div>
-  <p style="margin:0">The toast is suppressed when the user is already looking at the result — the center is open,
-  or the launching “Preparing… / In progress” modal for <em>that</em> job is still open (in which case that modal
-  switches straight to the result instead of toasting).</p>
+  <p style="margin:0">The governing rule: a toast fires <strong>only when the user ends up <em>not looking</em></strong>
+  at the finished result. Suppressed when the <strong>center is open</strong>; when the launching <em>“Preparing… /
+  In progress”</em> modal for <em>that</em> job is still open (it switches straight to the result instead of toasting);
+  and on a <strong>direct instant action on a cache hit</strong> — clicking <strong>Get download</strong> when an
+  identical export is <em>“available instantly”</em> fires the download there and then, so no toast, and the entry
+  lands <strong>already read</strong>. Conversely it <em>does</em> fire when the user <strong>backgrounds</strong> an
+  op (<em>Close — keep working</em>) and it finishes while they’re away (§9).</p>
 </div>
 
-<h2 id="nav"><span class="num">9</span>Navigating from a notification</h2>
+<h3>Auto-dismiss &amp; persistence</h3>
+<p>A toast lingers just long enough to read and reach for its action, then clears itself — but it never expires
+<em>while the user is engaging with it or away from the tab</em>. Each toast owns its own countdown, so they
+dismiss independently rather than as a batch.</p>
+<ul>
+  <li><strong>Duration by weight</strong> — <strong>5&nbsp;s</strong> for a toast with <strong>no action</strong>;
+  <strong>7&nbsp;s</strong> for one carrying a <strong>CTA</strong> (Download / Review / View), which needs the
+  extra beat to be reached.</li>
+  <li><strong>Paused (frozen, not reset)</strong> while the pointer is <strong>hovering</strong> the toast, keyboard
+  <strong>focus</strong> is inside it, or the <strong>window/tab is blurred</strong> (<code>visibilitychange</code> —
+  the user is in another tab or app). Holds can overlap; the countdown resumes only once <strong>all</strong> are
+  released.</li>
+  <li><strong>Resumes</strong> on mouse-leave / focus-out / window-focus, banking the time already elapsed.</li>
+  <li>A <strong>manual ×</strong> dismisses immediately, regardless of the timer.</li>
+</ul>
+<div class="callout amber">
+  <div class="k">1000&nbsp;ms grace on resume</div>
+  <p style="margin:0">On resume the remaining time is floored to <strong>1&nbsp;s</strong>, so a nearly-expired toast
+  can’t vanish the instant the cursor or focus leaves it.</p>
+</div>
+
+<h2 id="inprogress"><span class="num">9</span>In-progress: launch modal, bell pulse &amp; the count</h2>
+<p>Long-running ops spend most of their life <strong>in progress</strong>. Four rules keep that phase honest.</p>
+
+<h3>The launch modal is a dismissible confirmation</h3>
+<p>Pressing a committing CTA (<strong>Start Migration</strong>, <strong>Export</strong>) opens a small
+<em>“…in progress”</em> modal modelled on export’s <strong>Preparing…</strong> screen: spinner, what&nbsp;→&nbsp;where,
+and a <strong>“Close — keep working”</strong> button. It exists to (a) confirm an <strong>irreversible</strong> action
+actually started, and (b) say <em>“you can leave — we’ll notify you.”</em></p>
+<div class="grid2">
+  <div class="card"><h4>Not a trap</h4><p>Close it any time — a <em>running</em> op’s modal is never treated as dirty (§10), so leaving loses nothing. If left open through completion, it switches straight to the result (§8).</p></div>
+  <div class="card"><h4>Not pure background</h4><p>A bare toast is too ephemeral to be the <em>only</em> acknowledgement that a non-reversible op launched. The modal is the “it started” handshake; the toast/feed is the “it finished” one.</p></div>
+</div>
+<div class="callout">
+  <div class="k">Minimum on-screen time — ~1&nbsp;s</div>
+  <p style="margin:0">The launch modal stays up for at least ~1&nbsp;second even if the op finishes near-instantly
+  (cache hit, tiny migration), so it reads as <em>“it started”</em> instead of flashing (<code>MIN_MODAL_MS</code>).
+  A floor, not a fixed wait — a genuinely long op is unaffected. This is the answer to the “quick migrations make
+  the modal flash” caveat.</p>
+</div>
+
+<h3>The bell pulses when the modal is backgrounded</h3>
+<p>Pressing <strong>Close — keep working</strong> fires a <strong>one-shot pulse</strong> on the header bell — the
+visual handshake tying the just-dismissed modal to <em>where the operation now lives</em>, answering “where do I
+check on this?” without words. Suppressed when the panel is already open (the user can already see the feed update).</p>
+
+<h3>The unread count never counts in-progress</h3>
+<p>The numeric badge means exactly one thing: <strong>unread terminal results that need you</strong>
+(ready / done / failed / org events). A pending entry has <strong>no action</strong> — counting it would cry wolf
+(open the bell, find only a spinner) and double-count at completion (does <em>preparing → ready</em> bump it a second
+time?). So in-progress shows <strong>in the feed</strong> (a spinner row — discoverable) but <strong>out of the
+count</strong>; “work is happening” is carried by the <strong>pulse + the live row</strong>, never a number.</p>
+<p class="proto-note">Activity ≠ unread-actionable — the two signals are shown differently on purpose.</p>
+
+<h3>At completion, it hinges on one thing: is the user still looking?</h3>
+<ul>
+  <li><strong>Routed to the result</strong> (they let the modal switch them to the download / review / detail view)
+  → they’re looking → <strong>no toast</strong>, and the entry is written <strong>already&nbsp;read</strong> — kept as
+  history (30-day retention + cross-surface pull) without inflating the count or re-alerting. A record, not a second
+  notification. <em>(Mirrors export, which marks the job read when its Preparing modal switches to the download modal.)</em></li>
+  <li><strong>Backgrounded it</strong> via <em>Close — keep working</em> → they’ve <strong>stopped</strong> looking →
+  <strong>toast + unread</strong>, like any not-watched completion. This holds even in the <strong>min-display
+  sliver</strong> — if the op finished during that ≤1&nbsp;s hold and they click <em>Close — keep working</em> in it,
+  they still get the toast, not a silent unread row. <em>(A backgrounded-and-still-running op instead pulses the bell;
+  the toast comes later when it completes.)</em></li>
+</ul>
+
+<h2 id="nav"><span class="num">10</span>Navigating from a notification</h2>
 <p>A notification <strong>never navigates on its own</strong> — every route is a user click. Acting on one that
 routes to a page can fire while a modal is open (a toast sits above the scrim) or from a config page (the bell is
 reachable there). If the user is <strong>mid-setup</strong> (a migration setup/config, or an export setup), a
@@ -297,7 +369,7 @@ navigate at all — so neither prompts.</p>
   target exist at a time. Stacked modals are avoided on purpose (double-dimming + competing focus traps / Esc handling).</p>
 </div>
 
-<h2 id="failure"><span class="num">10</span>Failure handling</h2>
+<h2 id="failure"><span class="num">11</span>Failure handling</h2>
 <p>A <code>FAILED</code> transition raises a notification like any other. For a system-outage failure the copy should:
 name the failure, <strong>reassure that nothing was applied</strong> (the main anxiety with a mid-run failure), and
 offer <strong>Retry</strong>. Keep the wording <strong>identical across toast, feed row, and detail page</strong> so it
@@ -311,7 +383,7 @@ it; the action slot holds Retry.</p>
 <p class="proto-note">Only claim “nothing was changed” if the operation is transactional/atomic. If a partial effect is
 possible, soften to “Some items may not have been processed — open details to review before retrying.”</p>
 
-<h2 id="edge"><span class="num">11</span>Edge cases</h2>
+<h2 id="edge"><span class="num">12</span>Edge cases</h2>
 <ul>
   <li><strong>Concurrent identical requests</strong> — cache key + job lock; the second request attaches to the in-flight job (one notification, not two).</li>
   <li><strong>Result expiry</strong> — clicking a stale notification shows “expired — re-run”, not a broken action.</li>
@@ -321,7 +393,7 @@ possible, soften to “Some items may not have been processed — open details t
   <li><strong>Retention</strong> — the center keeps the last <strong>30 days</strong>; the footer states this so the absence of older items reads as policy, not loss.</li>
 </ul>
 
-<h2 id="future"><span class="num">12</span>Future &amp; open questions</h2>
+<h2 id="future"><span class="num">13</span>Future &amp; open questions</h2>
 <div class="grid2">
   <div class="card"><h4>Retry on failed</h4><p>Wire the Retry action end-to-end (re-run the job from the notification).</p></div>
   <div class="card"><h4>Archive</h4><p>Reintroduce per-item dismiss as an on-hover archive action, once there’s an archive destination.</p></div>

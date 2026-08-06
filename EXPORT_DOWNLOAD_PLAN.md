@@ -3,7 +3,7 @@
 > **Purpose:** Living design doc for the version-settings export/download + notification mechanism.
 > Keep this updated as decisions are made. See the **Decision Log** at the bottom.
 >
-> **Last updated:** 2026-06-30 (Outcome zone + filter refinements) · [Live prototype](https://madalinagheorghiu-ux.github.io/export-version/) · [PR #1](https://github.com/madalinagheorghiu-ux/export-version/pull/1)
+> **Last updated:** 2026-07-07 (Summary two-card redesign · reactive Readiness filter · life-buoy nav icon) · [Live prototype](https://madalinagheorghiu-ux.github.io/export-version/) · [PR #1](https://github.com/madalinagheorghiu-ux/export-version/pull/1)
 
 ---
 
@@ -446,8 +446,9 @@ Lead with the **header bell** (best satisfies "wherever you are" + reusable), an
 | 2026-07-03 | **Node mapping "Map nodes" is state-driven and self-resolving.** Ready processes show *"nothing to map"*; attention processes show unmatched-node rows with a warning hint under the title + **New-node dropdowns** (first option "last visited node", empty by default). "Review/Show auto-mapped" toggles were removed. **Mapping every unmatched node flips the process to Ready and updates the Readiness card counts/bar live.** | ✅ Decided |
 | 2026-07-03 | **Move tokens → "Set tokens destination (post-migration)".** Functional node dropdowns, build tags after each label, one header row (no repeated labels), no default row, right-aligned "+ Move Token". "Not found on target" uses a ban icon. | ✅ Decided |
 | 2026-07-03 | **Migration Configuration layout:** card title + Readiness filter + footer CTA are pinned; the process list scrolls inside its own region (page itself doesn't scroll). | ✅ Decided |
-| 2026-07-03 | **Readiness filter reacts to live counts.** A chip with count 0 is disabled (dashed/greyed, non-clickable). If the active filter's bucket empties (last process in it just resolved), the filter auto-clears so the resolved card stays visible instead of dropping into an empty state. | ✅ Decided |
-| 2026-07-03 | **Bulk Migration Summary redesign → two-card layout (final).** Grey collapsible cards: caret · title + build-version pill · right-aligned `N processes`; rows under a left rail. **Migrate to {tgt}** (expanded, icon+name only) and **Remain on {src}** (collapsed, icon+name+fate description grouping the left + terminated processes — "Remain on" not "Leave on" since it includes terminated processes). Names/counts sourced from the Configuration page (`genMigSummary` ← `MIG_CONFIG_PROCESSES`). 32px between title/body/CTA. Warning → *"Once started, the migration cannot be stopped or canceled."* Supersedes the three-card badge version explored earlier the same day. | ✅ Decided |
+| 2026-07-07 | **Readiness filter reacts to live counts.** A chip with count 0 is disabled (dashed/greyed, non-clickable). If the active filter's bucket empties (last process in it just resolved), the filter auto-clears so the resolved card stays visible instead of dropping into an empty state. | ✅ Decided |
+| 2026-07-07 | **Bulk Migration Summary redesign → two-card layout (final).** Grey collapsible cards: caret · title + build-version pill · right-aligned `N processes`; rows under a left rail. **Migrate to {tgt}** (expanded, icon+name only) and **Remain on {src}** (collapsed, icon+name+fate description grouping the left + terminated processes — "Remain on" not "Leave on" since it includes terminated processes). Names/counts sourced from the Configuration page (`genMigSummary` ← `MIG_CONFIG_PROCESSES`). 32px between title/body/CTA. Warning → *"Once started, the migration cannot be stopped or canceled."* Supersedes the three-card badge version explored earlier the same day. | ✅ Decided |
+| 2026-07-07 | **Life-buoy icon for Runtime Control** nav section — replaces the ambiguous refresh-loop icon (read as retry/sync) with a recover/rescue metaphor. Registered in `SECTION_ICONS`; the old `control` icon stays on the Migrate Bulk dropdown and Start Migration button. | ✅ Decided |
 
 ## Open questions
 
