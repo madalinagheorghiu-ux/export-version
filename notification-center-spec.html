@@ -238,11 +238,11 @@ and the <strong>action</strong> carries the next step.</p>
   </tbody>
 </table></div>
 <div class="callout">
-  <div class="k">CTA styling rule</div>
-  <p style="margin:0">Feed &amp; toast actions are <strong>secondary buttons with blue text</strong>. An <strong>icon
-  appears only when the click downloads immediately</strong> (<code>Download</code> → ⬇). Anything that opens a
-  step first (<code>Review</code>, <code>View</code>, <code>Retry</code>) is text-only — so the icon reliably
-  means “one click = file in hand.”</p>
+  <div class="k">CTA styling</div>
+  <p style="margin:0">Actions are <strong>tertiary — text + icon, no border and no fill</strong>, and
+  <strong>every</strong> action carries a leading icon (⬇&nbsp;<code>Download</code>, →&nbsp;<code>Review</code> /
+  <code>View</code>, ↺&nbsp;<code>Retry</code>). Sitting under the body rather than in a button-shaped slot, they read
+  as the item’s next step instead of competing with it.</p>
 </div>
 
 <h2 id="anatomy"><span class="num">5</span>Notification center anatomy</h2>
@@ -263,18 +263,37 @@ bell. Live arrivals also raise a <strong>toast</strong>.</p>
 A one-shot <strong>pulse</strong> on the bell is a separate signal, used when a running operation is backgrounded (§9).</p>
 <h3>Panel layout (top → bottom)</h3>
 <ul>
-  <li><strong>Header</strong> — “Notifications” + <strong>Mark all as read</strong> (a text link; <em>disabled, not hidden,</em> when nothing is unread).</li>
-  <li><strong>Search</strong> + a <strong>filter icon</strong> (§7) — the filter is an occasional control, so it collapses to an icon rather than a persistent row. The icon highlights when a filter is active; single-select, so there’s no filter chip.</li>
+  <li><strong>Header</strong> — “Notification” + <strong>Mark all as read</strong> (a text link; <em>disabled, not hidden,</em> when nothing is unread).</li>
+  <li><strong>Search</strong> + a <strong>filter icon</strong> (§7) — the filter is an occasional control, so it collapses to an icon rather than a persistent row. The icon highlights when a filter is active; single-select, so there’s no filter chip. The filter popover is <strong>175&nbsp;px</strong> wide; only the environment rows carry a colour dot, and the unread count is a plain right-aligned figure rather than a badge.</li>
+  <li class="proto-note" style="list-style:none;margin-left:-22px">The header and the search row sit in <strong>one continuous block — no separator between them</strong>; they’re one piece of panel chrome, and a rule there would split the header from its own controls. The first border is the one above the feed, where content actually starts.</li>
   <li><strong>Feed</strong> — one unified list, grouped by time into <strong>Today / This week / Older</strong>.</li>
   <li><strong>Footer</strong> — “Notifications are kept for 30 days.”</li>
 </ul>
-<h3>Feed item — two rows</h3>
+<h3>Feed item — title-led, body full width</h3>
+<pre>[ 24px disc ]   Title …………………………………………  2m
+                [ENV] workspace / &#128193; project
+                {source} &rarr; {target} &middot; {detail}
+                &#11015; Download</pre>
 <ul>
-  <li><strong>Context row:</strong> environment badge (or organization area) · workspace · project · time. A <strong>mark-as-read ✓</strong> appears on hover in a fixed slot <em>before the time</em>, so timestamps stay column-aligned across read and unread rows alike.</li>
-  <li><strong>Status row:</strong> status glyph · title · subtitle · inline action.</li>
-  <li><strong>Status glyph is deliberately discrete</strong> — a small colour-coded check / warning / ✕, <em>not</em> a filled tile — so a column of them stays calm rather than reading as a traffic light.</li>
-  <li><strong>Unread</strong> is a blue left-accent bar (+ the header/badge count).</li>
+  <li><strong>Row 1 — title + time.</strong> The title leads (it’s what the user scans for); the <strong>timestamp is right-aligned on the same row</strong>. The on-hover <strong>mark-as-read ✓</strong> sits in a fixed slot <em>before</em> the time, so timestamps stay column-aligned across read and unread rows alike.</li>
+  <li><strong>Row 2 — context.</strong> Environment badge (or organization area) · workspace · project.</li>
+  <li><strong>Row 3 — body.</strong> The source label / specifics; a failure adds a line naming the cause.</li>
+  <li><strong>Row 4 — action.</strong> Underneath the text, not in a right-hand column, so the body can run the <strong>full width</strong> of the panel.</li>
+  <li><strong>Status icon — a 24&nbsp;px disc with a 16&nbsp;px glyph inside</strong>, tinted per status. The tint is deliberately low-contrast so a column of discs still reads as calm rather than as a traffic light.</li>
+  <li><strong>Unread is the row fill alone</strong> — a pale blue wash, <em>no</em> left accent bar: the fill already spans the whole row, and a bar on top of it double-states the same thing.</li>
 </ul>
+<p>Type scale — the item runs on a single <strong>4&nbsp;px</strong> rhythm between bands:</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Band</th><th>Size / line-height</th><th>Weight</th><th>Colour</th></tr></thead>
+  <tbody>
+    <tr><td class="t">Title</td><td class="mono">14 / 22</td><td>Semibold</td><td class="mono">#1D232C</td></tr>
+    <tr><td class="t">Context + body details</td><td class="mono">12 / 18</td><td>Regular</td><td class="mono">#64748B</td></tr>
+    <tr><td class="t">Failure cause</td><td class="mono">12 / 18</td><td>Regular</td><td class="mono">#1D232C</td></tr>
+    <tr><td class="t">CTA</td><td class="mono">12 / 18</td><td>Semibold</td><td class="mono">#006BD8</td></tr>
+  </tbody>
+</table></div>
+<p class="proto-note">The failure cause is the one body line promoted to the title’s ink — it’s the substance of the
+notification, not a secondary detail.</p>
 
 <h2 id="width"><span class="num">6</span>Width &amp; sizing</h2>
 <p><strong>Panel size: 420 × 520&nbsp;px</strong> on a MacBook&nbsp;Pro&nbsp;16" — the reference display. The panel
