@@ -365,10 +365,15 @@ can’t currently be intersected (e.g. “unread Production”) — chosen for s
 Free-text <strong>search</strong> matches title + source label + context and composes with the filter.</p>
 
 <h2 id="toast"><span class="num">8</span>Toast (live arrival)</h2>
-<p>A toast is <strong>the same object as a feed item, just shorter-lived</strong> — it reuses the exact two-row
-structure, the discrete status glyph, the same colours and the same action rule (⬇&nbsp;Download for a clean
-result, text-only Review / View otherwise). It carries only what’s needed and a status-matched left accent
-(green / amber / red). A toast showing fewer fields than the feed is expected.</p>
+<p>A toast is <strong>the same object as a feed item, just shorter-lived</strong> — it reuses the <strong>exact
+bands of §5</strong>: the 24&nbsp;px status disc, then title, context, body and action stacked beside it, on the same
+4&nbsp;px rhythm and the same type scale. The only substitution is in the title row, where the feed’s
+<strong>timestamp slot holds the dismiss ×</strong> (a toast is always “now”, so there is nothing to date). Its action
+follows the same tertiary text+icon rule. It carries only what’s needed, plus a status-matched left accent
+(green / amber / red) as its one piece of toast-specific chrome. A toast showing fewer fields than the feed is
+expected.</p>
+<p class="proto-note">Because both surfaces render from one set of classes, a change to the item’s anatomy reaches
+the toast automatically — the two cannot drift into looking like different products.</p>
 <div class="callout">
   <div class="k">Don’t double-surface</div>
   <p style="margin:0">The governing rule: a toast fires <strong>only when the user ends up <em>not looking</em></strong>
