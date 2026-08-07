@@ -25,10 +25,34 @@ state. A toast alone is not enough: it's ephemeral and easily missed.
 **Goals**
 
 1. **Reach the user wherever they are** — the indicator lives in the always-mounted app shell, not in the operation's modal.
-2. **Never lose a notification** — persisted server-side, pushed in real time, pulled on reconnect.
+2. **Never lose a notification** — persisted server-side, pushed in real time, pulled on reconnect,
+   and **kept for 30 days** (§5.7), so a result stays findable long after its toast is gone.
 3. **Actionable** — each notification carries the next step (download / view results / retry), not just a status.
 4. **Extensible by type** — one feed, many operation kinds, without a redesign per kind.
 5. **Unambiguous context** — in a multi-workspace / multi-environment product, every notification says *where* it belongs.
+
+### 1.1 Delivery in phases — V1 ships toasts only
+
+The full pattern lands in two steps.
+
+| | **V1** | **Next iterations** |
+|---|---|---|
+| **Toast** | Yes — status only, **no CTA** | Gains its inline CTA (Download / Review / View / Retry) |
+| **Notification center** | **Not shipped** — no bell, no feed, no history | Bell + unified feed + history, per the rest of this spec |
+| **Where the user acts** | In the operation's own surface (Builds row, Corrective Actions table, the operation's modal) | Straight from the notification |
+
+In **V1 the toast announces a state change and nothing more** — it carries no action, and there is
+no center behind it. Everything downstream of "your thing is done" happens where the operation
+already lives.
+
+> **⚠️ Why the center can't simply be bolted on later — the blocker to resolve first.**
+> The bell assumes a **persistent header**, and the platform doesn't have one everywhere:
+> **several pages render without a header**, so the bell has nowhere to live — and the
+> "reach the user *wherever they are*" promise (goal 1) breaks precisely where it matters.
+> Introducing the center therefore requires **revisiting the platform's page architecture** —
+> establishing an always-mounted app shell (or an equivalent global slot) that every page
+> inherits. That's an architectural decision, not a notification-feature decision, which is
+> why V1 stops at toasts: **a toast needs no persistent chrome.**
 
 ---
 
@@ -61,6 +85,17 @@ Mapped to the two shipped operations:
 **Key idea:** the notification fires on every user-relevant transition. A `DONE_WITH_CAVEAT`
 state exists so the feed can route the user through a review step (e.g. the excluded-resources
 panel) instead of a one-click finish.
+
+**`IN_PROGRESS` has one visual, platform-wide — the Corrective Actions spinner.** The small
+neutral-grey ring spinner already used by the **Corrective Actions "In Progress" pill** is *the*
+running indicator, reused verbatim by the notification's status glyph and by its action slot
+("⟳ Preparing" / "⟳ In Progress"). Same component, same 12px geometry, same grey — no bespoke
+per-surface spinner and **no size overrides at the call site** (they drift). Rationale: "something
+is running" should look the same everywhere it appears, so users read it without re-learning; and
+`IN_PROGRESS` is the one state with no icon of its own — motion *is* the icon.
+
+> Distinct from the **large centred loader** inside a launch modal (§5.11), which is a full-surface
+> "we're working" state, not an inline status marker.
 
 ---
 
@@ -110,6 +145,17 @@ A global **bell** in the dark app-shell header (near `Config / Runtime` / the av
 *unread terminal results only* — never in-progress items; see §5.11) and a **one-shot pulse** that
 signals backgrounded in-progress work (§5.11). Live arrivals also raise a **toast**. Because the bell
 is global, closing a modal / navigating / refreshing never hides the status.
+
+**Bell icon states.** The badge is a bubble on the bell, and it earns its place three ways:
+
+| State | Bell shows | Rule |
+|---|---|---|
+| **All read** | Plain bell — **no bubble at all** | The bubble is *removed*, not shown as "0". Zero is not news; an empty badge is noise that trains the eye to ignore the real one. |
+| **1–99 unread** | Bell + bubble with the **exact count** | The number is the signal — it says how much is waiting. |
+| **> 99 unread** | Bell + bubble reading **`…`** | Past 99 the exact figure stops being actionable, and a 3-digit count would force the bubble to grow or shrink its type. The ellipsis says "more than you want to count" at a **fixed width**, so the header never reflows. |
+
+The count is *unread terminal results only* — in-progress never contributes (§5.11) — and the
+one-shot **pulse** is a separate signal for backgrounded work (§5.11).
 
 **Panel size — 420 × 520 px** on a MacBook Pro 16" (the reference display). Width benchmarked
 against contextual notification panels (Jira ~400, Notion ~420–460, Slack ~400, GitHub ~370 + full

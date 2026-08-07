@@ -331,7 +331,10 @@
   .nbtn.warn{color:#b6891f;border-color:#ecd9a3}
   .nbtn.warn:hover{background:var(--amber-bg)}
   .nproc{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--muted)}
-  .mini-spin{width:13px;height:13px;border-radius:50%;border:2px solid #d6dbe2;border-top-color:#8a94a3;animation:spin .9s linear infinite;display:inline-block}
+  /* THE in-progress spinner. One component, one size, used wherever an operation is running:
+     the Corrective Actions "In Progress" pill (the reference), the feed row's status glyph and
+     its action slot. No per-call-site size overrides — they drift. */
+  .mini-spin{width:12px;height:12px;border-radius:50%;border:2px solid #d6dbe2;border-top-color:#8a94a3;animation:spin .9s linear infinite;display:inline-block;flex:none}
   .exp-list{max-height:210px;overflow:auto;padding-bottom:6px}
   .erow{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:12.7px;border-bottom:1px solid var(--border-2)}
   .erow .ei{flex:1;min-width:0}
@@ -1780,7 +1783,7 @@ function NotifItem({ item, onAct, onActMig, onActOrg, onRetry, onRetryMig, onMar
       </div>
       {/* notification body */}
       <div className="nrow2" onClick={handleClick} style={{cursor:isReady?'pointer':'default'}}>
-        <span className={'nicon '+st.cls}>{isProcessing ? <span className="mini-spin" style={{width:16,height:16}}></span> : st.icon}</span>
+        <span className={'nicon '+st.cls}>{isProcessing ? <span className="mini-spin"></span> : st.icon}</span>
         <div className="ntext">
           <div className="t">{st.title}</div>
           <div className="s">{subtitle}</div>
@@ -2044,7 +2047,7 @@ function Toasts({ toasts, onAct, onClose }){
 
 /* ============================ Corrective Actions page ============================ */
 function OpStatusPill({ status, state }){
-  if (state==='IN_PROGRESS' || status==='In Progress') return <span className="status-pill in-progress"><span className="mini-spin" style={{width:12,height:12}}></span> In Progress</span>;
+  if (state==='IN_PROGRESS' || status==='In Progress') return <span className="status-pill in-progress"><span className="mini-spin"></span> In Progress</span>;
   if (status==='Completed')  return <span className="status-pill completed">Completed</span>;
   if (status==='Failed')     return <span className="status-pill failed">Failed</span>;
   return <span className="status-pill">{status}</span>;
