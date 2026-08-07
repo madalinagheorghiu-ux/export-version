@@ -204,8 +204,8 @@ is a separate interaction against the job’s result.</p>
 <div class="tablewrap"><table>
   <thead><tr><th>#</th><th>Operation type</th><th>In&nbsp;progress</th><th><span class="pill ok">Success</span></th><th><span class="pill warn">Warning</span></th><th><span class="pill err">Failed</span></th></tr></thead>
   <tbody>
-    <tr><td>1</td><td class="t">Export Build</td><td>Preparing build export…</td><td>Build export ready to download</td><td>Build export ready — {N} excluded</td><td>Build export failed</td></tr>
-    <tr><td>2</td><td class="t">Export Project Version</td><td>Preparing version export…</td><td>Version export ready to download</td><td>Version export ready — {N} excluded</td><td>Version export failed</td></tr>
+    <tr><td>1</td><td class="t">Export Build</td><td>Preparing build export…</td><td>Build export ready to download</td><td>Build export ready — {N} resources excluded</td><td>Build export failed</td></tr>
+    <tr><td>2</td><td class="t">Export Project Version</td><td>Preparing version export…</td><td>Version export ready to download</td><td>Version export ready — {N} resources excluded</td><td>Version export failed</td></tr>
     <tr><td>3</td><td class="t">Import Build</td><td>Importing build…</td><td>Build imported</td><td>Build import needs review — {N} conflicts</td><td>Build import failed</td></tr>
     <tr><td>4</td><td class="t">Import Project Version</td><td>Importing version…</td><td>Version imported</td><td>Version import needs review — {N} conflicts</td><td>Version import failed</td></tr>
     <tr><td>5</td><td class="t">Bulk Import End-Users</td><td>Importing end-users…</td><td>End-users imported</td><td>End-users imported — {N} skipped</td><td>End-user import failed</td></tr>
@@ -218,7 +218,7 @@ is a separate interaction against the job’s result.</p>
   <div class="k">The warning status is really two flavours</div>
   <p style="margin:0">They share the amber colour but differ in <strong>whether the operation finished</strong>, which changes the CTA:</p>
   <ul style="margin:8px 0 0">
-    <li><strong>W-a · needs review / accept impact</strong> (not finished — proceeds only if the user accepts) → types 1, 2, 3, 4 (and 7). Title: “ready — {N} excluded” / “needs review — {N} conflicts”. <strong>CTA = Review</strong> → then Download / Import.</li>
+    <li><strong>W-a · needs review / accept impact</strong> (not finished — proceeds only if the user accepts) → types 1, 2, 3, 4 (and 7). Title: “ready — {N} resources excluded” / “needs review — {N} conflicts”. <strong>CTA = Review</strong> → then Download / Import.</li>
     <li><strong>W-b · completed with warnings</strong> (finished, with caveats) → types 5, 6. Title: “…ed — {N} skipped / failed”. <strong>CTA = View</strong> (details).</li>
   </ul>
 </div>
