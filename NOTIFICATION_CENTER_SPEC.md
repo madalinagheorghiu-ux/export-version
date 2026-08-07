@@ -199,7 +199,7 @@ and its *notification* are the **same row**. A `notifStatus`-style helper branch
 |---|---|---|---|
 | `export` | preparing | Preparing build / version export… | spinner |
 | `export` | ready | Build / Version export ready to download | ✅ |
-| `export` | ready w/ exclusions | … export ready — N excluded | ⚠️ |
+| `export` | ready w/ exclusions | … export ready — N resources excluded | ⚠️ |
 | `export` | failed | … export failed | ❌ |
 | `migration` | in progress | Migrating instances… | spinner |
 | `migration` | completed | Instances migrated | ✅ |
@@ -262,7 +262,7 @@ Every item ends in an action that points at the same `jobId`:
 **every** action carries a leading icon (⬇ `Download`, → `Review` / `View`, ↺ `Retry`). Sitting
 under the body rather than in a button-shaped slot, they read as the item's next step instead of
 competing with it. The caveat on `READY_WITH_EXCLUSIONS` is carried by the item's amber warning
-icon + "N excluded" title, not by the button.
+icon + "N resources excluded" title, not by the button.
 
 **Failed state.** A `FAILED` item shows **no status chip** — the red error icon + title already say
 it, and a "Failed" pill next to a red icon is redundant. Its action slot holds **Retry** (§8), and it
@@ -408,8 +408,8 @@ file-producing → *"ready to download"*; change-applying → past participle (*
 
 | # | Type | In progress | Success | Warning | Failed |
 |---|---|---|---|---|---|
-| 1 | Export Build | Preparing build export… | Build export ready to download | Build export ready — {N} excluded | Build export failed |
-| 2 | Export Project Version | Preparing version export… | Version export ready to download | Version export ready — {N} excluded | Version export failed |
+| 1 | Export Build | Preparing build export… | Build export ready to download | Build export ready — {N} resources excluded | Build export failed |
+| 2 | Export Project Version | Preparing version export… | Version export ready to download | Version export ready — {N} resources excluded | Version export failed |
 | 3 | Import Build | Importing build… | Build imported | Build import needs review — {N} conflicts | Build import failed |
 | 4 | Import Project Version | Importing version… | Version imported | Version import needs review — {N} conflicts | Version import failed |
 | 5 | Bulk Import End-Users | Importing end-users… | End-users imported | End-users imported — {N} skipped | End-user import failed |

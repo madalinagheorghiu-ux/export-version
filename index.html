@@ -956,7 +956,7 @@ function App(){
       id, jobId: job.id, type:'export', excluded: excl>0, ctx: job.ctx,
       cls: excl ? 'warn' : 'ok',
       icon: excl ? 'warn' : 'check',
-      title: excl ? `${subj} ready — ${excl} excluded` : `${subj} ready to download`,
+      title: excl ? `${subj} ready — ${excl} resource${excl>1?'s':''} excluded` : `${subj} ready to download`,
       subtitle: jobLabel(job) + (job.fromCache ? ' · reused' : ''),
       action: excl ? 'Review' : 'Download',
       download: !excl,
@@ -1758,7 +1758,7 @@ function notifStatus(item){
   const n = (item.exclusions||[]).length;
   switch(item.state){
     case 'PROCESSING':            return { cls:'proc', icon:I.check, title:`Preparing ${subj.toLowerCase()}…` };
-    case 'READY_WITH_EXCLUSIONS': return { cls:'warn', icon:I.warn,  title:`${subj} ready — ${n} excluded` };
+    case 'READY_WITH_EXCLUSIONS': return { cls:'warn', icon:I.warn,  title:`${subj} ready — ${n} resource${n>1?'s':''} excluded` };
     case 'FAILED':                return { cls:'err',  icon:I.errCircle, title:`${subj} failed` };
     default:                      return { cls:'ok',   icon:I.check, title:`${subj} ready to download` };
   }
