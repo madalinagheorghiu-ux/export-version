@@ -300,20 +300,19 @@
   .nbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
   .nline1{display:flex;align-items:flex-start;gap:8px}
   /* Title — 14/22 semibold */
-  .nitem .t{flex:1;min-width:0;font-size:14px;line-height:22px;font-weight:600;color:#1D232C}
+  .nitem .t, .toast .t{flex:1;min-width:0;font-size:14px;line-height:22px;font-weight:600;color:#1D232C}
   .nctx-row{display:flex;align-items:center;gap:7px;min-width:0}
   /* Body details — 12/18 regular */
-  .nitem .s,
-  .nitem .nmeta{font-size:12px;line-height:18px;font-weight:400;color:#64748B}
-  .nitem .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0}
+  .nitem .s, .toast .s,
+  .nitem .nmeta, .toast .nmeta{font-size:12px;line-height:18px;font-weight:400;color:#64748B}
+  .nitem .s, .toast .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0}
   /* The failure cause is the one body line that carries title-weight colour — it's the substance
      of the notification, not a secondary detail. Still regular weight; it wraps. */
-  .nitem .s.nfail{color:#1D232C;white-space:normal;margin:0}
+  .nitem .s.nfail, .toast .s.nfail{color:#1D232C;white-space:normal;margin:0}
   .nact{display:flex}
   .nitem:hover{background:#fafbfc}
   /* Unread is carried by the fill alone — no left accent bar. */
   .nitem.unread{background:#f3f8ff}
-  .nrow1{display:flex;align-items:center;gap:8px;margin-bottom:8px}
   .nmeta{font-size:11.5px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .nproj{display:inline-flex;align-items:center;gap:4px;vertical-align:bottom}
   .nproj svg{color:#9aa4b2;vertical-align:-2px}
@@ -326,7 +325,6 @@
   .n-markread svg{width:14px;height:14px}
   .n-markread:hover{background:#eef0f3;color:#697586}
   .nitem:hover .n-markread{opacity:1}
-  .nrow2{display:flex;align-items:flex-start;gap:10px}
   /* Status marker — a 24px tinted disc with a 16px glyph inside. The tint is very low-contrast
      so a column of them still reads as calm rather than as a traffic light. */
   .nicon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
@@ -337,22 +335,16 @@
   .nicon.err{color:#d6453a;background:#fbe8e5}
   .nicon.info{color:#3a5fb0;background:#e9eefb}
   .nicon.proc{color:#8a94a3;background:#eef0f3}
-  .ntext{flex:1;min-width:0}
-  .ntext .t{font-size:13.2px;font-weight:600;color:#222b38;line-height:1.35}
-  .ntext .s{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* Failure cause: wraps (it's a sentence, not a label) and stays muted so the red icon carries the alarm. */
-  .ntext .s.nfail{white-space:normal;line-height:1.45;margin-top:4px}
-  .ntext .tm{font-size:11px;color:var(--faint);margin-top:3px}
   .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--blue)}
   .nctx{display:flex;align-items:center;gap:7px;margin-top:5px}
   .nctx-t{font-size:11.5px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
   .nctx-t svg{color:#9aa4b2}
-  .nright{margin-left:auto;display:flex;align-items:center;gap:8px;flex:0 0 auto;padding-top:3px}
   /* Tertiary: text + icon only. Negative inset so the label optically aligns with the text above it. */
   .nbtn{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;border-radius:7px;
         padding:4px 7px;margin-left:-7px;font-weight:600;color:var(--blue);font-size:12.5px;white-space:nowrap;cursor:pointer}
   .nbtn:hover{background:var(--blue-soft)}
-  .nitem .nbtn{font-size:12px;line-height:18px;font-weight:600;color:#006BD8}
+  .nitem .nbtn, .toast .nbtn{font-size:12px;line-height:18px;font-weight:600;color:#006BD8}
   .nbtn svg{width:15px;height:15px;flex:none}
   .nbtn.warn{color:#b6891f;border-color:#ecd9a3}
   .nbtn.warn:hover{background:var(--amber-bg)}
@@ -378,7 +370,8 @@
 
   /* ---------- Toasts ---------- */
   .toasts{position:fixed;right:18px;bottom:56px;z-index:90;display:flex;flex-direction:column;gap:10px;width:360px}
-  /* A toast reuses the feed item's rows (.nrow1/.nrow2/.nicon/.ntext/.nbtn); only the card + left accent are toast-specific. */
+  /* A toast reuses the feed item's bands (.nmain/.nicon/.nbody/.nline1/.nctx-row/.s/.nbtn);
+     only the card and its status-matched left accent are toast-specific. */
   .toast{background:#fff;border:1px solid var(--border);border-left:4px solid var(--green);border-radius:11px;box-shadow:var(--shadow);padding:12px 14px;display:block;animation:slidein .25s ease}
   .toast.ok{border-left-color:var(--green)} .toast.warn{border-left-color:var(--amber-bar)} .toast.err{border-left-color:var(--red)}
   @keyframes slidein{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
@@ -1998,7 +1991,7 @@ const TOAST_MS       = 5000; // no-action toast
 const TOAST_MS_CTA   = 7000; // toast carrying a CTA — extra time to reach for it
 const TOAST_GRACE_MS = 1000; // on resume, never leave less than this, so it can't vanish the instant you look away
 
-// A toast mirrors a feed item's structure exactly (context row + status row), just shorter-lived.
+// A toast mirrors a feed item's structure exactly (§5.3 bands), just shorter-lived.
 // Each toast owns its own countdown so it can pause independently while the user reads/hovers it.
 function Toast({ t, onAct, onClose }){
   const duration = t.action ? TOAST_MS_CTA : TOAST_MS;
@@ -2044,22 +2037,26 @@ function Toast({ t, onAct, onClose }){
     <div className={'toast '+(t.cls||'ok')}
          onMouseEnter={()=>hold('hover')}  onMouseLeave={()=>release('hover')}
          onFocusCapture={()=>hold('focus')} onBlurCapture={()=>release('focus')}>
-      <div className="nrow1">
-        {t.ctx && <>
-          <span className={'env-badge sm '+envTone(t.ctx.env)}>{t.ctx.env}</span>
-          <span className="nmeta">{t.ctx.workspace} · <span className="nproj">{I.folder}{t.ctx.project}</span></span>
-        </>}
-        <button className="ndismiss" title="Dismiss" style={{marginLeft:'auto'}} onClick={()=>onClose(t.id)}>{I.x}</button>
-      </div>
-      <div className="nrow2">
+      {/* Same bands as a feed item (§5.3): disc · title+dismiss · context · body · action.
+          The dismiss × takes the slot the feed gives the timestamp. */}
+      <div className="nmain">
         <span className={'nicon '+(t.cls||'ok')}>{I[t.icon]||I.check}</span>
-        <div className="ntext">
-          <div className="t">{t.title}</div>
+        <div className="nbody">
+          <div className="nline1">
+            <div className="t">{t.title}</div>
+            <button className="ndismiss" title="Dismiss" onClick={()=>onClose(t.id)}>{I.x}</button>
+          </div>
+          {t.ctx && <div className="nctx-row">
+            <span className={'env-badge sm '+envTone(t.ctx.env)}>{t.ctx.env}</span>
+            <span className="nmeta">{t.ctx.workspace} / <span className="nproj">{I.folder}{t.ctx.project}</span></span>
+          </div>}
           <div className="s">{t.subtitle}</div>
+          {t.action && <div className="nact">
+            <button className="nbtn" onClick={()=>{onAct(t);onClose(t.id);}}>
+              {t.download ? I.dl : t.retry ? I.retry : I.arrowR}{t.action}
+            </button>
+          </div>}
         </div>
-        {t.action && <div className="nright">
-          <button className="nbtn" onClick={()=>{onAct(t);onClose(t.id);}}>{t.download && I.dl}{t.action}</button>
-        </div>}
       </div>
     </div>
   );

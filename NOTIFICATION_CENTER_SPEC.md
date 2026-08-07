@@ -286,12 +286,18 @@ so exactly one surface and one focus target exist at a time. *Keep working* rest
 (Stacked modals are avoided on purpose: double-dimming + competing focus traps / Esc handling.)
 
 ### 5.5 Toast (live arrival)
-A live toast is **the same object as a feed item, just shorter-lived** — it reuses the exact
-two-row structure (context row + status row), the discrete status glyph, the same colours, and the
-same action rule (⬇ **Download** for a clean result, text-only **Review** / **View** otherwise). It
-carries only what's needed (env context, status, title, one-line subtitle, one action) — a toast
-showing fewer fields than the feed is expected. A status-matched left accent (green / amber / red)
-is the only toast-specific chrome. It points at the same `jobId`.
+A live toast is **the same object as a feed item, just shorter-lived** — it reuses the **exact bands
+of §5.3**: the 24px status disc, then title, context, body and action stacked beside it, on the same
+4px rhythm and the same type scale. The only substitution is in the title row, where the feed's
+**timestamp slot holds the dismiss ×** (a toast is always "now", so there is nothing to date). Its
+action follows the same tertiary text+icon rule.
+
+It carries only what's needed (env context, status, title, one-line subtitle, one action) — a toast
+showing fewer fields than the feed is expected. A **status-matched left accent** (green / amber /
+red) is the only toast-specific chrome. It points at the same `jobId`.
+
+> Because both surfaces render from one set of classes, a change to the item's anatomy reaches the
+> toast automatically — the two cannot drift into looking like different products.
 
 **Toast suppression — don't double-surface.** The governing rule: **a toast fires only when the
 user ends up *not looking* at the finished result.** So it's suppressed when they are:
