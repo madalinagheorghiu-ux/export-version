@@ -11,7 +11,7 @@
 > licence expiry, …).
 >
 > **Companion doc:** `EXPORT_DOWNLOAD_PLAN.md`. · **Shareable HTML:** `notification-center-spec.html`.
-> · **Live prototype:** https://madalinagheorghiu-ux.github.io/export-version/ · **Last updated:** 2026-08-06 (Retry on failed — §5.4, §8 · toast persistence + in-progress semantics — §5.5, §5.11)
+> · **Live prototype:** https://madalinagheorghiu-ux.github.io/export-version/ · **Last updated:** 2026-08-06 (Notification-center visual redesign — §5.1, §5.3, §5.4, §5.6)
 
 ---
 
@@ -146,6 +146,11 @@ A global **bell** in the dark app-shell header (near `Config / Runtime` / the av
 signals backgrounded in-progress work (§5.11). Live arrivals also raise a **toast**. Because the bell
 is global, closing a modal / navigating / refreshing never hides the status.
 
+**Panel chrome.** The header ("Notification" + *Mark all as read*) and the search + filter row sit
+in **one continuous block — no separator between them**; they're one piece of panel chrome, and a
+rule there would split the header from its own controls. The first border in the panel is the one
+above the feed, where the content actually starts.
+
 **Bell icon states.** The badge is a bubble on the bell, and it earns its place three ways:
 
 | State | Bell shows | Rule |
@@ -210,15 +215,41 @@ New kinds (licence expiry, build status, errors) slot in as new `type` branches 
 shares the feed cleanly; **org-level** notifications (see §5.9) are the second — they proved the
 feed can hold items that belong to no environment at all.
 
-### 5.3 Item layout (de-crowded, two rows)
-Each feed item is **two rows**:
-- **Context header (top):** env pill (or org area — §5.9) · workspace · project · time. A **mark-as-read
-  ✓** appears on hover in a fixed slot **before the time**, so timestamps stay column-aligned across
-  read/unread rows alike.
-- **Notification (below):** status icon · title · source label · inline **action**
-- **Status icon** is deliberately **discrete** — a small **colour-coded glyph** (success / warning /
-  failed), *not* a filled tile — so a column of them stays calm rather than reading as a traffic light.
-- **Unread indicator:** a blue **left-accent bar**.
+### 5.3 Item layout — title-led, body full width
+
+A **status disc in a fixed left column**, and everything else stacked beside it at full width:
+
+```
+[ 24px disc ]   Title …………………………………………  2m
+                [ENV] workspace / 📁 project
+                {source} → {target} · {detail}
+                ⬇ Download
+```
+
+- **Row 1 — title + time.** The title leads (it's what the user scans for); the **timestamp is
+  right-aligned on the same row**. The on-hover **mark-as-read ✓** sits in a fixed slot *before* the
+  time, so timestamps stay column-aligned across read and unread rows alike.
+- **Row 2 — context.** Env badge (or org area — §5.9) · workspace · project.
+- **Row 3 — body.** The source label / specifics. A failure adds a line naming the cause (§5.4).
+- **Row 4 — action.** Underneath the text, not in a right-hand column, so the body can run the
+  **full width** of the panel.
+- **Status icon — a 24px disc with a 16px glyph inside**, tinted per status (success / warning /
+  failed). The tint is deliberately low-contrast so a column of discs still reads as calm rather
+  than as a traffic light.
+- **Unread indicator — the row fill alone** (a pale blue wash). No left accent bar: the fill already
+  spans the whole row, and a bar on top of it double-states the same thing.
+
+**Type scale** (the whole item runs on a single **4px** rhythm between bands):
+
+| Band | Size / line-height | Weight | Colour |
+|---|---|---|---|
+| Title | 14 / 22 | Semibold | `#1D232C` |
+| Context + body details | 12 / 18 | Regular | `#64748B` |
+| Failure cause (§5.4) | 12 / 18 | Regular | `#1D232C` |
+| CTA | 12 / 18 | Semibold | `#006BD8` |
+
+The failure cause is the one body line promoted to the title's ink: it's the substance of the
+notification, not a secondary detail.
 
 ### 5.4 Inline action (the payoff)
 Every item ends in an action that points at the same `jobId`:
@@ -227,11 +258,11 @@ Every item ends in an action that points at the same `jobId`:
 - **Completed migration** → **View** → the Migration Detail Page.
 - **Failed** → **Retry**.
 
-**Action styling.** Feed actions are **secondary buttons with blue text** — consistent, low-weight.
-An **icon appears only when the click downloads immediately** (`Download` → ⬇). Anything that opens
-a step first (`Review`, `View results`, `Retry`) is text-only, so the icon reliably signals
-"one click = file in hand." The caveat on `READY_WITH_EXCLUSIONS` is carried by the item's amber
-warning icon + "N excluded" title, not by the button.
+**Action styling.** Feed actions are **tertiary — text + icon, no border and no fill** — and
+**every** action carries a leading icon (⬇ `Download`, → `Review` / `View`, ↺ `Retry`). Sitting
+under the body rather than in a button-shaped slot, they read as the item's next step instead of
+competing with it. The caveat on `READY_WITH_EXCLUSIONS` is carried by the item's amber warning
+icon + "N excluded" title, not by the button.
 
 **Failed state.** A `FAILED` item shows **no status chip** — the red error icon + title already say
 it, and a "Failed" pill next to a red icon is redundant. Its action slot holds **Retry** (§8), and it
@@ -295,20 +326,26 @@ than a persistent row. The icon opens a single-select popover that folds *read-s
 into one list:
 
 ```
-All notifications
-Unread (N)                    ← read-state
-─────────────
-Organization                 ← org-level items (no environment)
-─────────────
+All Notifications
+Unread                    N   ← read-state, count right-aligned
+Organization                  ← org-level items (no environment)
+─────────────────────────
 ENVIRONMENT TYPE
-  Production / Staging / Sandbox
+  ● Sandbox                   ← sandbox → staging → production,
+  ● Staging                     the order work actually promotes in
+  ● Production
 ```
+
+**Popover — 175px wide.** It holds six short labels and nothing else, so it's sized to the content
+rather than to the panel. Only the **environment rows carry a dot**: the dot *is* the env-type
+colour coding, so putting a neutral one on *All / Unread / Organization* would imply those are
+scopes of the same kind. The unread **count is a plain right-aligned figure**, not a badge pill —
+it annotates the row, it isn't a second alarm.
 
 **One active filter at a time** — *Unread* shows unread across every scope; a scope shows that
 scope's items (read + unread). *(Trade-off: the two can't currently be intersected, e.g. "unread
 Production" — chosen for simplicity; it replaced the earlier standalone All/Unread toggle, now
-removed.)* Env types carry a colour-coded dot; *All / Unread / Organization* use a neutral dot.
-Because it's **single-select**, there's **no active-filter chip** — the highlighted **filter icon**
+removed.)* Because it's **single-select**, there's **no active-filter chip** — the highlighted **filter icon**
 alone signals a filter is on, and re-opening the popover to pick *All notifications* clears it. (A
 chip would just duplicate what the one selected row in the popover already shows.) (Evolved: four
 counted chips → grouped scope dropdown → icon + chip → icon only, with read-state folded in.)
