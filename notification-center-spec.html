@@ -63,6 +63,12 @@
   .pill.warn{background:rgba(194,146,31,.16);color:var(--amber)}
   .pill.err{background:rgba(214,69,58,.14);color:var(--red)}
   .pill.prog{background:var(--code-bg);color:var(--muted)}
+  /* In-progress marker — the SAME ring spinner the Corrective Actions "In Progress" pill uses,
+     so one component means "running" everywhere (proto: .mini-spin + .status-pill.in-progress). */
+  .pill.prog{display:inline-flex;align-items:center;gap:7px}
+  .spin{width:12px;height:12px;border-radius:50%;border:2px solid #d6dbe2;border-top-color:#8a94a3;
+        animation:spin .9s linear infinite;display:inline-block;flex:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
   .mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.9em}
 
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
@@ -126,11 +132,34 @@ navigate, refresh, or leave and come back</strong> — and still be told, reliab
 changes state. A toast alone isn’t enough: it’s ephemeral and easily missed.</p>
 <div class="grid2">
   <div class="card"><h4>Reach the user anywhere</h4><p>The indicator lives in the always-mounted app shell, not in the operation’s modal.</p></div>
-  <div class="card"><h4>Never lose a notification</h4><p>Persisted server-side, pushed in real time, pulled on reconnect.</p></div>
+  <div class="card"><h4>Never lose a notification</h4><p>Persisted server-side, pushed in real time, pulled on reconnect — and <strong>kept for 30 days</strong>, so a result stays findable long after the toast is gone.</p></div>
   <div class="card"><h4>Actionable</h4><p>Each item carries the next step — download / view / review / retry — not just a status.</p></div>
   <div class="card"><h4>Extensible by type</h4><p>One feed, many operation kinds, without a redesign per kind.</p></div>
   <div class="card"><h4>Unambiguous context</h4><p>Every notification says <em>where</em> it belongs (environment / workspace / project, or organization).</p></div>
   <div class="card"><h4>No dedicated page</h4><p>The panel is the home; per-item detail is surfaced in the operation’s own modals.</p></div>
+</div>
+
+<h3>Delivery in phases — V1 ships toasts only</h3>
+<p>The full pattern lands in two steps. <strong>V1 is toasts only, and those toasts carry no CTA</strong> — they
+announce a state change and nothing more. There is <strong>no notification center in V1</strong>: no bell, no feed,
+no history. The user acts on the result where the operation already lives (the Builds row, the Corrective Actions
+table, the operation’s own modal).</p>
+<div class="tablewrap"><table>
+  <thead><tr><th></th><th>V1</th><th>Next iterations</th></tr></thead>
+  <tbody>
+    <tr><td class="t">Toast</td><td>Yes — status only, <strong>no CTA</strong></td><td>Gains its inline CTA (Download / Review / View / Retry)</td></tr>
+    <tr><td class="t">Notification center</td><td><strong>Not shipped</strong></td><td>Bell + unified feed + history, per this spec</td></tr>
+    <tr><td class="t">Where the user acts</td><td>In the operation’s own surface</td><td>Straight from the notification</td></tr>
+  </tbody>
+</table></div>
+<div class="callout amber">
+  <div class="k">Why the center can’t simply be added later — the blocker to resolve</div>
+  <p style="margin:0">The bell assumes a <strong>persistent header</strong>, and the platform doesn’t have one
+  everywhere: <strong>several pages render without a header</strong>, so the bell has nowhere to live and the
+  “reach the user <em>wherever they are</em>” promise breaks precisely where it matters. Introducing the center
+  therefore requires <strong>revisiting the platform’s page architecture</strong> — establishing an always-mounted
+  app shell (or an equivalent global slot) that every page inherits. That is an architectural decision, not a
+  notification-feature decision, which is why V1 stops at toasts: a toast needs no persistent chrome.</p>
 </div>
 
 <h2 id="model"><span class="num">2</span>The model: an async job whose state changes are the notifications</h2>
@@ -145,12 +174,23 @@ is a separate interaction against the job’s result.</p>
 <div class="tablewrap"><table>
   <thead><tr><th>Status</th><th>Meaning</th><th>Icon / colour</th><th>Default CTA</th></tr></thead>
   <tbody>
-    <tr><td class="t"><span class="pill prog">In&nbsp;progress</span></td><td>Running; not done yet.</td><td>Spinner · neutral</td><td>—</td></tr>
+    <tr><td class="t"><span class="pill prog"><span class="spin"></span>In&nbsp;progress</span></td><td>Running; not done yet.</td><td>The Corrective&nbsp;Actions ring spinner · neutral grey</td><td>—</td></tr>
     <tr><td class="t"><span class="pill ok">Success</span></td><td>Completed cleanly.</td><td>Check · green</td><td><strong>Download</strong> or <strong>View</strong></td></tr>
     <tr><td class="t"><span class="pill warn">Warning</span></td><td>Two flavours — <em>completed with warnings</em>, <em>or</em> not completed yet but can proceed if the user accepts the impact.</td><td>Triangle · amber</td><td><strong>Review</strong> or <strong>View</strong></td></tr>
     <tr><td class="t"><span class="pill err">Failed</span></td><td>Did not complete; can be retried.</td><td>✕ · red</td><td><strong>Retry</strong></td></tr>
   </tbody>
 </table></div>
+
+<div class="callout">
+  <div class="k">In progress has one visual, platform-wide</div>
+  <p style="margin:0">The small neutral-grey ring spinner already used by the <strong>Corrective Actions
+  “<span class="pill prog"><span class="spin"></span>In&nbsp;progress</span>” pill</strong> is <em>the</em> running
+  indicator — reused verbatim by the notification’s status glyph and its action slot. Same component, same 12&nbsp;px
+  geometry, same grey; <strong>no per-surface spinner and no size overrides at the call site</strong> (they drift).
+  “Something is running” should look identical everywhere, and <em>in&nbsp;progress</em> is the one state with no icon
+  of its own — motion <em>is</em> the icon. Distinct from the large centred loader inside a launch modal (§9), which is
+  a full-surface “we’re working” state, not an inline marker.</p>
+</div>
 
 <h2 id="types"><span class="num">3</span>Operation types &amp; notification titles</h2>
 <p>Seven long-running operations ride on this mechanism today. The <strong>naming convention</strong>:</p>
@@ -189,7 +229,7 @@ and the <strong>action</strong> carries the next step.</p>
 <div class="tablewrap"><table>
   <thead><tr><th>Status</th><th>Subtitle (specifics)</th><th>Action</th></tr></thead>
   <tbody>
-    <tr><td class="t"><span class="pill prog">In&nbsp;progress</span></td><td>what → where</td><td>— (spinner)</td></tr>
+    <tr><td class="t"><span class="pill prog"><span class="spin"></span>In&nbsp;progress</span></td><td>what → where</td><td>— (spinner only)</td></tr>
     <tr><td class="t"><span class="pill ok">Success — file</span></td><td class="mono">{source} → {target}</td><td><strong>Download</strong> (with ⬇ icon)</td></tr>
     <tr><td class="t"><span class="pill ok">Success — applied</span></td><td class="mono">{source} → {target} · {N} items</td><td><strong>View</strong></td></tr>
     <tr><td class="t"><span class="pill warn">Warning W-a</span></td><td>same as success</td><td><strong>Review</strong></td></tr>
@@ -210,6 +250,17 @@ and the <strong>action</strong> carries the next step.</p>
 <p>A global <strong>bell</strong> in the dark app-shell header with an <strong>unread badge</strong>, always mounted
 and independent of any operation modal. Clicking it opens a <strong>contextual panel</strong> anchored under the
 bell. Live arrivals also raise a <strong>toast</strong>.</p>
+<h3>Bell icon states</h3>
+<div class="tablewrap"><table>
+  <thead><tr><th>State</th><th>Bell shows</th><th>Rule</th></tr></thead>
+  <tbody>
+    <tr><td class="t">All read</td><td>Plain bell — <strong>no counter bubble at all</strong></td><td>The bubble is removed, not shown as “0”. Zero is not news; an empty badge is visual noise that trains the eye to ignore the real one.</td></tr>
+    <tr><td class="t">1–99 unread</td><td>Bell + bubble with the <strong>exact count</strong></td><td>The number is the signal — it says how much is waiting.</td></tr>
+    <tr><td class="t">More than 99</td><td>Bell + bubble reading <strong><span class="mono">…</span></strong></td><td>Past 99 the exact figure stops being actionable and the bubble would have to grow or shrink its type to fit. The ellipsis says “more than you want to count” at a fixed width, so the header never reflows.</td></tr>
+  </tbody>
+</table></div>
+<p class="proto-note">The count itself is <em>unread terminal results only</em> — in-progress items never contribute (§9).
+A one-shot <strong>pulse</strong> on the bell is a separate signal, used when a running operation is backgrounded (§9).</p>
 <h3>Panel layout (top → bottom)</h3>
 <ul>
   <li><strong>Header</strong> — “Notifications” + <strong>Mark all as read</strong> (a text link; <em>disabled, not hidden,</em> when nothing is unread).</li>
