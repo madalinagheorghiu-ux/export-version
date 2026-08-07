@@ -95,7 +95,7 @@
   <div class="meta">
     <span class="tag">FlowX Designer</span>
     <span class="tag n">Status: prototype-backed</span>
-    <span class="tag n">Last updated: 2026-08-05</span>
+    <span class="tag n">Last updated: 2026-08-06</span>
     <span class="tag n">Owner: Product / Design</span>
   </div>
 </header>
@@ -226,9 +226,9 @@ bell. Live arrivals also raise a <strong>toast</strong>.</p>
 </ul>
 
 <h2 id="width"><span class="num">6</span>Width &amp; sizing</h2>
-<p><strong>Recommended panel width: 420&nbsp;px</strong> (min 380 / max 440, responsive; the panel scrolls internally,
-capped ~ 480&nbsp;px tall).</p>
-<p>Reasoning, benchmarked against contextual notification panels in comparable tools:</p>
+<p><strong>Panel size: 420 × 520&nbsp;px</strong> on a MacBook&nbsp;Pro&nbsp;16" — the reference display. The panel
+scrolls internally; the list is the only band that flexes.</p>
+<p>Reasoning for the width, benchmarked against contextual notification panels in comparable tools:</p>
 <div class="tablewrap"><table>
   <thead><tr><th>Product</th><th>Surface</th><th>Approx. width</th></tr></thead>
   <tbody>
@@ -246,6 +246,29 @@ capped ~ 480&nbsp;px tall).</p>
   <li>Because <strong>per-item detail lives in the operation’s own modals</strong> (the excluded-resources panel, the migration detail page), the panel does <em>not</em> need to show everything — so it doesn’t need to grow into a page either. 420&nbsp;px is the balance.</li>
 </ul>
 <p class="proto-note">Toasts stay a touch narrower (~360 px) since they’re transient and single-action.</p>
+
+<h3>Responsive tiers — a fixed 21 : 26 proportion</h3>
+<p>The panel keeps the same <strong>21 : 26 (w : h)</strong> proportion at every size, and scales in
+<strong>discrete steps rather than fluidly</strong> — a dropdown that resizes continuously with the window makes the
+list reflow while you’re reading it, and the two-row item is only legible inside a narrow width band anyway.</p>
+<p>Tiers switch on <strong>viewport height</strong>, because height is what actually runs out on a laptop: a 16" and a
+13" are ~250&nbsp;px apart vertically, but both have room for a 420&nbsp;px column.</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Tier</th><th>Trigger (viewport height)</th><th>Panel</th><th>Typical display</th></tr></thead>
+  <tbody>
+    <tr><td class="t">S</td><td class="mono">&lt; 900 px</td><td class="mono">380 × 470</td><td>13" laptops (1280×800, MacBook Air)</td></tr>
+    <tr><td class="t">M — baseline</td><td class="mono">900–1149 px</td><td class="mono"><strong>420 × 520</strong></td><td><strong>MacBook Pro 16"</strong>, most docked laptops</td></tr>
+    <tr><td class="t">L</td><td class="mono">≥ 1150 px</td><td class="mono">460 × 570</td><td>27" external, 4K/5K desktop</td></tr>
+  </tbody>
+</table></div>
+<div class="callout amber">
+  <div class="k">Two guards sit above the tiers</div>
+  <p style="margin:0"><strong>Never reach the screen edge</strong> — <code>max-height: calc(100dvh − 72px)</code>. On a
+  very short window the panel clamps below its tier height (the ratio yields to fit) so the <strong>footer stays
+  visible</strong> instead of the list running off-screen. · <strong>Narrow viewports (&lt; 520&nbsp;px)</strong> — the
+  dropdown becomes a near-full-width <strong>sheet</strong> (<code>100vw − 24px</code>, max <code>70dvh</code>) and the
+  ratio is deliberately released: 21:26 serves a bell-anchored panel, not a phone-width one.</p>
+</div>
 
 <h2 id="scope"><span class="num">7</span>Scope: organization vs environment type · filtering</h2>
 <p>An organization spans <strong>three environment types</strong> — <code>PRODUCTION</code> / <code>STAGING</code> /
@@ -383,6 +406,53 @@ it; the action slot holds Retry.</p>
 <p class="proto-note">Only claim “nothing was changed” if the operation is transactional/atomic. If a partial effect is
 possible, soften to “Some items may not have been processed — open details to review before retrying.”</p>
 
+<h3>One wording, three surfaces</h3>
+<p>The cause string is defined <strong>once per operation kind</strong> and reused verbatim by the <strong>feed row</strong>
+(a second subtitle line), the <strong>toast</strong>, and the <strong>launch modal’s failure state</strong> — so a failure
+reads as one error, not three. The toast, being one line, carries the title + <code>{source} → {target}</code> and leaves
+the cause to the row it points at. The failed row is the one place a feed item runs to three lines: “why did it fail, and
+was anything applied?” is the first question a failure raises.</p>
+
+<h3>Retry semantics</h3>
+<div class="callout amber">
+  <div class="k">The rule</div>
+  <p style="margin:0"><strong>Retry re-enters the operation’s last confirmation gate if it has one; only a
+  consequence-free operation re-runs on the click itself.</strong> A notification is a low-ceremony surface — one stray
+  click in a dropdown must never launch something irreversible. Retry restores <em>where the user was</em>; it does not
+  skip ahead of the safeguards the original flow imposed.</p>
+</div>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>Operation</th><th>Retry does</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Export<br><span class="mono" style="font-weight:400">read-only</span></td>
+        <td><strong>Re-runs immediately</strong> in the background — no modal, no navigation, safe from anywhere the bell is reachable.</td>
+        <td>It produces an artifact and changes nothing; a confirm step would be ceremony for a no-op risk.</td></tr>
+      <tr><td class="t">Migration<br><span class="mono" style="font-weight:400">irreversible</span></td>
+        <td><strong>Reopens the Bulk Migration Summary</strong> — the same gate the original flow used, with <strong>Start Migration</strong> as the deliberate commit and <strong>Back</strong> still leading to the mapping config.</td>
+        <td>“Once started, the migration cannot be stopped or canceled.” The retry path must not shortcut the gate — and reopening lets the user re-read the plan, since builds/instances may have moved on since the failure.</td></tr>
+    </tbody>
+  </table>
+</div>
+<ul>
+  <li>Either way Retry <strong>reuses the original parameters</strong> (source, target, options) — a re-attempt, not a
+  fresh setup. For gated kinds those params pre-fill the gate.</li>
+  <li><strong>A fresh run raises a fresh notification.</strong> The failed item is marked <strong>read</strong> (acted on —
+  <code>ACTED_ON</code> in the lifecycle) and the retry appears as its own in-progress → terminal item. History is
+  appended, never rewritten in place, so “this failed twice then worked” stays legible.</li>
+  <li><strong>Opening a gate counts as acting on it</strong>, so the item is marked read at that point — same as the export
+  <code>Review</code> flow, which also marks read before a cancellable modal. <strong>Backing out runs nothing</strong>;
+  the failed row stays in the feed with Retry still on it, now read.</li>
+  <li><strong>Retry obeys the discard guard</strong> — if it would tear down an unsaved setup, the “Discard unsaved
+  changes?” confirm comes first.</li>
+  <li><strong>A failure counts as unread</strong> (§9) — it’s a terminal result that needs you. Retrying clears it from the
+  count whether or not the retry ultimately succeeds.</li>
+  <li><strong>Failing while its launch modal is open</strong> switches that modal to a failure state (same copy,
+  <code>Close</code> + <code>Retry</code>) rather than spinning on — the same “switches straight to the result” rule as
+  success, the result just being a failure. No toast fires: the user is already looking.</li>
+  <li><strong>Retry is text-only</strong> (no icon) — it re-runs work rather than handing back a file.</li>
+</ul>
+
 <h2 id="edge"><span class="num">12</span>Edge cases</h2>
 <ul>
   <li><strong>Concurrent identical requests</strong> — cache key + job lock; the second request attaches to the in-flight job (one notification, not two).</li>
@@ -395,7 +465,7 @@ possible, soften to “Some items may not have been processed — open details t
 
 <h2 id="future"><span class="num">13</span>Future &amp; open questions</h2>
 <div class="grid2">
-  <div class="card"><h4>Retry on failed</h4><p>Wire the Retry action end-to-end (re-run the job from the notification).</p></div>
+  <div class="card"><h4>Artifact expiry (TTL)</h4><p>Show how long a result stays downloadable; a stale notification reads “expired — re-run” instead of breaking. Needs the TTL decision below.</p></div>
   <div class="card"><h4>Archive</h4><p>Reintroduce per-item dismiss as an on-hover archive action, once there’s an archive destination.</p></div>
   <div class="card"><h4>Deep-link “Go to”</h4><p>Jump to the build / version / project a notification refers to, auto-switching workspace + env.</p></div>
   <div class="card"><h4>Grouping by workspace</h4><p>Time grouping ships today; workspace grouping is a candidate as volume grows.</p></div>
