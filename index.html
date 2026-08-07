@@ -235,7 +235,22 @@
   .ok-banner{display:flex;gap:10px;align-items:center;background:#e9f7ef;border:1px solid #bce6cf;color:#1f7a4d;border-radius:10px;padding:13px 15px;font-size:13.5px}
 
   /* ---------- Bell panel ---------- */
-  .bell-panel{position:absolute;top:50px;right:10px;width:420px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);z-index:70;overflow:hidden}
+  /* ---- Notification panel sizing — fixed 21:26 (w:h) at every tier; see spec §5.1 ----
+     Height is the binding constraint on a laptop, so the tier switches on viewport HEIGHT.
+     Baseline is the MacBook Pro 16" (~1000px viewport) at 420 × 520. */
+  :root{ --np-w:420px; --np-h:520px; }                                  /* M — baseline (MBP 16") */
+  @media (max-height:899px){  :root{ --np-w:380px; --np-h:470px; } }    /* S — 13" laptops */
+  @media (min-height:1150px){ :root{ --np-w:460px; --np-h:570px; } }    /* L — large / external */
+  .bell-panel{position:absolute;top:50px;right:10px;
+    width:var(--np-w);height:var(--np-h);
+    max-height:calc(100vh - 72px);max-height:calc(100dvh - 72px);       /* never reach the screen edge */
+    display:flex;flex-direction:column;
+    background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);z-index:70;overflow:hidden}
+  /* Below ~520px the dropdown can't hold the ratio without overflowing — it becomes a near-full-width
+     sheet instead. Deliberate: the ratio serves a bell-anchored panel, not a phone-width one. */
+  @media (max-width:519px){
+    .bell-panel{width:calc(100vw - 24px);right:12px;height:auto;max-height:70dvh}
+  }
   .bp-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
   .bp-head h4{margin:0;font-size:14.5px}
   .bp-head button{border:0;background:transparent;color:var(--blue);font-size:12.5px;font-weight:600;cursor:pointer;padding:4px 6px;border-radius:7px}
@@ -273,7 +288,8 @@
   .fchip.on{background:var(--blue-soft);border-color:#cfe0ff;color:var(--blue)}
   .fcount{font-size:11px;font-weight:700;color:var(--faint)}
   .fchip.on .fcount{color:var(--blue)}
-  .nlist{max-height:420px;overflow:auto;border-top:1px solid var(--border)}
+  /* The list is the only flexible band — header, search and footer keep their intrinsic height. */
+  .nlist{flex:1 1 auto;min-height:0;overflow:auto;border-top:1px solid var(--border)}
   .nitem{padding:11px 14px;border-bottom:1px solid var(--border-2)}
   .nitem:hover{background:#fafbfc}
   .nitem.unread{background:#f3f8ff;box-shadow:inset 3px 0 0 var(--blue)}
@@ -302,6 +318,8 @@
   .ntext{flex:1;min-width:0}
   .ntext .t{font-size:13.2px;font-weight:600;color:#222b38;line-height:1.35}
   .ntext .s{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* Failure cause: wraps (it's a sentence, not a label) and stays muted so the red icon carries the alarm. */
+  .ntext .s.nfail{white-space:normal;line-height:1.45;margin-top:4px}
   .ntext .tm{font-size:11px;color:var(--faint);margin-top:3px}
   .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--blue)}
   .nctx{display:flex;align-items:center;gap:7px;margin-top:5px}
@@ -544,6 +562,18 @@ const EXCLUSIONS = {
 const VERSION_SOURCE = { kind:'version', id:'main@1.6.2', label:'main 1.6.2', tag:'1.6.2' };
 const cacheKey = (source, target, media) => `${source.id}->${target}|media:${media}`;
 const jobReady = (j) => !!j && (j.state==='READY' || j.state==='READY_WITH_EXCLUSIONS');
+
+/* --- Failure copy (spec §8) -------------------------------------------------
+   One wording, reused verbatim by the feed row, the toast and the detail page,
+   so a failure reads as one error rather than three. Each names the cause and —
+   because both operations are atomic — reassures that nothing was applied. */
+const FAIL_COPY = {
+  export:    'The export service is temporarily unavailable, so the package couldn’t be built. Nothing was exported.',
+  migration: 'The migration service is temporarily unavailable, so the operation couldn’t run. Your process instances weren’t changed.',
+};
+// Prototype-only: exporting this build fails on its FIRST attempt, then succeeds — so the
+// fail → Retry → success loop is demoable end-to-end (mirrors §8's "temporarily unavailable").
+const FAIL_ONCE_TAG = '1.1.1';
 let _id = 100;
 const uid = () => `exp_${++_id}`;
 
@@ -752,7 +782,7 @@ const SEED_JOBS = [
     state:'READY',                 exclusions:[],                fromCache:true,  read:true,  ts:Date.now()-28*_hr },
   { id:uid(), source:{kind:'build',id:'build@1.1.1',label:'Bizkids 1.1.1',tag:'1.1.1'}, target:'5.1.x',
     includeMedia:true,  ctx:{env:'SANDBOX',    workspace:'Experiments',       project:'bizkids'},
-    state:'FAILED',                exclusions:[],                fromCache:false, read:true,  ts:Date.now()-9*_day },
+    state:'FAILED',                exclusions:[],                fromCache:false, read:false, ts:Date.now()-9*_day },
 ];
 const SEED_MIGRATIONS = [
   { id:uid(), type:'migration', opType:'Migration Bulk', opId:hexId(), srcBuild:'3.9', tgtBuild:'3.9.1',
@@ -761,6 +791,9 @@ const SEED_MIGRATIONS = [
   { id:uid(), type:'migration', opType:'Migration Bulk', opId:hexId(), srcBuild:'3.8', tgtBuild:'3.9',
     state:'COMPLETED', summary:genMigSummary(), ctx:{env:'STAGING',    workspace:'QA workspace', project:'bizkids'},
     read:true, dismissed:false, ts:Date.now()-12*_day },
+  { id:uid(), type:'migration', opType:'Migration Bulk', opId:hexId(), srcBuild:'3.9', tgtBuild:'3.10',
+    state:'FAILED',    summary:genMigSummary(), ctx:{env:'STAGING',    workspace:'QA workspace', project:'bizkids'},
+    read:false, dismissed:false, ts:Date.now()-4*_hr },
 ];
 // Org-level notifications are scoped to the organization, not to any one environment type.
 // (An org spans three env types — prod / staging / sandbox — plus org-wide events like these.)
@@ -836,6 +869,12 @@ function App(){
   const [jobs, setJobs] = useState(SEED_JOBS);
   const [toasts, setToasts] = useState([]);
   const cache = useRef({});
+  // cacheKey → true once that export's simulated failure has been spent. Seeded (historical) failures
+  // start already spent, so retrying one from the feed recovers on the first try; a *fresh* export of
+  // the flagged build still fails once, to demo the failure → Retry → success loop end-to-end.
+  const failedOnce = useRef(Object.fromEntries(
+    SEED_JOBS.filter(j=>j.state==='FAILED').map(j=>[cacheKey(j.source, j.target, j.includeMedia), true])
+  ));
   // Refs so the export-completion timeout reads live UI state (not stale closures).
   const bellOpenRef = useRef(false);
   const watchRef = useRef(null);    // id of the export job whose "Preparing…" modal is still open
@@ -865,20 +904,32 @@ function App(){
   // migModal: null | {step:'setup'} | {step:'summary',src,tgt} | {step:'processing',id,src,tgt}
 
   const downloadJob = jobs.find(j=>j.id===downloadJobId) || null;
+  // Terminal + unread only — failures included (they need a Retry), in-progress excluded (§5.11).
   const unread = [
-    ...jobs.filter(j=>jobReady(j) && !j.read && !j.dismissed),
-    ...migrations.filter(m=>m.state==='COMPLETED' && !m.read && !m.dismissed),
+    ...jobs.filter(j=>(jobReady(j) || j.state==='FAILED') && !j.read && !j.dismissed),
+    ...migrations.filter(m=>(m.state==='COMPLETED' || m.state==='FAILED') && !m.read && !m.dismissed),
     ...orgNotifs.filter(o=>!o.read && !o.dismissed),
   ].length;
 
   const dismissToast = (id)=> setToasts(p=>p.filter(x=>x.id!==id));
-  const actOnToast = (t) => { if (t.type==='migration') actOnMigration(t.migId); else actOnJob(t.jobId); };
+  // A toast's action mirrors its feed row: Retry on a failure, otherwise the normal act-on.
+  const actOnToast = (t) => {
+    if (t.retry) return t.type==='migration' ? retryMigration(t.migId) : retryJob(t.jobId);
+    if (t.type==='migration') actOnMigration(t.migId); else actOnJob(t.jobId);
+  };
   const pushToast = (job) => {
-    const excl = job.exclusions.length;
+    const failed = job.state === 'FAILED';
+    const excl = (job.exclusions||[]).length;
     const id = uid();
     // Same structure / labels / colours as the feed item — a toast is just a shorter view of it.
     const subj = job.source && job.source.kind==='build' ? 'Build export' : 'Version export';
-    const toast = {
+    const toast = failed ? {
+      id, jobId: job.id, type:'export', ctx: job.ctx,
+      cls:'err', icon:'x',
+      title: `${subj} failed`,
+      subtitle: jobLabel(job),           // cause lives in the item; the toast stays one line
+      action:'Retry', retry:true, download:false,
+    } : {
       id, jobId: job.id, type:'export', excluded: excl>0, ctx: job.ctx,
       cls: excl ? 'warn' : 'ok',
       icon: excl ? 'warn' : 'check',
@@ -966,6 +1017,37 @@ function App(){
     }
   };
 
+  // Retry a FAILED export: re-run straight away with the original params. Safe to do on one click
+  // because an export is read-only and reversible — it produces an artifact, it changes nothing.
+  // (A migration retry deliberately does NOT do this — see retryMigration.)
+  // The failed notification is marked read (acted on — ACTED_ON in the §2 lifecycle) and the fresh
+  // run raises its own notification, so the feed shows one attempt per row rather than mutating
+  // history in place.
+  const retryJob = (jobId) => {
+    const job = jobs.find(j=>j.id===jobId);
+    if (!job || job.state!=='FAILED') return;
+    markRead(jobId);
+    setBellOpen(false);          // re-runs in the background — no navigation, no modal
+    startExport(job.source, job.target, job.includeMedia);
+  };
+  // Retry a FAILED migration — same contract, minus the modal (it re-runs in the background).
+  // Retrying a MIGRATION does NOT re-run it — it reopens the operation's last confirmation gate,
+  // the Bulk Migration Summary, with Start Migration as the deliberate commit. A migration is
+  // irreversible ("cannot be stopped or canceled"), so a single click in the notification panel must
+  // never launch one: the retry path gets the same gate as the original, not a shortcut around it.
+  // It also lets the user re-read what will happen — the builds/instances may have moved on since
+  // the failure — and Back still leads to the mapping config.
+  const retryMigration = (migId) => {
+    const m = migrations.find(x=>x.id===migId);
+    if (!m || m.state!=='FAILED') return;
+    requestNav(()=>{             // opening the gate tears down other overlays — guard unsaved setup
+      markOneRead(migId);
+      closeAllOverlays();
+      setConfirmNav(null);
+      setMigModal({ step:'summary', src:m.srcBuild, tgt:m.tgtBuild });
+    });
+  };
+
   const closeExport = () => { watchRef.current = null; setExportSource(null); };
   // The "Preparing…" modal for this job is still open → switch it straight to the download modal.
   const onExportReady = (job) => {
@@ -992,14 +1074,25 @@ function App(){
     }
     const job = { id:uid(), source, target, includeMedia, ctx, state:'PROCESSING', exclusions:null, fromCache:false, read:false, ts:Date.now() };
     setJobs(p=>[job, ...p]);
+    // Prototype: the flagged build fails its first attempt, then succeeds — so Retry visibly recovers.
+    const willFail = source.tag === FAIL_ONCE_TAG && !failedOnce.current[key];
     setTimeout(()=>{
+      const watched = watchRef.current === job.id;
+      if (willFail){
+        failedOnce.current[key] = true;                    // the retry of this same export will pass
+        const failed = { ...job, state:'FAILED', exclusions:[], failReason:FAIL_COPY.export };
+        setJobs(p=>p.map(j=>j.id===job.id? failed : j));
+        // A failure is a result like any other: surface it unless they're already looking at it.
+        // If watched, ExportModal switches its Preparing screen to the failure state instead.
+        if (!watched && !bellOpenRef.current) pushToast(failed);
+        return;
+      }
       const excl = EXCLUSIONS[target] || [];
       const finished = { ...job, state: excl.length ? 'READY_WITH_EXCLUSIONS' : 'READY', exclusions: excl };
       cache.current[key] = { state:finished.state, exclusions:excl };
       setJobs(p=>p.map(j=>j.id===job.id? finished : j));
       // Suppress the right-side toast when the user is already looking:
       //   (a) the notification center is open, or (b) the Preparing modal for this job is open.
-      const watched = watchRef.current === job.id;
       if (!watched && !bellOpenRef.current) pushToast(finished);
       // If watched, ExportModal's effect calls onExportReady → switches to the download modal.
     }, PROCESS_MS);
@@ -1060,6 +1153,7 @@ function App(){
           jobs={jobs} migrations={migrations} orgNotifs={orgNotifs}
           onClose={()=>setBellOpen(false)} onMarkAll={markAllRead}
           onAct={actOnJob} onActMig={actOnMigration} onActOrg={actOrg}
+          onRetry={retryJob} onRetryMig={retryMigration}
           onMarkRead={markOneRead} onDismiss={dismissNote}
           stop={(e)=>e.stopPropagation()}
         />}
@@ -1110,9 +1204,9 @@ function App(){
           onBackground={()=>{
             const j = jobs.find(x=>x.id===watchRef.current); // the export whose Preparing modal is open
             closeExport();
-            // Backgrounding it: if it already finished in the min-display sliver, the user has stopped
-            // looking → surface the result as a toast; otherwise pulse to point at the still-running op.
-            if (jobReady(j)){ if (!bellOpenRef.current) pushToast(j); }
+            // Backgrounding it: if it already settled in the min-display sliver (ready OR failed), the
+            // user has stopped looking → surface it as a toast; otherwise pulse at the still-running op.
+            if (j && (jobReady(j) || j.state==='FAILED')){ if (!bellOpenRef.current) pushToast(j); }
             else pulseBell();
           }}
           onStart={startExport}
@@ -1406,19 +1500,28 @@ function ExportModal({ source, onClose, onBackground, onStart, onWatch, onReady,
     return ()=>clearInterval(t);
   }, [phase]);
 
-  // While the Preparing modal is open, when this export becomes ready → switch to the download modal.
+  // While the Preparing modal is open, when this export settles → switch straight to the outcome:
+  // ready → the download modal; failed → this modal's own failure state (never spin on forever).
   // Held to a MIN_MODAL_MS floor so a fast/cache-warmed result doesn't flash the loading screen.
   useEffect(()=>{
     if (phase!=='processing' || !watchId) return;
     const j = jobs.find(x=>x.id===watchId);
-    if (!jobReady(j)) return;
+    if (!j || (!jobReady(j) && j.state!=='FAILED')) return;
     const wait = Math.max(0, MIN_MODAL_MS - (Date.now()-procShownAt.current));
-    const t = setTimeout(()=>onReady(j), wait);
+    const t = setTimeout(()=> j.state==='FAILED' ? setPhase('failed') : onReady(j), wait);
     return ()=>clearTimeout(t);
   }, [jobs, watchId, phase]);
 
   // In the processing phase, any close means "background it" (pulse the bell); in the form it's a plain cancel.
+  // On the failure screen it's a plain close — the failed item is already waiting in the feed.
   const handleClose = () => { if (phase==='processing') (onBackground||onClose)(); else onClose(); };
+
+  // Retry from the failure screen: re-run the same params and go back to watching.
+  const onRetryHere = () => {
+    const job = onStart(source, target, media);
+    if (job){ setWatchId(job.id); onWatch(job.id); }
+    setPhase('processing');
+  };
 
   const onExport = () => {
     if (willHitCache){ onStart(source, target, media); return; } // instant -> modal closes, download opens
@@ -1492,6 +1595,21 @@ function ExportModal({ source, onClose, onBackground, onStart, onWatch, onReady,
               </div>
             </div>
           </>
+        ) : phase==='failed' ? (
+          /* Failure state — same wording as the feed row and the toast (§8): name the cause,
+             reassure nothing was exported, offer Retry. */
+          <div className="mbody" style={{paddingTop:30}}>
+            <button className="mclose" onClick={handleClose}>{I.x}</button>
+            <div className="proc">
+              <span className="nicon err" style={{width:44,height:44,marginBottom:16}}>{I.x}</span>
+              <h3>{isBuild ? 'Build export failed' : 'Version export failed'}</h3>
+              <p>{FAIL_COPY.export}<br/><b>{jobLabel({source, target})}</b></p>
+              <div className="mfoot" style={{justifyContent:'center',width:'100%',gap:10}}>
+                <button className="btn-ghost" onClick={handleClose}>Close</button>
+                <button className="btn-blue" onClick={onRetryHere}>Retry</button>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="mbody" style={{paddingTop:30}}>
             <button className="mclose" onClick={handleClose}>{I.x}</button>
@@ -1623,11 +1741,12 @@ function notifStatus(item){
   }
 }
 
-function NotifItem({ item, onAct, onActMig, onActOrg, onMarkRead, onDismiss }){
+function NotifItem({ item, onAct, onActMig, onActOrg, onRetry, onRetryMig, onMarkRead, onDismiss }){
   const st = notifStatus(item);
   const isOrg = item.type === 'org';
   const isMig = item.type === 'migration';
   const isProcessing = item.state === 'PROCESSING' || item.state === 'IN_PROGRESS';
+  const isFailed = !isOrg && item.state === 'FAILED';
   const isReady = isOrg ? true : isMig ? item.state==='COMPLETED' : jobReady(item);
   const unread = isUnreadItem(item);
   const subtitle = isOrg
@@ -1635,6 +1754,8 @@ function NotifItem({ item, onAct, onActMig, onActOrg, onMarkRead, onDismiss }){
     : isMig
       ? `${item.srcBuild} → ${item.tgtBuild} · ${item.summary.migrateTo.length} process${item.summary.migrateTo.length>1?'es':''}`
       : jobLabel(item) + (item.fromCache?' · reused':'');
+  // A failure names its cause and (both ops being atomic) reassures nothing was applied — §8.
+  const failCause = isFailed ? (item.failReason || (isMig ? FAIL_COPY.migration : FAIL_COPY.export)) : null;
   const handleClick = () => {
     if (isOrg) return onActOrg(item.id);
     if (!isReady) return;
@@ -1663,6 +1784,8 @@ function NotifItem({ item, onAct, onActMig, onActOrg, onMarkRead, onDismiss }){
         <div className="ntext">
           <div className="t">{st.title}</div>
           <div className="s">{subtitle}</div>
+          {/* Failure cause — same wording as the toast and detail page, so it reads as one error. */}
+          {failCause && <div className="s nfail">{failCause}</div>}
         </div>
         <div className="nright">
           {/* org action */}
@@ -1675,7 +1798,9 @@ function NotifItem({ item, onAct, onActMig, onActOrg, onMarkRead, onDismiss }){
             <button className="nbtn" onClick={(e)=>{e.stopPropagation();onAct(item.id);}}>{I.dl} Download</button>}
           {!isOrg && !isMig && item.state==='READY_WITH_EXCLUSIONS' &&
             <button className="nbtn" onClick={(e)=>{e.stopPropagation();onAct(item.id);}}>Review</button>}
-          {/* FAILED carries no action chip — the red error icon says it. (Retry lands here later.) */}
+          {/* FAILED → Retry. Text-only (like Review/View): it re-runs the job, it doesn't hand back a file. */}
+          {isFailed &&
+            <button className="nbtn" onClick={(e)=>{e.stopPropagation();(isMig?onRetryMig:onRetry)(item.id);}}>Retry</button>}
           {/* migration actions */}
           {isMig && item.state==='IN_PROGRESS' &&
             <span className="nproc"><span className="mini-spin"></span> In Progress</span>}
@@ -1702,10 +1827,12 @@ const ENV_TYPE_OPTS = [
   ['SANDBOX','Sandbox','#1f6feb'],
 ];
 const itemScope = (item) => item.type==='org' ? 'ORG' : (item.ctx ? item.ctx.env : null);
+// Unread = an unread TERMINAL result that needs you (§5.11) — ready / done / FAILED / org.
+// A failure is actionable (Retry), so it counts; only in-progress is excluded.
 const isUnreadItem = (item) =>
   item.type==='org'       ? !item.read :
-  item.type==='migration' ? (item.state==='COMPLETED' && !item.read) :
-  (jobReady(item) && !item.read);
+  item.type==='migration' ? ((item.state==='COMPLETED' || item.state==='FAILED') && !item.read) :
+  ((jobReady(item) || item.state==='FAILED') && !item.read);
 // One searchable haystack per item: title + label + context.
 function searchText(item){
   const st = notifStatus(item);
@@ -1717,7 +1844,7 @@ function searchText(item){
   const c = item.ctx || {};
   return `${st.title} ${sub} ${c.env||''} ${c.workspace||''} ${c.project||''} ${c.area||''} ${c.target||''}`.toLowerCase();
 }
-function BellPanel({ jobs, migrations, orgNotifs, onClose, onMarkAll, onAct, onActMig, onActOrg, onMarkRead, onDismiss, stop }){
+function BellPanel({ jobs, migrations, orgNotifs, onClose, onMarkAll, onAct, onActMig, onActOrg, onRetry, onRetryMig, onMarkRead, onDismiss, stop }){
   const [filter, setFilter] = useState('ALL');   // ALL | UNREAD | ORG | PRODUCTION | STAGING | SANDBOX
   const [envOpen, setEnvOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -1801,7 +1928,8 @@ function BellPanel({ jobs, migrations, orgNotifs, onClose, onMarkAll, onAct, onA
           <div key={bucket}>
             <div className="bp-section">{bucket}</div>
             {items.map(item=> <NotifItem key={item.id} item={item}
-              onAct={onAct} onActMig={onActMig} onActOrg={onActOrg} onMarkRead={onMarkRead} onDismiss={onDismiss} />)}
+              onAct={onAct} onActMig={onActMig} onActOrg={onActOrg}
+              onRetry={onRetry} onRetryMig={onRetryMig} onMarkRead={onMarkRead} onDismiss={onDismiss} />)}
           </div>
         ))}
       </div>

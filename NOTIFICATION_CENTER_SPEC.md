@@ -11,7 +11,7 @@
 > licence expiry, …).
 >
 > **Companion doc:** `EXPORT_DOWNLOAD_PLAN.md`. · **Shareable HTML:** `notification-center-spec.html`.
-> · **Live prototype:** https://madalinagheorghiu-ux.github.io/export-version/ · **Last updated:** 2026-08-05 (toast persistence · in-progress: launch modal, bell pulse & count — §5.5, §5.11)
+> · **Live prototype:** https://madalinagheorghiu-ux.github.io/export-version/ · **Last updated:** 2026-08-06 (Retry on failed — §5.4, §8 · toast persistence + in-progress semantics — §5.5, §5.11)
 
 ---
 
@@ -111,12 +111,33 @@ A global **bell** in the dark app-shell header (near `Config / Runtime` / the av
 signals backgrounded in-progress work (§5.11). Live arrivals also raise a **toast**. Because the bell
 is global, closing a modal / navigating / refreshing never hides the status.
 
-**Panel width — 420px** (min 380 / max 440; scrolls internally, capped ~480px tall). Benchmarked
+**Panel size — 420 × 520 px** on a MacBook Pro 16" (the reference display). Width benchmarked
 against contextual notification panels (Jira ~400, Notion ~420–460, Slack ~400, GitHub ~370 + full
 page). Below ~360 the two-row item truncates; above ~480 a bell-anchored dropdown reads like it
 wants to be a page. Since FlowX has **no dedicated notifications page** the panel is the primary
 surface (lean comfortable), but per-item detail lives in the operation **modals** (so it needn't grow
 into a page) — 420 is the balance. Toasts stay ~360 (transient, single-action).
+
+**Responsive tiers — the panel keeps a fixed 21 : 26 (w : h) proportion at every size.**
+It scales in **discrete steps, not fluidly**: a dropdown that resizes continuously with the window
+makes the list reflow while you read it, and the item layout is only legible inside a narrow width
+band anyway. Tiers switch on **viewport height**, because height — not width — is what runs out on a
+laptop (a 16" and a 13" are ~250px apart vertically but both have room for a 420px column).
+
+| Tier | Trigger (viewport height) | Panel | Typical display |
+|---|---|---|---|
+| **S** | `< 900px` | **380 × 470** | 13" laptops (1280×800, MacBook Air) |
+| **M** — baseline | `900–1149px` | **420 × 520** | **MacBook Pro 16"**, most docked laptops |
+| **L** | `≥ 1150px` | **460 × 570** | 27" external, 4K/5K desktop |
+
+Two guards sit above the tiers:
+- **Never reach the screen edge** — `max-height: calc(100dvh − 72px)`. On a very short window the
+  panel clamps below its tier height (ratio yields to fit) so the **footer stays visible** rather
+  than the list running off-screen. The list is the only flexible band; header, search and footer
+  keep their intrinsic height.
+- **Narrow viewports (`< 520px`)** — the dropdown becomes a near-full-width **sheet**
+  (`100vw − 24px`, max `70dvh`) and the ratio is deliberately released: 21:26 serves a
+  *bell-anchored panel*, not a phone-width one.
 
 ### 5.2 Unified feed (one list, many types)
 The center is a **single list**, not one section per operation kind. The operation's *status*
@@ -167,8 +188,9 @@ a step first (`Review`, `View results`, `Retry`) is text-only, so the icon relia
 warning icon + "N excluded" title, not by the button.
 
 **Failed state.** A `FAILED` item shows **no status chip** — the red error icon + title already say
-it, and a "Failed" pill next to a red icon is redundant. Its action slot stays empty until Retry
-(§8, a future candidate) lands there.
+it, and a "Failed" pill next to a red icon is redundant. Its action slot holds **Retry** (§8), and it
+carries a **second subtitle line naming the cause** — the one place a feed item runs to three lines,
+because "why did it fail / was anything applied?" is the first question a failure raises.
 
 **Navigating from a notification never discards work silently.** Acting on a notification that
 routes to a page (a migration's *View results*, an export's *Review & download*) can fire while a
@@ -415,6 +437,42 @@ Example (bulk migration, service unavailable):
 > effect is possible, soften to *"Some items may not have been processed — open details to
 > review before retrying."*
 
+**One wording, three surfaces.** The cause string is defined **once per operation kind** and reused
+verbatim by the **feed row** (second subtitle line), the **toast**, and the **launch modal's failure
+state** — so a failure reads as one error, not three. The toast, being one line, carries the title +
+`{source} → {target}` and leaves the cause to the row it points at.
+
+**Retry semantics.**
+
+> **The rule: Retry re-enters the operation's last confirmation gate if it has one; only a
+> consequence-free operation re-runs on the click itself.** A notification is a low-ceremony
+> surface — one stray click in a dropdown must never be able to launch something irreversible.
+> Retry therefore restores *where the user was*, it does not skip ahead of the safeguards the
+> original flow imposed.
+
+| Operation | Retry does | Why |
+|---|---|---|
+| **Export** (read-only, reversible) | **Re-runs immediately** in the background — no modal, no navigation, safe from anywhere the bell is reachable | It produces an artifact and changes nothing; a confirm step would be ceremony for a no-op risk |
+| **Migration** (state-changing, irreversible) | **Reopens the Bulk Migration Summary** — the same gate the original flow used, with **Start Migration** as the deliberate commit and **Back** still leading to the mapping config | "Once started, the migration cannot be stopped or canceled." The retry path must not be a shortcut around the gate — and reopening lets the user re-read the plan, since builds/instances may have moved on since the failure |
+
+- Either way Retry **reuses the original parameters** (source, target, options) — it is a re-attempt,
+  not a fresh setup. For gated kinds those params pre-fill the gate.
+- **A fresh run raises a fresh notification.** The failed item is marked **read** (it's been acted on
+  — `ACTED_ON` in the §2 lifecycle) and the retry appears as its own in-progress → terminal item.
+  History is appended, never rewritten in place, so "this failed twice then worked" stays legible.
+- **Opening a gate counts as acting on it**, so the failed item is marked read at that point — the
+  same as the export `Review` flow, which also marks read before a modal the user can still cancel.
+  **Backing out of the gate runs nothing**; the failed row simply stays in the feed with Retry still
+  on it, now read.
+- **Retry obeys the discard guard** (§5.4): if it would tear down an unsaved setup, the
+  "Discard unsaved changes?" confirm comes first.
+- **A failure counts as unread** (§5.11) — it's a terminal result that needs you. Retrying clears it
+  from the count whether or not the retry ultimately succeeds.
+- **Failing while its launch modal is open** switches that modal to a **failure state** (same copy,
+  `Close` + `Retry`) rather than spinning on — the same "modal switches straight to the result" rule
+  as success (§5.5), the result just being a failure. No toast fires: the user is already looking.
+- **Retry is text-only** (no icon) — per §5.4 it re-runs work rather than handing back a file.
+
 ---
 
 ## 9. Edge cases (notification-relevant)
@@ -447,7 +505,7 @@ the unified feed above; it now hosts both exports and migrations.
 
 1. **Type filter / tabs** — once there are more kinds: `All / Downloads / System / Alerts`. (Partly realized: the scope filter §5.6 already separates org-wide from env-type items.)
 2. **Deep-link "Go to"** — jump to the build/version/project a notification refers to (auto-switch workspace/env context).
-3. **Expiry indicator + Retry** — show artifact TTL; "expired — re-run"; Retry on `FAILED`. (Distinct from the 30-day *notification* retention in §5.7 — this is the *artifact* TTL.)
+3. **Expiry indicator** — show artifact TTL; "expired — re-run". (Distinct from the 30-day *notification* retention in §5.7 — this is the *artifact* TTL.) ✅ *Retry on `FAILED` shipped — see §8.*
 4. **Bulk actions** — ✅ *shipped: "Mark all read" + per-item mark-as-read on hover (§5.7).* Still open: "Clear read", "Clear all", multi-select.
 5. **Grouping** — ✅ *shipped: by time (Today / This week / Older) — see §5.7.* Still open: grouping by workspace.
 6. ~~**Unread-only toggle** + search.~~ ✅ *shipped — **Unread** as a filter option (§5.6) + search (§5.7).*
