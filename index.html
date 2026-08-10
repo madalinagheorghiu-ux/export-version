@@ -300,7 +300,11 @@
   .nbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
   .nline1{display:flex;align-items:flex-start;gap:8px}
   /* Title — 14/22 semibold */
-  .nitem .t, .toast .t{flex:1;min-width:0;font-size:14px;line-height:22px;font-weight:600;color:#1D232C}
+  /* Title is always ONE line — it's the scan target, so a wrapping title would push the
+     context/body/CTA bands down and break the feed's even rhythm. Overflow ellipsises and
+     the full string is exposed on hover (tooltip added only when it actually truncates). */
+  .nitem .t, .toast .t{flex:1;min-width:0;font-size:14px;line-height:22px;font-weight:600;color:#1D232C;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nctx-row{display:flex;align-items:center;gap:7px;min-width:0}
   /* Body details — 12/18 regular */
   .nitem .s, .toast .s,
@@ -369,6 +373,8 @@
   .empty{padding:26px 16px;text-align:center;color:var(--faint);font-size:12.5px}
 
   /* ---------- Toasts ---------- */
+  /* Bottom-anchored column: the newest toast is appended last, so it sits closest to the corner
+     and later arrivals never push it off-screen. Capped at TOAST_MAX (§5.5.1). */
   .toasts{position:fixed;right:18px;bottom:56px;z-index:90;display:flex;flex-direction:column;gap:10px;width:360px}
   /* A toast reuses the feed item's bands (.nmain/.nicon/.nbody/.nline1/.nctx-row/.s/.nbtn);
      only the card and its status-matched left accent are toast-specific. */
@@ -935,6 +941,10 @@ function App(){
   ].length;
 
   const dismissToast = (id)=> setToasts(p=>p.filter(x=>x.id!==id));
+  // Every toast goes through here. Appending puts the newest LAST, which — in a bottom-anchored
+  // column — is the slot nearest the corner. slice(-TOAST_MAX) then evicts the OLDEST, so a burst
+  // can never hide the most recent result and the stack can never grow into a curtain (§5.5.1).
+  const enqueueToast = (t) => setToasts(p => [...p, t].slice(-TOAST_MAX));
   // A toast's action mirrors its feed row: Retry on a failure, otherwise the normal act-on.
   const actOnToast = (t) => {
     if (t.retry) return t.type==='migration' ? retryMigration(t.migId) : retryJob(t.jobId);
@@ -961,20 +971,20 @@ function App(){
       action: excl ? 'Review' : 'Download',
       download: !excl,
     };
-    setToasts(p=>[...p, toast]);
+    enqueueToast(toast);
     // Auto-dismiss is owned by each <Toast> (5s no-action / 7s with-action, paused on hover/focus/tab-blur).
   };
   // Migration completion toast — same shape as a feed item. Reused by completion-while-not-watching
   // and by backgrounding a migration that already finished (§5.11).
   const pushMigrationToast = (m) => {
     const total = m.summary.migrateTo.length;
-    setToasts(p=>[...p, {
+    enqueueToast({
       id:uid(), migId:m.id, type:'migration', ctx:m.ctx,
       cls:'ok', icon:'check',
       title:'Instances migrated',
       subtitle:`${m.srcBuild} → ${m.tgtBuild} · ${total} process${total>1?'es':''}`,
       action:'View', download:false,
-    }]);
+    });
   };
 
   const markRead = (id) => setJobs(p=>p.map(j=>j.id===id?{...j, read:true}:j));
@@ -1764,6 +1774,22 @@ function notifStatus(item){
   }
 }
 
+// One-line title. Exposes the full string as a tooltip ONLY when it's actually clipped — a tooltip
+// that repeats fully-visible text is noise.
+//
+// The measurement happens on hover, which is the moment the answer is actually needed: it's correct
+// no matter how the panel has been resized since mount (it has three width tiers), and it costs no
+// observer and no re-render. Setting the attribute here is early enough — the browser reads `title`
+// when it decides to show the tooltip, which is after the hover delay.
+function NotifTitle({ text }){
+  const sync = (e) => {
+    const el = e.currentTarget;
+    if (el.scrollWidth > el.clientWidth + 1) el.setAttribute('title', text);
+    else el.removeAttribute('title');
+  };
+  return <div className="t" onMouseEnter={sync} onFocus={sync}>{text}</div>;
+}
+
 function NotifItem({ item, onAct, onActMig, onActOrg, onRetry, onRetryMig, onMarkRead, onDismiss }){
   const st = notifStatus(item);
   const isOrg = item.type === 'org';
@@ -1792,7 +1818,7 @@ function NotifItem({ item, onAct, onActMig, onActOrg, onRetry, onRetryMig, onMar
           {/* Title leads; timestamp right-aligned on the same row. The on-hover mark-as-read sits in a
               fixed slot before the time, so timestamps stay column-aligned across read/unread rows. */}
           <div className="nline1">
-            <div className="t">{st.title}</div>
+            <NotifTitle text={st.title} />
             <span className="n-actions">
               {unread &&
                 <button className="n-markread" title="Mark as read" onClick={(e)=>{e.stopPropagation();onMarkRead(item.id);}}>{I.check}</button>}
@@ -1990,6 +2016,9 @@ function ConfirmLeaveModal({ label, onKeep, onDiscard }){
 const TOAST_MS       = 5000; // no-action toast
 const TOAST_MS_CTA   = 7000; // toast carrying a CTA — extra time to reach for it
 const TOAST_GRACE_MS = 1000; // on resume, never leave less than this, so it can't vanish the instant you look away
+// Most toasts on screen at once. Beyond this the oldest is evicted early rather than the newest
+// being dropped or queued — see spec §5.5.1 for why there is no queue.
+const TOAST_MAX      = 3;
 
 // A toast mirrors a feed item's structure exactly (§5.3 bands), just shorter-lived.
 // Each toast owns its own countdown so it can pause independently while the user reads/hovers it.
@@ -2043,7 +2072,7 @@ function Toast({ t, onAct, onClose }){
         <span className={'nicon '+(t.cls||'ok')}>{I[t.icon]||I.check}</span>
         <div className="nbody">
           <div className="nline1">
-            <div className="t">{t.title}</div>
+            <NotifTitle text={t.title} />
             <button className="ndismiss" title="Dismiss" onClick={()=>onClose(t.id)}>{I.x}</button>
           </div>
           {t.ctx && <div className="nctx-row">

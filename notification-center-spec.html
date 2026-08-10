@@ -276,6 +276,7 @@ A one-shot <strong>pulse</strong> on the bell is a separate signal, used when a 
                 &#11015; Download</pre>
 <ul>
   <li><strong>Row 1 — title + time.</strong> The title leads (it’s what the user scans for); the <strong>timestamp is right-aligned on the same row</strong>. The on-hover <strong>mark-as-read ✓</strong> sits in a fixed slot <em>before</em> the time, so timestamps stay column-aligned across read and unread rows alike.</li>
+  <li><strong>The title is always one line</strong> — it ellipsises rather than wrapping, since a wrapping title would push the context / body / CTA bands down and break the even rhythm that makes a column of items scannable. When clipped, hovering reveals the <strong>full string in a tooltip</strong>, and the tooltip appears <strong>only when the text is actually cut off</strong> — never on a title you can already read in full. Whether a title clips depends on the panel’s width tier (§6), so it is measured <em>at hover time</em> rather than cached.</li>
   <li><strong>Row 2 — context.</strong> Environment badge (or organization area) · workspace · project.</li>
   <li><strong>Row 3 — body.</strong> The source label / specifics; a failure adds a line naming the cause.</li>
   <li><strong>Row 4 — action.</strong> Underneath the text, not in a right-hand column, so the body can run the <strong>full width</strong> of the panel.</li>
@@ -405,6 +406,42 @@ dismiss independently rather than as a batch.</p>
   <p style="margin:0">On resume the remaining time is floored to <strong>1&nbsp;s</strong>, so a nearly-expired toast
   can’t vanish the instant the cursor or focus leaves it.</p>
 </div>
+
+<h3 id="stacking">Stacking — when several toasts arrive at once</h3>
+<p>Long-running operations can finish together (three exports kicked off in a row, a burst of cache hits).</p>
+<div class="callout amber">
+  <div class="k">The rule</div>
+  <p style="margin:0"><strong>Stack, capped at 3. The newest always gets a slot; at the cap the oldest is evicted
+  early. Nothing is queued.</strong></p>
+</div>
+<ul>
+  <li><strong>Newest nearest the corner.</strong> A bottom-anchored column with the newest appended last, so the most
+  recent result sits closest to the corner and later arrivals never push it off-screen.</li>
+  <li><strong>Evict the oldest, never drop the newest.</strong> The most recent completion is the most relevant, and
+  the evicted toast has already had screen time.</li>
+  <li><strong>Timers stay independent</strong> — hovering one pauses only that one; its neighbours keep expiring.</li>
+  <li><strong>Overflow needs no extra signal</strong> — the unread badge increments, and that <em>is</em> the
+  “something arrived” cue. The <strong>pulse is deliberately not reused</strong>: it means “your backgrounded
+  operation lives here” (§9), and overloading it would blur a signal we just defined.</li>
+</ul>
+<div class="grid2">
+  <div class="card"><h4>Why not queue them?</h4><p>The timer <strong>pauses on hover, focus and tab-blur</strong> — so
+  one hovered toast, or the user switching tabs, would <strong>stall the whole queue indefinitely</strong>. Serial
+  delivery is also slow: five CTA toasts at 7&nbsp;s each is ~35&nbsp;s, so the last announces news half a minute
+  stale. Queueing optimises for “don’t miss anything”, but <strong>the feed already guarantees that</strong> — every
+  toast is also a feed item, kept 30 days. The toast is a courtesy, not the system of record.</p></div>
+  <div class="card"><h4>Why not unbounded?</h4><p>A wall of toasts covers the app, and because each owns an
+  independent timer they pop out at staggered times — the stack jumps around under the cursor exactly when the user is
+  reaching for a button.</p></div>
+  <div class="card"><h4>Why 3?</h4><p>It absorbs realistic bursts without becoming a curtain, and matches the common
+  default — macOS, Slack and the mainstream toast libraries all land on 3.</p></div>
+  <div class="card"><h4>Accepted trade-off</h4><p>In a burst larger than 3, some results are announced only by the
+  badge. That’s the right call — the alternative spends the user’s attention re-litigating old news, and nothing is
+  lost.</p></div>
+</div>
+<p class="proto-note"><strong>Not doing: coalescing</strong> (“3 exports ready”). It breaks the one-toast → one
+<code>jobId</code> → one action model — a merged toast can’t carry a single meaningful CTA, and it would invent a
+second notification type. A future candidate if bursts ever prove common.</p>
 
 <h2 id="inprogress"><span class="num">9</span>In-progress: launch modal, bell pulse &amp; the count</h2>
 <p>Long-running ops spend most of their life <strong>in progress</strong>. Four rules keep that phase honest.</p>
