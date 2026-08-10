@@ -11,7 +11,7 @@
 > licence expiry, …).
 >
 > **Companion doc:** `EXPORT_DOWNLOAD_PLAN.md`. · **Shareable HTML:** `notification-center-spec.html`.
-> · **Live prototype:** https://madalinagheorghiu-ux.github.io/export-version/ · **Last updated:** 2026-08-06 (Notification-center visual redesign — §5.1, §5.3, §5.4, §5.6)
+> · **Live prototype:** https://madalinagheorghiu-ux.github.io/export-version/ · **Last updated:** 2026-08-06 (Toast stacking — §5.5.1 · one-line titles with hover tooltip — §5.3)
 
 ---
 
@@ -229,6 +229,13 @@ A **status disc in a fixed left column**, and everything else stacked beside it 
 - **Row 1 — title + time.** The title leads (it's what the user scans for); the **timestamp is
   right-aligned on the same row**. The on-hover **mark-as-read ✓** sits in a fixed slot *before* the
   time, so timestamps stay column-aligned across read and unread rows alike.
+- **The title is always one line.** It ellipsises rather than wrapping: a wrapping title would push
+  the context / body / CTA bands down and break the feed's even rhythm, which is what makes a column
+  of items scannable. When it's clipped, hovering reveals the **full string in a tooltip** — and the
+  tooltip appears **only when the text is actually cut off**, never on a title that's already fully
+  visible (a tooltip repeating what you can read is noise). Because the panel has three width tiers
+  (§5.1), whether a given title clips depends on the tier, so this is measured **at hover time**
+  rather than cached.
 - **Row 2 — context.** Env badge (or org area — §5.9) · workspace · project.
 - **Row 3 — body.** The source label / specifics. A failure adds a line naming the cause (§5.4).
 - **Row 4 — action.** Underneath the text, not in a right-hand column, so the body can run the
@@ -325,6 +332,51 @@ from the tab*. Each toast owns its own countdown (they dismiss independently, no
   a **minimum 1000ms grace**: on resume the remaining time is floored to 1s so a nearly-expired
   toast can't vanish the instant the cursor or focus leaves.
 - A **manual ×** dismisses immediately regardless of the timer.
+
+### 5.5.1 Stacking — when several toasts arrive at once
+
+Long-running operations can finish together (three exports kicked off in a row, a burst of cache
+hits). The rule:
+
+> **Stack, capped at 3. The newest always gets a slot; at the cap the oldest is evicted early.
+> Nothing is queued.**
+
+- **Newest nearest the corner.** Toasts stack in a bottom-anchored column with the newest appended
+  last, so the most recent result sits closest to the corner and later arrivals never push it
+  off-screen.
+- **Evict the oldest, never drop the newest.** At the cap the oldest toast is retired early rather
+  than the new one being refused. The most recent completion is the most relevant, and the evicted
+  one has already had screen time.
+- **Timers stay independent** (§5.5). Hovering one pauses only that one; its neighbours keep
+  expiring on their own schedule.
+- **Overflow needs no extra signal** — the bell's unread badge increments, and *that* is the
+  "something arrived" cue. The **pulse is deliberately not reused** here: it means "your backgrounded
+  operation lives here" (§5.11), and overloading it would blur a signal we just defined.
+
+**Why not queue them (show one, wait, show the next)?** Because the toast timer **pauses on hover,
+focus, and tab-blur**. A single hovered toast — or the user simply switching tabs — would **stall the
+whole queue indefinitely**. Serial delivery is also slow: five CTA toasts at 7s each is ~35 seconds,
+so the last one announces news half a minute stale, possibly after the user already acted on it in
+the center. Queueing optimises for "don't miss anything", but **the feed already guarantees that** —
+every toast is also a feed item, kept 30 days. *The toast is a courtesy, not the system of record*,
+which is what makes dropping one cheap and queueing one expensive.
+
+**Why not unbounded stacking?** A wall of toasts covers the app, and because each owns an
+independent timer they pop out at staggered times — the stack jumps around under the cursor exactly
+when the user is reaching for a button.
+
+**Why 3?** It absorbs realistic bursts without becoming a curtain, and matches the common default
+(macOS, Slack, and the mainstream toast libraries all land on 3).
+
+**Accepted trade-off:** in a burst larger than 3, some results are announced only by the badge. That
+is the right call — the alternative spends the user's attention re-litigating old news, and nothing
+is lost.
+
+> **Not doing: coalescing** ("3 exports ready"). It breaks the one-toast → one `jobId` → one action
+> model — a merged toast can't carry a single meaningful CTA, and it would invent a second
+> notification type. A future candidate if bursts ever prove common (§11).
+
+---
 
 ### 5.6 Filter — read-state + scope (one control)
 Filtering is an **occasional** control, so it collapses to a **filter icon next to search** rather
