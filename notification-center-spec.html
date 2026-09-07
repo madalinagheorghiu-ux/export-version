@@ -101,7 +101,7 @@
   <div class="meta">
     <span class="tag">FlowX Designer</span>
     <span class="tag n">Status: prototype-backed</span>
-    <span class="tag n">Last updated: 2026-08-06</span>
+    <span class="tag n">Last updated: 2026-09-07</span>
     <span class="tag n">Owner: Product / Design</span>
   </div>
 </header>
@@ -115,7 +115,7 @@
     <li><a href="#subtitle">Subtitle &amp; CTA per status</a></li>
     <li><a href="#anatomy">Center anatomy</a></li>
     <li><a href="#width">Width &amp; sizing</a></li>
-    <li><a href="#scope">Scope: org vs environment</a></li>
+    <li><a href="#scope">Scope: org vs workspace type</a></li>
     <li><a href="#toast">Toast</a></li>
     <li><a href="#inprogress">In-progress: launch modal, pulse &amp; count</a></li>
     <li><a href="#nav">Navigating from a notification</a></li>
@@ -135,7 +135,7 @@ changes state. A toast alone isn’t enough: it’s ephemeral and easily missed.
   <div class="card"><h4>Never lose a notification</h4><p>Persisted server-side, pushed in real time, pulled on reconnect — and <strong>kept for 30 days</strong>, so a result stays findable long after the toast is gone.</p></div>
   <div class="card"><h4>Actionable</h4><p>Each item carries the next step — download / view / review / retry — not just a status.</p></div>
   <div class="card"><h4>Extensible by type</h4><p>One feed, many operation kinds, without a redesign per kind.</p></div>
-  <div class="card"><h4>Unambiguous context</h4><p>Every notification says <em>where</em> it belongs (environment / workspace / project, or organization).</p></div>
+  <div class="card"><h4>Unambiguous context</h4><p>Every notification says <em>where</em> it belongs (workspace type / workspace / project, or organization).</p></div>
   <div class="card"><h4>No dedicated page</h4><p>The panel is the home; per-item detail is surfaced in the operation’s own modals.</p></div>
 </div>
 
@@ -247,37 +247,112 @@ and the <strong>action</strong> carries the next step.</p>
 
 <h2 id="anatomy"><span class="num">5</span>Notification center anatomy</h2>
 <h3>Surface</h3>
-<p>A global <strong>bell</strong> in the dark app-shell header with an <strong>unread badge</strong>, always mounted
+<p>A global <strong>bell</strong> in the dark app-shell header with an <strong>unread dot</strong>, always mounted
 and independent of any operation modal. Clicking it opens a <strong>contextual panel</strong> anchored under the
-bell. Live arrivals also raise a <strong>toast</strong>.</p>
-<h3>Bell icon states</h3>
+bell. Live arrivals also raise a <strong>toast</strong>. The glyph is <strong>Phosphor <span class="mono">Bell</span>
+(regular)</strong> at 20&nbsp;px — Phosphor is the FlowX icon library, and the bell is not an exception to it.</p>
+<h3>Bell icon states — two, not three</h3>
+<p>The indicator is an <strong>8&nbsp;px dot</strong>, not a counter:</p>
 <div class="tablewrap"><table>
   <thead><tr><th>State</th><th>Bell shows</th><th>Rule</th></tr></thead>
   <tbody>
-    <tr><td class="t">All read</td><td>Plain bell — <strong>no counter bubble at all</strong></td><td>The bubble is removed, not shown as “0”. Zero is not news; an empty badge is visual noise that trains the eye to ignore the real one.</td></tr>
-    <tr><td class="t">1–99 unread</td><td>Bell + bubble with the <strong>exact count</strong></td><td>The number is the signal — it says how much is waiting.</td></tr>
-    <tr><td class="t">More than 99</td><td>Bell + bubble reading <strong><span class="mono">…</span></strong></td><td>Past 99 the exact figure stops being actionable and the bubble would have to grow or shrink its type to fit. The ellipsis says “more than you want to count” at a fixed width, so the header never reflows.</td></tr>
+    <tr><td class="t">All read</td><td>Plain bell — <strong>no dot at all</strong></td><td>The dot is removed, not dimmed or shown as “0”. Zero is not news; an always-present marker is noise that trains the eye to ignore the real one.</td></tr>
+    <tr><td class="t">Any unread</td><td>Bell + <strong>8&nbsp;px red dot</strong> on the upper-right shoulder (<span class="mono">#E62200</span>, red-500 / DS <span class="mono">error</span>; a 2&nbsp;px header-coloured ring cuts it out from the glyph)</td><td>The dot says “something is waiting” — one bit. It does not say how much.</td></tr>
   </tbody>
 </table></div>
-<p class="proto-note">The count itself is <em>unread terminal results only</em> — in-progress items never contribute (§9).
+<p><strong>Why a dot and not a count.</strong> The header is the calmest surface in the app, and a number on it is a
+standing demand — it asks to be driven to zero, and it changes width as it grows (1 → 12 → 99 forced the old bubble
+to reflow, and pushed us into an “…” rule past 99). The dot is fixed-size, binary, and honest about what the bell can
+tell you from across the room: <em>yes / no</em>. The <strong>count still exists and is one click away</strong> — it’s
+the right-aligned figure on the filter popover’s <em>Unread</em> row (§7), where it sits next to the control that acts
+on it. Same information, moved from the place that can only <em>announce</em> it to the place that can <em>do</em>
+something with it.</p>
+<p class="proto-note">The dot lights for <em>unread terminal results only</em> — in-progress items never contribute (§9).
 A one-shot <strong>pulse</strong> on the bell is a separate signal, used when a running operation is backgrounded (§9).</p>
 <h3>Panel layout (top → bottom)</h3>
 <ul>
   <li><strong>Header</strong> — “Notification” + <strong>Mark all as read</strong> (a text link; <em>disabled, not hidden,</em> when nothing is unread).</li>
-  <li><strong>Search</strong> + a <strong>filter icon</strong> (§7) — the filter is an occasional control, so it collapses to an icon rather than a persistent row. The icon highlights when a filter is active; single-select, so there’s no filter chip. The filter popover is <strong>175&nbsp;px</strong> wide; only the environment rows carry a colour dot, and the unread count is a plain right-aligned figure rather than a badge.</li>
+  <li><strong>Search</strong> + a <strong>filter icon</strong> (§7) — the filter is an occasional control, so it collapses to an icon rather than a persistent row. The icon highlights when a filter is active; single-select, so there’s no filter chip. The filter popover is <strong>175&nbsp;px</strong> wide; the workspace-type rows render as the same pill the feed items wear, and the unread count is a plain right-aligned figure rather than a badge.</li>
   <li class="proto-note" style="list-style:none;margin-left:-22px">The header and the search row sit in <strong>one continuous block — no separator between them</strong>; they’re one piece of panel chrome, and a rule there would split the header from its own controls. The first border is the one above the feed, where content actually starts.</li>
   <li><strong>Feed</strong> — one unified list, grouped by time into <strong>Today / This week / Older</strong>.</li>
   <li><strong>Footer</strong> — “Notifications are kept for 30 days.”</li>
 </ul>
+<h3>Empty states — name the cause, not the void</h3>
+<p>The feed can be empty for four different reasons, and the message says <strong>which one</strong> — because in
+three of the four the user’s own search or filter is what’s hiding the items, and the fix is to clear it:</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Condition</th><th>Message</th><th>Alignment</th></tr></thead>
+  <tbody>
+    <tr><td class="t">Nothing in the feed at all (first run, or everything aged past 30 days)</td><td><strong>No notifications yet.</strong></td><td>centred</td></tr>
+    <tr><td class="t"><strong>Search</strong> active, nothing matches</td><td><strong>No notifications match your search.</strong></td><td><strong>top</strong></td></tr>
+    <tr><td class="t"><strong>Unread</strong> filter on, nothing unread</td><td><strong>No unread notifications.</strong></td><td>centred</td></tr>
+    <tr><td class="t">A <strong>workspace-type</strong> filter on, nothing in it</td><td><strong>No notifications for this filter.</strong></td><td>centred</td></tr>
+  </tbody>
+</table></div>
+<p>A single generic “Nothing here” would be a dead end in the three filtered cases: it reads as “you have no
+notifications” when the truth is “you have some, and you’re filtering them out.” Naming the cause is what makes
+the state recoverable.</p>
+<p><strong>Text only — no illustration, no CTA.</strong> An empty feed is the <em>good</em> state, not a failure: an
+illustration would celebrate nothing, and a CTA (“run an export”) would be patronising in a panel that’s opened
+dozens of times a day. This is also what the FlowX DS prescribes: its empty-state pattern has a <strong>Small</strong>
+size — “subtitle only, drops the icon, title and CTA” — called out explicitly for <strong>“limited space such as a
+dropdown panel.”</strong> That’s this surface.</p>
+<p><strong>Type — Open Sans Regular 14 / 22, <span class="mono">#64748B</span></strong> (neutrals-500 /
+<span class="mono">text-secondary</span> — the same ink the DS gives its Small empty state). One size step up from the
+item’s body band (§5), because when the feed is empty this line is the panel’s <em>only</em> content and shouldn’t read
+as a caption under something; but it keeps secondary ink, since an empty feed is not news.</p>
+<p><strong>The message replaces the list band, not the panel.</strong> Header, search + filter row
+and footer all stay mounted, and the panel keeps its tier height (§6) rather than collapsing around one line of text.
+Two reasons: the control that caused the emptiness stays right there to undo, and the footer keeps stating the 30-day
+retention — the standing answer to “where did the old ones go?”, so the first-run message never has to carry it.</p>
+<p><strong>The panel must not hug the message — it does not resize.</strong> Search is incremental, so a self-sizing
+panel would shrink on a keystroke (<span class="mono">b</span> → 8 results, <span class="mono">bi</span> → 3,
+<span class="mono">biz</span> → 0) and snap back on backspace, moving the footer and the panel’s bottom edge under the
+cursor mid-read; the same would happen on every filter switch. The panel is anchored to a <strong>fixed</strong> bell,
+so its bottom edge must not be a function of the current query. Hugging would also discard the 21 : 26 ratio in the one
+state a first-time user is most likely to see.</p>
+<p><strong>So the message is centred — vertically and horizontally — in the list band.</strong> This is the counterpart
+of not resizing: a single line pinned to the <em>top</em> of a 520&nbsp;px panel reads as “content failed to load”, not
+“there is nothing here”, and that misread is what makes a fixed height feel wrong. Centring is also the convergent
+instruction across design systems (Carbon, PatternFly, Primer and Emarsys all specify the empty state as centred
+<strong>in its container</strong>, never the container shrinking to the state). A populated list, by contrast, stays
+top-aligned and scrolls.</p>
+<p><strong>One message stays top-aligned: “No notifications match your search.”</strong> Search is the only empty state
+that is <strong>live feedback on typing</strong> rather than a state of the panel, and two things follow:</p>
+<ul>
+  <li><strong>It must not move as you type.</strong> <span class="mono">b</span> → 8 results, <span class="mono">bi</span> → 3,
+  <span class="mono">biz</span> → 0 — if the message were centred, the feedback would jump from the top of the band to its
+  middle on that last keystroke and back up on backspace. That’s the same defect as a resizing panel: movement under the
+  eye, caused by a keystroke, at the moment the user is deciding what to type next.</li>
+  <li><strong>It occupies the slot where the answer lives.</strong> One match renders at the top of the band, so zero
+  matches must appear in the same place — a response to a query shouldn’t change position with its result count. It also
+  keeps the message next to the field that caused it, rather than ~130&nbsp;px away from the control the user has to go
+  back and fix.</li>
+</ul>
+<p>The other three have no such transition — nothing narrows into them keystroke by keystroke — so they are stable states
+of an empty container, and they centre.</p>
+<p class="proto-note"><strong>Exception — the narrow-viewport sheet (&lt;&nbsp;520&nbsp;px, §6).</strong> There the panel
+is already <span class="mono">height: auto</span>, so it <em>does</em> hug. Correct, and consistent: that tier
+deliberately releases the ratio, and a phone-width sheet with 380&nbsp;px of void is a worse offence than a resize.</p>
 <h3>Feed item — title-led, body full width</h3>
 <pre>[ 24px disc ]   Title …………………………………………  2m
-                [ENV] workspace / &#128193; project
+                [WS-TYPE] workspace / &#128193; project
                 {source} &rarr; {target} &middot; {detail}
                 &#11015; Download</pre>
 <ul>
   <li><strong>Row 1 — title + time.</strong> The title leads (it’s what the user scans for); the <strong>timestamp is right-aligned on the same row</strong>. The on-hover <strong>mark-as-read ✓</strong> sits in a fixed slot <em>before</em> the time, so timestamps stay column-aligned across read and unread rows alike.</li>
+  <li><strong>Timestamp format — relative today, an absolute date before that, and never the word “ago.”</strong>
+  An item from <strong>today</strong> shows a relative figure with no unit word (<span class="mono">just now</span> ·
+  <span class="mono">42s</span> · <span class="mono">25m</span> · <span class="mono">3h</span>); an item from
+  <strong>any earlier day</strong> shows <strong><span class="mono">dd Mmm</span></strong> (<span class="mono">26 Jun</span>).
+  “Ago” is dropped because the slot’s meaning comes from its position — a right-aligned figure on a notification row is
+  read as age without being told, and the word repeats on every row while adding nothing. Switching to a <em>date</em>
+  rather than continuing to count (<span class="mono">2d</span>, <span class="mono">3w</span>) is the same argument in
+  reverse: past today, “how long ago” stops being the useful question and “which day” starts — and a date is stable,
+  where a relative figure silently changes under the reader. The handover at midnight means the relative branch never
+  has to express more than <span class="mono">23h</span>, so the two formats can’t both describe the same item.</li>
   <li><strong>The title is always one line</strong> — it ellipsises rather than wrapping, since a wrapping title would push the context / body / CTA bands down and break the even rhythm that makes a column of items scannable. When clipped, hovering reveals the <strong>full string in a tooltip</strong>, and the tooltip appears <strong>only when the text is actually cut off</strong> — never on a title you can already read in full. Whether a title clips depends on the panel’s width tier (§6), so it is measured <em>at hover time</em> rather than cached.</li>
-  <li><strong>Row 2 — context.</strong> Environment badge (or organization area) · workspace · project.</li>
+  <li><strong>Row 2 — context.</strong> Workspace-type pill (or organization area) · workspace · project.</li>
   <li><strong>Row 3 — body.</strong> The source label / specifics; a failure adds a line naming the cause.</li>
   <li><strong>Row 4 — action.</strong> Underneath the text, not in a right-hand column, so the body can run the <strong>full width</strong> of the panel.</li>
   <li><strong>Status icon — a 24&nbsp;px disc with a 16&nbsp;px glyph inside</strong>, tinted per status. The tint is deliberately low-contrast so a column of discs still reads as calm rather than as a traffic light.</li>
@@ -341,27 +416,40 @@ list reflow while you’re reading it, and the two-row item is only legible insi
   ratio is deliberately released: 21:26 serves a bell-anchored panel, not a phone-width one.</p>
 </div>
 
-<h2 id="scope"><span class="num">7</span>Scope: organization vs environment type · filtering</h2>
-<p>An organization spans <strong>three environment types</strong> — <code>PRODUCTION</code> / <code>STAGING</code> /
+<h2 id="scope"><span class="num">7</span>Scope: organization vs workspace type · filtering</h2>
+<p>An organization spans <strong>three workspace types</strong> — <code>PRODUCTION</code> / <code>STAGING</code> /
 <code>SANDBOX</code> — plus the org itself. Every notification has one of two scopes:</p>
 <ul>
-  <li><strong>Environment-type scope</strong> — work-in-an-environment kinds (export, import, migration). Stamped with
-  <code>{ env, workspace, project }</code>, shown with the colour-coded environment badge
-  (blue&nbsp;Sandbox · amber&nbsp;Staging · dark&nbsp;Production).</li>
-  <li><strong>Organization scope</strong> — org-wide events that belong to no single environment (e.g. Bulk Import
+  <li><strong>Workspace-type scope</strong> — work-in-a-workspace kinds (export, import, migration). Stamped with
+  <code>{ wsType, workspace, project }</code>, shown with the colour-coded workspace-type pill
+  (blue&nbsp;Sandbox · amber&nbsp;Staging · dark&nbsp;Production) — one component wherever it appears: header, logo-menu
+  group headings, feed item, toast, filter popover.</li>
+  <li><strong>Organization scope</strong> — org-wide events that belong to no single workspace (e.g. Bulk Import
   End-Users, licence expiry, billing). Stamped with <code>{ area, target }</code> and shown as a plain
   <span class="mono">{area} · {target}</span> line (e.g. <span class="mono">Access Management · End-Users</span>) —
-  <strong>no coloured badge</strong> (the absence of an environment badge is itself the “not environment-specific” signal).</li>
+  <strong>no coloured pill</strong> (the absence of a workspace-type pill is itself the “not workspace-specific” signal).
+  These appear <strong>under <em>All</em> only</strong> — the filter popover offers workspace types and nothing else, so
+  an org item has no scope option of its own.</li>
 </ul>
-<p>Filtering folds read-state and scope into <strong>one single-select popover</strong> off the filter icon:</p>
+<p>Filtering folds read-state and scope into <strong>one single-select popover</strong> off the filter icon —
+<strong>175&nbsp;px</strong> wide, five rows:</p>
 <pre>All notifications
-Unread (N)              ← read-state
+Unread (N)              ← read-state, count right-aligned
 ────────────
-Organization           ← org-level items
-────────────
-ENVIRONMENT TYPE
-  Production / Staging / Sandbox</pre>
-<p>One active filter at a time; picking <em>Unread</em> shows unread across every scope. Trade-off: the two axes
+WORKSPACE TYPE
+  [SANDBOX] [STAGING] [PRODUCTION]   ← the order work promotes in</pre>
+<p><strong>A workspace type is represented by its pill, not by a dot beside a label.</strong> The workspace rows render
+<strong>the same badge the feed items wear</strong> — so the filter and the thing it filters read alike, and picking
+<span class="mono">[PRODUCTION]</span> is visibly the same token you then see on every row that comes back. The pill
+carries the label, so there’s no text beside it to restate it. Read-state rows (<em>All / Unread</em>) stay plain text:
+they aren’t workspace scopes, and giving them any marker of the same family would imply they were. Rows are held to one
+height across the divider, since a pill is shorter than a line of label text.</p>
+<p class="proto-note"><strong>Not doing: an “Organization” row.</strong> Org-level notifications still exist in the feed,
+but they no longer get a scope option — the popover filters <strong>workspace type only</strong>, and org items are
+reachable under <em>All</em> or by search. Removed because a single row mixing a <em>non</em>-workspace scope into a list
+headed “Workspace Type” was the one thing in the popover that didn’t fit its own heading. A future <em>type</em> filter
+(§13) is the better home for them.</p>
+<p>One active filter at a time; picking <em>Unread</em> shows unread across every workspace type. Trade-off: the two axes
 can’t currently be intersected (e.g. “unread Production”) — chosen for simplicity over a separate All/Unread toggle.
 Free-text <strong>search</strong> matches title + source label + context and composes with the filter.</p>
 
@@ -420,9 +508,10 @@ dismiss independently rather than as a batch.</p>
   <li><strong>Evict the oldest, never drop the newest.</strong> The most recent completion is the most relevant, and
   the evicted toast has already had screen time.</li>
   <li><strong>Timers stay independent</strong> — hovering one pauses only that one; its neighbours keep expiring.</li>
-  <li><strong>Overflow needs no extra signal</strong> — the unread badge increments, and that <em>is</em> the
-  “something arrived” cue. The <strong>pulse is deliberately not reused</strong>: it means “your backgrounded
-  operation lives here” (§9), and overloading it would blur a signal we just defined.</li>
+  <li><strong>Overflow needs no extra signal</strong> — the bell’s unread dot is already lit (§5), and the <em>Unread</em>
+  count on the filter popover carries the number of results that arrived. The <strong>pulse is deliberately not
+  reused</strong>: it means “your backgrounded operation lives here” (§9), and overloading it would blur a signal we
+  just defined.</li>
 </ul>
 <div class="grid2">
   <div class="card"><h4>Why not queue them?</h4><p>The timer <strong>pauses on hover, focus and tab-blur</strong> — so
@@ -468,12 +557,13 @@ actually started, and (b) say <em>“you can leave — we’ll notify you.”</e
 visual handshake tying the just-dismissed modal to <em>where the operation now lives</em>, answering “where do I
 check on this?” without words. Suppressed when the panel is already open (the user can already see the feed update).</p>
 
-<h3>The unread count never counts in-progress</h3>
-<p>The numeric badge means exactly one thing: <strong>unread terminal results that need you</strong>
-(ready / done / failed / org events). A pending entry has <strong>no action</strong> — counting it would cry wolf
-(open the bell, find only a spinner) and double-count at completion (does <em>preparing → ready</em> bump it a second
-time?). So in-progress shows <strong>in the feed</strong> (a spinner row — discoverable) but <strong>out of the
-count</strong>; “work is happening” is carried by the <strong>pulse + the live row</strong>, never a number.</p>
+<h3>Unread never includes in-progress</h3>
+<p>The bell’s dot (§5) and the <em>Unread</em> count (§7) mean exactly one thing: <strong>unread terminal results that
+need you</strong> (ready / done / failed / org events). A pending entry has <strong>no action</strong> — counting it would
+cry wolf (open the bell, find only a spinner) and double-count at completion (does <em>preparing → ready</em> bump it a
+second time?). So in-progress shows <strong>in the feed</strong> (a spinner row — discoverable) but <strong>out of
+unread</strong>; “work is happening” is carried by the <strong>pulse + the live row</strong>, never by the dot or the
+count.</p>
 <p class="proto-note">Activity ≠ unread-actionable — the two signals are shown differently on purpose.</p>
 
 <h3>At completion, it hinges on one thing: is the user still looking?</h3>
@@ -579,7 +669,7 @@ was anything applied?” is the first question a failure raises.</p>
 <div class="grid2">
   <div class="card"><h4>Artifact expiry (TTL)</h4><p>Show how long a result stays downloadable; a stale notification reads “expired — re-run” instead of breaking. Needs the TTL decision below.</p></div>
   <div class="card"><h4>Archive</h4><p>Reintroduce per-item dismiss as an on-hover archive action, once there’s an archive destination.</p></div>
-  <div class="card"><h4>Deep-link “Go to”</h4><p>Jump to the build / version / project a notification refers to, auto-switching workspace + env.</p></div>
+  <div class="card"><h4>Deep-link “Go to”</h4><p>Jump to the build / version / project a notification refers to, auto-switching workspace + workspace type.</p></div>
   <div class="card"><h4>Grouping by workspace</h4><p>Time grouping ships today; workspace grouping is a candidate as volume grows.</p></div>
   <div class="card"><h4>Priority / severity</h4><p>Errors and licence expiry styled distinctly, optionally pinned.</p></div>
   <div class="card"><h4>Preferences</h4><p>Mute types, do-not-disturb, optional email/desktop for long-running jobs.</p></div>

@@ -11,7 +11,7 @@
 > licence expiry, …).
 >
 > **Companion doc:** `EXPORT_DOWNLOAD_PLAN.md`. · **Shareable HTML:** `notification-center-spec.html`.
-> · **Live prototype:** https://madalinagheorghiu-ux.github.io/export-version/ · **Last updated:** 2026-08-06 (Toast stacking — §5.5.1 · one-line titles with hover tooltip — §5.3)
+> · **Live prototype:** https://madalinagheorghiu-ux.github.io/export-version/ · **Last updated:** 2026-09-07 (Feed empty states — §5.7.1)
 
 ---
 
@@ -29,7 +29,7 @@ state. A toast alone is not enough: it's ephemeral and easily missed.
    and **kept for 30 days** (§5.7), so a result stays findable long after its toast is gone.
 3. **Actionable** — each notification carries the next step (download / view results / retry), not just a status.
 4. **Extensible by type** — one feed, many operation kinds, without a redesign per kind.
-5. **Unambiguous context** — in a multi-workspace / multi-environment product, every notification says *where* it belongs.
+5. **Unambiguous context** — in a multi-workspace product spanning several workspace types, every notification says *where* it belongs.
 
 ### 1.1 Delivery in phases — V1 ships toasts only
 
@@ -110,14 +110,14 @@ Notification {
   type,               // EXPORT_READY | EXPORT_READY_WITH_EXCLUSIONS | EXPORT_FAILED
                       // | MIGRATION_COMPLETED | MIGRATION_FAILED | … (extensible)
   status,             // UNREAD | READ
-  payload,            // { jobId, label, context{environment, workspace, project}, … type-specific fields }
+  payload,            // { jobId, label, context{wsType, workspace, project}, … type-specific fields }
   createdAt
 }
 ```
 
 - `type` is an open enum — new operation kinds add new types without schema change.
 - `payload.jobId` links the notification to its job/artifact so the action can be re-derived at click time (permissions and expiry re-checked then, not at creation).
-- `payload.context` stamps the launching `{ environment, workspace, project }` (see §6).
+- `payload.context` stamps the launching `{ wsType, workspace, project }` (see §6).
 
 ---
 
@@ -141,25 +141,35 @@ a dedicated path. Recommendation: **reuse** — pending codebase confirmation.
 
 ### 5.1 Where it lives
 A global **bell** in the dark app-shell header (near `Config / Runtime` / the avatar) —
-**always mounted, independent of any operation modal** — with an **unread badge** (which counts
-*unread terminal results only* — never in-progress items; see §5.11) and a **one-shot pulse** that
+**always mounted, independent of any operation modal** — with an **unread dot** (lit by *unread
+terminal results only* — never by in-progress items; see §5.11) and a **one-shot pulse** that
 signals backgrounded in-progress work (§5.11). Live arrivals also raise a **toast**. Because the bell
 is global, closing a modal / navigating / refreshing never hides the status.
+
+The glyph is **Phosphor `Bell` (regular)** at 20px — Phosphor is the FlowX icon library, and the
+bell is not an exception to it.
 
 **Panel chrome.** The header ("Notification" + *Mark all as read*) and the search + filter row sit
 in **one continuous block — no separator between them**; they're one piece of panel chrome, and a
 rule there would split the header from its own controls. The first border in the panel is the one
 above the feed, where the content actually starts.
 
-**Bell icon states.** The badge is a bubble on the bell, and it earns its place three ways:
+**Bell icon states — two, not three.** The indicator is an **8px dot**, not a counter:
 
 | State | Bell shows | Rule |
 |---|---|---|
-| **All read** | Plain bell — **no bubble at all** | The bubble is *removed*, not shown as "0". Zero is not news; an empty badge is noise that trains the eye to ignore the real one. |
-| **1–99 unread** | Bell + bubble with the **exact count** | The number is the signal — it says how much is waiting. |
-| **> 99 unread** | Bell + bubble reading **`…`** | Past 99 the exact figure stops being actionable, and a 3-digit count would force the bubble to grow or shrink its type. The ellipsis says "more than you want to count" at a **fixed width**, so the header never reflows. |
+| **All read** | Plain bell — **no dot at all** | The dot is *removed*, not dimmed or shown as "0". Zero is not news; an always-present marker is noise that trains the eye to ignore the real one. |
+| **Any unread** | Bell + **8px red dot** on the upper-right shoulder (`#E62200`, red-500 / DS `error`; a 2px header-coloured ring cuts it out from the glyph) | The dot says *"something is waiting"* — one bit. It does not say how much. |
 
-The count is *unread terminal results only* — in-progress never contributes (§5.11) — and the
+**Why a dot and not a count.** The header is the calmest surface in the app, and a number on it is a
+standing demand — it asks to be driven to zero, and it changes width as it grows (1 → 12 → 99 forced
+the old bubble to reflow, and pushed us into an `…` rule past 99). The dot is fixed-size, binary, and
+honest about what the bell can tell you from across the room: *yes / no*. The **count still exists
+and is one click away** — it's the right-aligned figure on the filter popover's *Unread* row (§5.6),
+where it sits next to the control that acts on it. Same information, moved from the place that can
+only *announce* it to the place that can *do* something with it.
+
+The dot lights for *unread terminal results only* — in-progress never contributes (§5.11) — and the
 one-shot **pulse** is a separate signal for backgrounded work (§5.11).
 
 **Panel size — 420 × 520 px** on a MacBook Pro 16" (the reference display). Width benchmarked
@@ -213,7 +223,7 @@ and its *notification* are the **same row**. A `notifStatus`-style helper branch
 New kinds (licence expiry, build status, errors) slot in as new `type` branches — **the
 "extensible by type" promise**. Bulk Migration was the first proof that a non-export kind
 shares the feed cleanly; **org-level** notifications (see §5.9) are the second — they proved the
-feed can hold items that belong to no environment at all.
+feed can hold items that belong to no workspace at all.
 
 ### 5.3 Item layout — title-led, body full width
 
@@ -221,7 +231,7 @@ A **status disc in a fixed left column**, and everything else stacked beside it 
 
 ```
 [ 24px disc ]   Title …………………………………………  2m
-                [ENV] workspace / 📁 project
+                [WS-TYPE] workspace / 📁 project
                 {source} → {target} · {detail}
                 ⬇ Download
 ```
@@ -229,6 +239,20 @@ A **status disc in a fixed left column**, and everything else stacked beside it 
 - **Row 1 — title + time.** The title leads (it's what the user scans for); the **timestamp is
   right-aligned on the same row**. The on-hover **mark-as-read ✓** sits in a fixed slot *before* the
   time, so timestamps stay column-aligned across read and unread rows alike.
+- **Timestamp format — relative today, an absolute date before that, and never the word "ago".**
+
+  | Item is from | Shows | Examples |
+  |---|---|---|
+  | Today | Relative, no unit word | `just now` · `42s` · `25m` · `3h` |
+  | Any earlier day | **`dd Mmm`** | `26 Jun` |
+
+  *"Ago"* is dropped because the slot's meaning comes from its position — a right-aligned figure on a
+  notification row is read as age without being told, and the word repeats on every row while adding
+  nothing. Switching to a **date** rather than continuing to count (`2d`, `3w`) is the same argument
+  applied in reverse: past today, "how long ago" stops being the useful question and *"which day"*
+  starts — a date is also stable, where a relative figure silently changes under the reader. The
+  handover at midnight means the relative branch never has to express more than `23h`, so the two
+  formats can't both describe the same item.
 - **The title is always one line.** It ellipsises rather than wrapping: a wrapping title would push
   the context / body / CTA bands down and break the feed's even rhythm, which is what makes a column
   of items scannable. When it's clipped, hovering reveals the **full string in a tooltip** — and the
@@ -236,7 +260,7 @@ A **status disc in a fixed left column**, and everything else stacked beside it 
   visible (a tooltip repeating what you can read is noise). Because the panel has three width tiers
   (§5.1), whether a given title clips depends on the tier, so this is measured **at hover time**
   rather than cached.
-- **Row 2 — context.** Env badge (or org area — §5.9) · workspace · project.
+- **Row 2 — context.** Workspace-type pill (or org area — §5.9) · workspace · project.
 - **Row 3 — body.** The source label / specifics. A failure adds a line naming the cause (§5.4).
 - **Row 4 — action.** Underneath the text, not in a right-hand column, so the body can run the
   **full width** of the panel.
@@ -299,7 +323,7 @@ of §5.3**: the 24px status disc, then title, context, body and action stacked b
 **timestamp slot holds the dismiss ×** (a toast is always "now", so there is nothing to date). Its
 action follows the same tertiary text+icon rule.
 
-It carries only what's needed (env context, status, title, one-line subtitle, one action) — a toast
+It carries only what’s needed (workspace context, status, title, one-line subtitle, one action) — a toast
 showing fewer fields than the feed is expected. A **status-matched left accent** (green / amber /
 red) is the only toast-specific chrome. It points at the same `jobId`.
 
@@ -349,9 +373,10 @@ hits). The rule:
   one has already had screen time.
 - **Timers stay independent** (§5.5). Hovering one pauses only that one; its neighbours keep
   expiring on their own schedule.
-- **Overflow needs no extra signal** — the bell's unread badge increments, and *that* is the
-  "something arrived" cue. The **pulse is deliberately not reused** here: it means "your backgrounded
-  operation lives here" (§5.11), and overloading it would blur a signal we just defined.
+- **Overflow needs no extra signal** — the bell's unread dot is already lit (§5.1), and the *Unread*
+  count on the filter popover carries the number of results that arrived. The **pulse is deliberately
+  not reused** here: it means "your backgrounded operation lives here" (§5.11), and overloading it
+  would blur a signal we just defined.
 
 **Why not queue them (show one, wait, show the next)?** Because the toast timer **pauses on hover,
 focus, and tab-blur**. A single hovered toast — or the user simply switching tabs — would **stall the
@@ -386,19 +411,31 @@ into one list:
 ```
 All Notifications
 Unread                    N   ← read-state, count right-aligned
-Organization                  ← org-level items (no environment)
 ─────────────────────────
-ENVIRONMENT TYPE
-  ● Sandbox                   ← sandbox → staging → production,
-  ● Staging                     the order work actually promotes in
-  ● Production
+WORKSPACE TYPE
+  [SANDBOX]                   ← sandbox → staging → production,
+  [STAGING]                     the order work actually promotes in
+  [PRODUCTION]
 ```
 
-**Popover — 175px wide.** It holds six short labels and nothing else, so it's sized to the content
-rather than to the panel. Only the **environment rows carry a dot**: the dot *is* the env-type
-colour coding, so putting a neutral one on *All / Unread / Organization* would imply those are
-scopes of the same kind. The unread **count is a plain right-aligned figure**, not a badge pill —
+**Popover — 175px wide.** It holds five short rows and nothing else, so it's sized to the content
+rather than to the panel. The unread **count is a plain right-aligned figure**, not a badge pill —
 it annotates the row, it isn't a second alarm.
+
+**A workspace type is represented by its pill, not by a dot beside a label.** The workspace rows
+render **the same `ws-badge` pill the feed items wear** — so the filter and the thing it filters
+read alike, and picking `[PRODUCTION]` is visibly the same token you then see on every row that
+comes back. The pill also carries the label, so there's no text beside it to restate it. Read-state
+rows (*All / Unread*) stay plain text: they aren't workspace scopes, and giving them any marker of
+the same family would imply they were. Rows are held to **one height across the divider**
+(`min-height`), since a pill is shorter than a line of label text and the popover should keep a
+single rhythm.
+
+> **Not doing: an *Organization* row.** Org-level notifications (§5.9) still exist in the feed, but
+> they no longer get their own scope option — the popover filters **workspace type only**, and org
+> items are reachable under *All* (and via search). Removed because a single row mixing a
+> *non*-workspace scope into a list headed "Workspace Type" was the one thing in the popover that
+> didn't fit its own heading.
 
 **One active filter at a time** — *Unread* shows unread across every scope; a scope shows that
 scope's items (read + unread). *(Trade-off: the two can't currently be intersected, e.g. "unread
@@ -414,7 +451,7 @@ all/unread all narrow the same list):
 - **Search** — a text box matching each item's title, source label (`Bizkids 1.6.1 → 5.9.X`),
   and stamped context (scope / workspace / project / org).
 - **Unread view** — now a **filter option** (§5.6), not a standalone toggle; its count lives on that
-  option and is global. (Per-env chip counts and a running "N shown" total were removed as noise.)
+  option and is global. (Per-workspace-type chip counts and a running "N shown" total were removed as noise.)
 - **Mark one as read** — a ✓ affordance revealed **on item hover** for any unread row, so a single
   item can be cleared without acting on it or touching the others.
 - **Mark all as read** — a text link in the **panel header** (top-right). Driven by *global* unread
@@ -425,6 +462,73 @@ all/unread all narrow the same list):
 - **Retention** — the center keeps the **last 30 days**; a persistent footer states this so the
   absence of older items reads as policy, not loss.
 
+### 5.7.1 Empty states — name the cause, not the void
+
+The feed can be empty for four different reasons, and the message says **which one** — because in
+three of the four the user's own search or filter is what's hiding the items, and the fix is to
+clear it:
+
+| Condition | Message | Alignment |
+|---|---|---|
+| Nothing in the feed at all (first run, or everything aged past 30 days) | **No notifications yet.** | centred |
+| **Search** active, nothing matches | **No notifications match your search.** | **top** |
+| **Unread** filter on, nothing unread | **No unread notifications.** | centred |
+| A **workspace-type** filter on, nothing in it | **No notifications for this filter.** | centred |
+
+A single generic *"Nothing here"* would be a dead end in the three filtered cases: it reads as
+"you have no notifications" when the truth is "you have some, and you're filtering them out."
+Naming the cause is what makes the state recoverable.
+
+**Text only — no illustration, no CTA.** An empty feed is the *good* state, not a failure: an
+illustration would celebrate nothing, and a CTA ("run an export") would be patronising in a panel
+that's opened dozens of times a day. This is also what the FlowX DS prescribes: its empty-state
+pattern has a **Small** size — *"subtitle only, drops the icon, title and CTA"* — called out
+explicitly for **"limited space such as a dropdown panel."** That's this surface.
+
+**Type — Open Sans Regular 14 / 22, `#64748B`** (neutrals-500 / `text-secondary` — the same ink the
+DS gives its Small empty state). One size step up from the item's body band (§5.3), because when the
+feed is empty this line is the panel's *only* content and shouldn't read as a caption under
+something; but it keeps secondary ink, since an empty feed is not news.
+
+**The message replaces the list band, not the panel.** Header, search + filter row and footer all
+stay mounted, and the panel keeps its tier height (§5.1) rather than collapsing around one line of
+text. Two reasons: the control that caused the emptiness stays right there to undo, and the footer
+keeps stating the 30-day retention — which is the standing answer to "where did the old ones go?",
+so the first-run message never has to carry it.
+
+**The panel must not hug the message — it does not resize.** Search is incremental, so a
+self-sizing panel would shrink on a keystroke (`b` → 8 results, `bi` → 3, `biz` → 0) and snap back
+on backspace, moving the footer and the panel's bottom edge under the cursor mid-read; the same
+would happen on every filter switch. The panel is anchored to a **fixed** bell, so its bottom edge
+must not be a function of the current query. Hugging would also discard the 21:26 ratio in the one
+state a first-time user is most likely to see.
+
+**So the message is centred — vertically and horizontally — in the list band.** This is the
+counterpart of not resizing: a single line pinned to the *top* of a 520px panel reads as *"content
+failed to load"*, not *"there is nothing here"*, and that misread is what makes a fixed height feel
+wrong. Centring is also the convergent instruction across design systems (Carbon, PatternFly,
+Primer, Emarsys all specify the empty state as centred **in its container**, never the container
+shrinking to the state). A populated list, by contrast, stays top-aligned and scrolls.
+
+**One message stays top-aligned: *No notifications match your search.*** Search is the only empty
+state that is **live feedback on typing** rather than a state of the panel, and two things follow:
+
+- **It must not move as you type.** `b` → 8 results, `bi` → 3, `biz` → 0 — if the message were
+  centred, the feedback would jump from the top of the band to its middle on that last keystroke
+  and back up on backspace. That's the same defect as a resizing panel: movement under the eye,
+  caused by a keystroke, at the moment the user is deciding what to type next.
+- **It occupies the slot where the answer lives.** One match renders at the top of the band, so
+  zero matches must appear in the same place — a response to a query shouldn't change position
+  with its result count. It also keeps the message next to the field that caused it, rather than
+  ~130px away from the control the user has to go back and fix.
+
+The other three have no such transition — nothing narrows into them keystroke by keystroke — so
+they are stable states of an empty container, and they centre.
+
+> **Exception — the narrow-viewport sheet (`< 520px`, §5.1).** There the panel is already
+> `height: auto`, so it *does* hug. Correct, and consistent: that tier deliberately releases the
+> ratio, and a phone-width sheet with 380px of void is a worse offence than a resize.
+
 ### 5.8 Dismiss / archive (deferred)
 The per-item **×** was **removed for now** — dismiss/archive is deferred until there's a real
 **archive** destination (a dismissed item shouldn't just vanish with nowhere to go). When it lands,
@@ -432,24 +536,28 @@ it will live as a second **on-hover** action alongside mark-as-read (§5.7), and
 **artifact/cache/result untouched** — e.g. an archived export still shows "Download ready" on its
 Builds row. Until then the feed's only reduction is read/unread + the 30-day window.
 
-### 5.9 Notification scope — organization vs environment type
-An organization spans **three environment types** — `PRODUCTION` / `STAGING` / `SANDBOX` — plus the
+### 5.9 Notification scope — organization vs workspace type
+An organization spans **three workspace types** — `PRODUCTION` / `STAGING` / `SANDBOX` — plus the
 org itself. Every notification therefore has one of two **scopes**:
 
-- **Environment-type scope** — the work-in-an-environment kinds (export, migration). Stamped with
-  `ctx = { env, workspace, project }`; shown with the env badge. These appear under *All* and under
-  their env-type filter, never under a *different* env type.
-- **Organization scope** — org-wide events that belong to no single environment (e.g. **Bulk Import
+- **Workspace-type scope** — the work-in-a-workspace kinds (export, migration). Stamped with
+  `ctx = { wsType, workspace, project }`; shown with the workspace-type pill. These appear under
+  *All* and under their workspace-type filter, never under a *different* type.
+- **Organization scope** — org-wide events that belong to no single workspace (e.g. **Bulk Import
   End-Users**, **licence expiry**, billing/plan). Stamped with `ctx = { area, target }` and shown as
   a plain **`{area} · {target}`** context line — e.g. `Access Management · End-Users`, `Billing ·
-  Subscription` — parallel to the env items' `{workspace} · {project}` but with **no leading marker
-  and no folder icon** (there's no dedicated org colour, and the *absence* of an env badge is itself
-  the "not environment-specific" signal). The status is carried entirely by the discrete
-  success/warning/failed glyph (§5.3), same as every other kind. These appear under *All* and under
-  *Organization* only.
+  Subscription` — parallel to the workspace items' `{workspace} · {project}` but with **no leading
+  marker and no folder icon** (there's no dedicated org colour, and the *absence* of a
+  workspace-type pill is itself the "not workspace-specific" signal). The status is carried
+  entirely by the discrete
+  success/warning/failed glyph (§5.3), same as every other kind. These appear **under *All* only** —
+  the filter popover offers workspace types and nothing else (§5.6), so an org item has no scope
+  option of its own; it's found under *All* or by search.
 
-`itemScope(item)` returns `ORG` for org items and the `ctx.env` otherwise; the scope filter (§5.6)
-matches on it. This is the model behind "filter by env type, org, all."
+`itemScope(item)` still returns `ORG` for org items and the `ctx.wsType` otherwise, and the filter
+(§5.6) matches on it — but since `ORG` is no longer a selectable value, that branch now serves only
+to keep org items *out* of every workspace-type filter. The model is "filter by workspace type, or
+all."
 
 ### 5.10 Notification titles — naming spec (for dev)
 
@@ -512,12 +620,13 @@ flashes" caveat — a floor, not a fixed wait: a genuinely long op is unaffected
 *where the operation now lives*, answering "where do I check on this?" without words. Suppressed when
 the panel is already open (the user can already see the feed update).
 
-**The unread count never counts in-progress.** The numeric badge means exactly one thing —
-**unread terminal results that need you** (ready / done / failed / org events). A pending entry has
-**no action**: counting it would cry wolf (open the bell, find only a spinner) and double-count at
-completion (does *preparing → ready* bump it a second time?). So in-progress shows **in the feed** (a
-spinner row — discoverable) but **out of the count**; "work is happening" is carried by the **pulse +
-the live row**, never a number. *Activity ≠ unread-actionable.*
+**Unread never includes in-progress.** The bell's dot (§5.1) and the *Unread* count (§5.6) mean
+exactly one thing — **unread terminal results that need you** (ready / done / failed / org events).
+A pending entry has **no action**: counting it would cry wolf (open the bell, find only a spinner)
+and double-count at completion (does *preparing → ready* bump it a second time?). So in-progress
+shows **in the feed** (a spinner row — discoverable) but **out of unread**; "work is happening" is
+carried by the **pulse + the live row**, never by the dot or the count. *Activity ≠
+unread-actionable.*
 
 **At completion, what happens next hinges on one thing: is the user still looking?**
 - **Routed to the result** (they let the modal switch them to the download / review / detail view) →
@@ -533,20 +642,21 @@ the live row**, never a number. *Activity ≠ unread-actionable.*
 
 ---
 
-## 6. Context on every notification (multi-workspace / multi-environment)
+## 6. Context on every notification (multi-workspace, several workspace types)
 
-Users switch **workspace + environment** from the logo menu (env groups
-`SANDBOX` / `STAGING` / `PRODUCTION`, each with its workspaces). Because the bell is global, a
-notification could otherwise be ambiguous about *where* it belongs.
+Users switch **workspace** from the logo menu, where workspaces are grouped by **workspace type**
+(`SANDBOX` / `STAGING` / `PRODUCTION`). Because the bell is global, a notification could otherwise
+be ambiguous about *where* it belongs.
 
-So **every job is stamped at launch with `{ environment, workspace, project }`**, and that
-context is shown on:
+So **every job is stamped at launch with `{ wsType, workspace, project }`**, and that context is
+shown on:
 - the **feed item** (context header),
 - the **toast**,
 - and the **result modal / detail page** it opens.
 
-The **env badge is colour-coded**: blue `SANDBOX` · amber `STAGING` · dark `PRODUCTION`
-(e.g. `[PRODUCTION] Silviu prod · bizkids`).
+The **workspace-type pill is colour-coded**: blue `SANDBOX` · amber `STAGING` · dark `PRODUCTION`
+(e.g. `[PRODUCTION] Silviu prod · bizkids`). It is one component (`ws-badge`) wherever it appears —
+the header, the logo menu's group headings, the feed item, the toast, and the filter popover (§5.6).
 
 ---
 
@@ -644,8 +754,8 @@ the unified feed above; it now hosts both exports and migrations.
 
 ## 11. Future candidates
 
-1. **Type filter / tabs** — once there are more kinds: `All / Downloads / System / Alerts`. (Partly realized: the scope filter §5.6 already separates org-wide from env-type items.)
-2. **Deep-link "Go to"** — jump to the build/version/project a notification refers to (auto-switch workspace/env context).
+1. **Type filter / tabs** — once there are more kinds: `All / Downloads / System / Alerts`. Now also the home for **org-level items**, which lost their scope option when the popover narrowed to workspace types (§5.6) — a *type* filter is the better place for them than a scope filter was.
+2. **Deep-link "Go to"** — jump to the build/version/project a notification refers to (auto-switch workspace / workspace-type context).
 3. **Expiry indicator** — show artifact TTL; "expired — re-run". (Distinct from the 30-day *notification* retention in §5.7 — this is the *artifact* TTL.) ✅ *Retry on `FAILED` shipped — see §8.*
 4. **Bulk actions** — ✅ *shipped: "Mark all read" + per-item mark-as-read on hover (§5.7).* Still open: "Clear read", "Clear all", multi-select.
 5. **Grouping** — ✅ *shipped: by time (Today / This week / Older) — see §5.7.* Still open: grouping by workspace.
