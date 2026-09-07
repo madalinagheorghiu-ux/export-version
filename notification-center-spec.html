@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Notification Center — Product Specs · FlowX</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#fff; --ink:#1c2430; --muted:#5b6675; --faint:#8a94a3;
+    --border:#e6e8ec; --border-2:#eef0f3; --blue:#1f6feb; --blue-soft:#eaf1fe;
+    --green:#2e9e6b; --amber:#c2921f; --amber-bg:#fdf7e6; --red:#d6453a;
+    --code-bg:#f2f4f7; --shadow:0 1px 2px rgba(16,24,40,.05);
+    --maxw:920px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f1420; --panel:#161c28; --ink:#e7ecf2; --muted:#9aa6b6; --faint:#6f7c8d;
+      --border:#26303f; --border-2:#1f2836; --blue-soft:#152742; --code-bg:#1b2331; --amber-bg:#2a2413; --shadow:none; }
+  }
+  :root[data-theme="dark"]{ --bg:#0f1420; --panel:#161c28; --ink:#e7ecf2; --muted:#9aa6b6; --faint:#6f7c8d;
+    --border:#26303f; --border-2:#1f2836; --blue-soft:#152742; --code-bg:#1b2331; --amber-bg:#2a2413; --shadow:none; }
+  :root[data-theme="light"]{ --bg:#f6f7f9; --panel:#fff; --ink:#1c2430; --muted:#5b6675; --faint:#8a94a3;
+    --border:#e6e8ec; --border-2:#eef0f3; --blue-soft:#eaf1fe; --code-bg:#f2f4f7; --amber-bg:#fdf7e6; }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:48px 24px 96px}
+
+  header.doc{border-bottom:1px solid var(--border);padding-bottom:26px;margin-bottom:10px}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--blue)}
+  h1{font-size:32px;line-height:1.2;margin:10px 0 8px;letter-spacing:-.02em}
+  .lede{color:var(--muted);font-size:16px;max-width:66ch;margin:0}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .tag{font-size:12px;font-weight:600;background:var(--blue-soft);color:var(--blue);border-radius:999px;padding:4px 11px}
+  .tag.n{background:var(--code-bg);color:var(--muted)}
+
+  h2{font-size:22px;margin:46px 0 6px;letter-spacing:-.01em;scroll-margin-top:20px}
+  h2 .num{color:var(--faint);font-weight:600;margin-right:8px}
+  h3{font-size:16px;margin:26px 0 6px}
+  p{margin:10px 0}
+  a{color:var(--blue)}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  strong{font-weight:650}
+  code{background:var(--code-bg);border-radius:5px;padding:1px 6px;font-size:.86em;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  hr{border:0;border-top:1px solid var(--border);margin:40px 0}
+
+  .callout{border:1px solid var(--border);border-left:3px solid var(--blue);background:var(--panel);
+    border-radius:10px;padding:14px 16px;margin:18px 0;box-shadow:var(--shadow)}
+  .callout.amber{border-left-color:var(--amber)}
+  .callout .k{font-weight:700;font-size:13px;letter-spacing:.02em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
+
+  .tablewrap{overflow-x:auto;margin:16px 0;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px;background:var(--panel)}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border-2);vertical-align:top}
+  thead th{background:var(--code-bg);font-size:12px;letter-spacing:.03em;color:var(--muted);font-weight:700;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  td.t{font-weight:600;white-space:nowrap}
+  .pill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap}
+  .pill.ok{background:rgba(46,158,107,.14);color:var(--green)}
+  .pill.warn{background:rgba(194,146,31,.16);color:var(--amber)}
+  .pill.err{background:rgba(214,69,58,.14);color:var(--red)}
+  .pill.prog{background:var(--code-bg);color:var(--muted)}
+  /* In-progress marker — the SAME ring spinner the Corrective Actions "In Progress" pill uses,
+     so one component means "running" everywhere (proto: .mini-spin + .status-pill.in-progress). */
+  .pill.prog{display:inline-flex;align-items:center;gap:7px}
+  .spin{width:12px;height:12px;border-radius:50%;border:2px solid #d6dbe2;border-top-color:#8a94a3;
+        animation:spin .9s linear infinite;display:inline-block;flex:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.9em}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr}}
+  .card{border:1px solid var(--border);border-radius:12px;padding:16px 18px;background:var(--panel);box-shadow:var(--shadow)}
+  .card h4{margin:0 0 4px;font-size:14.5px}
+  .card p{margin:0;color:var(--muted);font-size:13.5px}
+
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-size:13px;line-height:1.5;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;margin:16px 0}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin:22px 0;box-shadow:var(--shadow)}
+  .toc ol{columns:2;column-gap:28px;margin:6px 0 0;font-size:14px}
+  @media(max-width:680px){.toc ol{columns:1}}
+  .toc a{text-decoration:none;color:var(--ink)}
+  .toc a:hover{color:var(--blue)}
+  .proto-note{font-size:13px;color:var(--faint);margin-top:2px}
+  footer.doc{margin-top:56px;border-top:1px solid var(--border);padding-top:20px;color:var(--faint);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <div class="eyebrow">Product Specs</div>
+  <h1>Notification Center &amp; long-running-process notifications</h1>
+  <p class="lede">The mechanism and surface that tells a user “your thing is ready / done / failed”
+  wherever they are in the FlowX Designer — a single, reusable pattern that already hosts exports,
+  imports, bulk migration, bulk user import and KB downloads.</p>
+  <div class="meta">
+    <span class="tag">FlowX Designer</span>
+    <span class="tag n">Status: prototype-backed</span>
+    <span class="tag n">Last updated: 2026-09-07</span>
+    <span class="tag n">Owner: Product / Design</span>
+  </div>
+</header>
+
+<div class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#goals">Problem &amp; goals</a></li>
+    <li><a href="#model">The model: job → statuses</a></li>
+    <li><a href="#types">Operation types &amp; titles</a></li>
+    <li><a href="#subtitle">Subtitle &amp; CTA per status</a></li>
+    <li><a href="#anatomy">Center anatomy</a></li>
+    <li><a href="#width">Width &amp; sizing</a></li>
+    <li><a href="#scope">Scope: org vs workspace type</a></li>
+    <li><a href="#toast">Toast</a></li>
+    <li><a href="#inprogress">In-progress: launch modal, pulse &amp; count</a></li>
+    <li><a href="#nav">Navigating from a notification</a></li>
+    <li><a href="#failure">Failure handling</a></li>
+    <li><a href="#edge">Edge cases</a></li>
+    <li><a href="#future">Future &amp; open questions</a></li>
+  </ol>
+</div>
+
+<h2 id="goals"><span class="num">1</span>Problem &amp; goals</h2>
+<p>Some operations are <strong>long-running</strong> (an export can take up to ~15&nbsp;min; a bulk
+migration runs seconds-to-minutes). The user must be free to <strong>close the launching modal,
+navigate, refresh, or leave and come back</strong> — and still be told, reliably, when the operation
+changes state. A toast alone isn’t enough: it’s ephemeral and easily missed.</p>
+<div class="grid2">
+  <div class="card"><h4>Reach the user anywhere</h4><p>The indicator lives in the always-mounted app shell, not in the operation’s modal.</p></div>
+  <div class="card"><h4>Never lose a notification</h4><p>Persisted server-side, pushed in real time, pulled on reconnect — and <strong>kept for 30 days</strong>, so a result stays findable long after the toast is gone.</p></div>
+  <div class="card"><h4>Actionable</h4><p>Each item carries the next step — download / view / review / retry — not just a status.</p></div>
+  <div class="card"><h4>Extensible by type</h4><p>One feed, many operation kinds, without a redesign per kind.</p></div>
+  <div class="card"><h4>Unambiguous context</h4><p>Every notification says <em>where</em> it belongs (workspace type / workspace / project, or organization).</p></div>
+  <div class="card"><h4>No dedicated page</h4><p>The panel is the home; per-item detail is surfaced in the operation’s own modals.</p></div>
+</div>
+
+<h3>Delivery in phases — V1 ships toasts only</h3>
+<p>The full pattern lands in two steps. <strong>V1 is toasts only, and those toasts carry no CTA</strong> — they
+announce a state change and nothing more. There is <strong>no notification center in V1</strong>: no bell, no feed,
+no history. The user acts on the result where the operation already lives (the Builds row, the Corrective Actions
+table, the operation’s own modal).</p>
+<div class="tablewrap"><table>
+  <thead><tr><th></th><th>V1</th><th>Next iterations</th></tr></thead>
+  <tbody>
+    <tr><td class="t">Toast</td><td>Yes — status only, <strong>no CTA</strong></td><td>Gains its inline CTA (Download / Review / View / Retry)</td></tr>
+    <tr><td class="t">Notification center</td><td><strong>Not shipped</strong></td><td>Bell + unified feed + history, per this spec</td></tr>
+    <tr><td class="t">Where the user acts</td><td>In the operation’s own surface</td><td>Straight from the notification</td></tr>
+  </tbody>
+</table></div>
+<div class="callout amber">
+  <div class="k">Why the center can’t simply be added later — the blocker to resolve</div>
+  <p style="margin:0">The bell assumes a <strong>persistent header</strong>, and the platform doesn’t have one
+  everywhere: <strong>several pages render without a header</strong>, so the bell has nowhere to live and the
+  “reach the user <em>wherever they are</em>” promise breaks precisely where it matters. Introducing the center
+  therefore requires <strong>revisiting the platform’s page architecture</strong> — establishing an always-mounted
+  app shell (or an equivalent global slot) that every page inherits. That is an architectural decision, not a
+  notification-feature decision, which is why V1 stops at toasts: a toast needs no persistent chrome.</p>
+</div>
+
+<h2 id="model"><span class="num">2</span>The model: an async job whose state changes are the notifications</h2>
+<p>Every operation is modelled as a <strong>server-side job with a lifecycle</strong>. The notification
+is the messenger that announces a transition; the follow-up action (download / view / review / retry)
+is a separate interaction against the job’s result.</p>
+<pre>REQUESTED ──► IN&nbsp;PROGRESS ──► SUCCESS
+                    │        └──► WARNING   (done-with-caveats, or needs-review-to-proceed)
+                    └────────────► FAILED   (retryable)</pre>
+<p>Beyond <em>in&nbsp;progress</em>, every terminal notification resolves to exactly one of three
+<strong>statuses</strong>, which drive the icon, colour and CTA:</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Status</th><th>Meaning</th><th>Icon / colour</th><th>Default CTA</th></tr></thead>
+  <tbody>
+    <tr><td class="t"><span class="pill prog"><span class="spin"></span>In&nbsp;progress</span></td><td>Running; not done yet.</td><td>The Corrective&nbsp;Actions ring spinner · neutral grey</td><td>—</td></tr>
+    <tr><td class="t"><span class="pill ok">Success</span></td><td>Completed cleanly.</td><td>Check · green</td><td><strong>Download</strong> or <strong>View</strong></td></tr>
+    <tr><td class="t"><span class="pill warn">Warning</span></td><td>Two flavours — <em>completed with warnings</em>, <em>or</em> not completed yet but can proceed if the user accepts the impact.</td><td>Triangle · amber</td><td><strong>Review</strong> or <strong>View</strong></td></tr>
+    <tr><td class="t"><span class="pill err">Failed</span></td><td>Did not complete; can be retried.</td><td>✕ · red</td><td><strong>Retry</strong></td></tr>
+  </tbody>
+</table></div>
+
+<div class="callout">
+  <div class="k">In progress has one visual, platform-wide</div>
+  <p style="margin:0">The small neutral-grey ring spinner already used by the <strong>Corrective Actions
+  “<span class="pill prog"><span class="spin"></span>In&nbsp;progress</span>” pill</strong> is <em>the</em> running
+  indicator — reused verbatim by the notification’s status glyph and its action slot. Same component, same 12&nbsp;px
+  geometry, same grey; <strong>no per-surface spinner and no size overrides at the call site</strong> (they drift).
+  “Something is running” should look identical everywhere, and <em>in&nbsp;progress</em> is the one state with no icon
+  of its own — motion <em>is</em> the icon. Distinct from the large centred loader inside a launch modal (§9), which is
+  a full-surface “we’re working” state, not an inline marker.</p>
+</div>
+
+<h2 id="types"><span class="num">3</span>Operation types &amp; notification titles</h2>
+<p>Seven long-running operations ride on this mechanism today. The <strong>naming convention</strong>:</p>
+<ul>
+  <li>Title = <code>{subject} {outcome}</code>. The <strong>subject stays identical across all statuses of a type</strong>; only the outcome word changes, so the same operation reads consistently as it moves success → warning → failed.</li>
+  <li><strong>Counts, versions and names never go in the title</strong> — they belong in the subtitle. The one exception is the <strong>warning count</strong> (it is the point of the warning).</li>
+  <li>Two success verbs by category: operations that <strong>produce a file</strong> → “ready to download”; operations that <strong>apply a change</strong> → past participle (“imported” / “migrated”).</li>
+  <li>Status drives icon + colour + CTA; the title’s outcome word matches the status.</li>
+</ul>
+
+<div class="tablewrap"><table>
+  <thead><tr><th>#</th><th>Operation type</th><th>In&nbsp;progress</th><th><span class="pill ok">Success</span></th><th><span class="pill warn">Warning</span></th><th><span class="pill err">Failed</span></th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td class="t">Export Build</td><td>Preparing build export…</td><td>Build export ready to download</td><td>Build export ready — {N} resources excluded</td><td>Build export failed</td></tr>
+    <tr><td>2</td><td class="t">Export Project Version</td><td>Preparing version export…</td><td>Version export ready to download</td><td>Version export ready — {N} resources excluded</td><td>Version export failed</td></tr>
+    <tr><td>3</td><td class="t">Import Build</td><td>Importing build…</td><td>Build imported</td><td>Build import needs review — {N} conflicts</td><td>Build import failed</td></tr>
+    <tr><td>4</td><td class="t">Import Project Version</td><td>Importing version…</td><td>Version imported</td><td>Version import needs review — {N} conflicts</td><td>Version import failed</td></tr>
+    <tr><td>5</td><td class="t">Bulk Import End-Users</td><td>Importing end-users…</td><td>End-users imported</td><td>End-users imported — {N} skipped</td><td>End-user import failed</td></tr>
+    <tr><td>6</td><td class="t">Migrate Instances</td><td>Migrating instances…</td><td>Instances migrated</td><td>Instances migrated — {N} failed</td><td>Instance migration failed</td></tr>
+    <tr><td>7</td><td class="t">Download KB Data Source</td><td>Preparing KB data source…</td><td>KB data source ready to download</td><td>KB data source ready — {N} skipped</td><td>KB data source download failed</td></tr>
+  </tbody>
+</table></div>
+
+<div class="callout amber">
+  <div class="k">The warning status is really two flavours</div>
+  <p style="margin:0">They share the amber colour but differ in <strong>whether the operation finished</strong>, which changes the CTA:</p>
+  <ul style="margin:8px 0 0">
+    <li><strong>W-a · needs review / accept impact</strong> (not finished — proceeds only if the user accepts) → types 1, 2, 3, 4 (and 7). Title: “ready — {N} resources excluded” / “needs review — {N} conflicts”. <strong>CTA = Review</strong> → then Download / Import.</li>
+    <li><strong>W-b · completed with warnings</strong> (finished, with caveats) → types 5, 6. Title: “…ed — {N} skipped / failed”. <strong>CTA = View</strong> (details).</li>
+  </ul>
+</div>
+
+<h2 id="subtitle"><span class="num">4</span>Subtitle &amp; CTA per status</h2>
+<p>The title carries type + outcome; the <strong>subtitle</strong> carries the specifics (what → where, counts),
+and the <strong>action</strong> carries the next step.</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Status</th><th>Subtitle (specifics)</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td class="t"><span class="pill prog"><span class="spin"></span>In&nbsp;progress</span></td><td>what → where</td><td>— (spinner only)</td></tr>
+    <tr><td class="t"><span class="pill ok">Success — file</span></td><td class="mono">{source} → {target}</td><td><strong>Download</strong> (with ⬇ icon)</td></tr>
+    <tr><td class="t"><span class="pill ok">Success — applied</span></td><td class="mono">{source} → {target} · {N} items</td><td><strong>View</strong></td></tr>
+    <tr><td class="t"><span class="pill warn">Warning W-a</span></td><td>same as success</td><td><strong>Review</strong></td></tr>
+    <tr><td class="t"><span class="pill warn">Warning W-b</span></td><td class="mono">{source} → {target} · {N} affected</td><td><strong>View</strong></td></tr>
+    <tr><td class="t"><span class="pill err">Failed</span></td><td>short cause; “nothing was applied” if atomic</td><td><strong>Retry</strong></td></tr>
+  </tbody>
+</table></div>
+<div class="callout">
+  <div class="k">CTA styling</div>
+  <p style="margin:0">Actions are <strong>tertiary — text + icon, no border and no fill</strong>, and
+  <strong>every</strong> action carries a leading icon (⬇&nbsp;<code>Download</code>, →&nbsp;<code>Review</code> /
+  <code>View</code>, ↺&nbsp;<code>Retry</code>). Sitting under the body rather than in a button-shaped slot, they read
+  as the item’s next step instead of competing with it.</p>
+</div>
+
+<h2 id="anatomy"><span class="num">5</span>Notification center anatomy</h2>
+<h3>Surface</h3>
+<p>A global <strong>bell</strong> in the dark app-shell header with an <strong>unread dot</strong>, always mounted
+and independent of any operation modal. Clicking it opens a <strong>contextual panel</strong> anchored under the
+bell. Live arrivals also raise a <strong>toast</strong>. The glyph is <strong>Phosphor <span class="mono">Bell</span>
+(regular)</strong> at 20&nbsp;px — Phosphor is the FlowX icon library, and the bell is not an exception to it.</p>
+<h3>Bell icon states — two, not three</h3>
+<p>The indicator is an <strong>8&nbsp;px dot</strong>, not a counter:</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>State</th><th>Bell shows</th><th>Rule</th></tr></thead>
+  <tbody>
+    <tr><td class="t">All read</td><td>Plain bell — <strong>no dot at all</strong></td><td>The dot is removed, not dimmed or shown as “0”. Zero is not news; an always-present marker is noise that trains the eye to ignore the real one.</td></tr>
+    <tr><td class="t">Any unread</td><td>Bell + <strong>8&nbsp;px red dot</strong> on the upper-right shoulder (<span class="mono">#E62200</span>, red-500 / DS <span class="mono">error</span>; a 2&nbsp;px header-coloured ring cuts it out from the glyph)</td><td>The dot says “something is waiting” — one bit. It does not say how much.</td></tr>
+  </tbody>
+</table></div>
+<p><strong>Why a dot and not a count.</strong> The header is the calmest surface in the app, and a number on it is a
+standing demand — it asks to be driven to zero, and it changes width as it grows (1 → 12 → 99 forced the old bubble
+to reflow, and pushed us into an “…” rule past 99). The dot is fixed-size, binary, and honest about what the bell can
+tell you from across the room: <em>yes / no</em>. The <strong>count still exists and is one click away</strong> — it’s
+the right-aligned figure on the filter popover’s <em>Unread</em> row (§7), where it sits next to the control that acts
+on it. Same information, moved from the place that can only <em>announce</em> it to the place that can <em>do</em>
+something with it.</p>
+<p class="proto-note">The dot lights for <em>unread terminal results only</em> — in-progress items never contribute (§9).
+A one-shot <strong>pulse</strong> on the bell is a separate signal, used when a running operation is backgrounded (§9).</p>
+<h3>Panel layout (top → bottom)</h3>
+<ul>
+  <li><strong>Header</strong> — “Notification” + <strong>Mark all as read</strong> (a text link; <em>disabled, not hidden,</em> when nothing is unread).</li>
+  <li><strong>Search</strong> + a <strong>filter icon</strong> (§7) — the filter is an occasional control, so it collapses to an icon rather than a persistent row. The icon highlights when a filter is active; single-select, so there’s no filter chip. The filter popover is <strong>175&nbsp;px</strong> wide; the workspace-type rows render as the same pill the feed items wear, and the unread count is a plain right-aligned figure rather than a badge.</li>
+  <li class="proto-note" style="list-style:none;margin-left:-22px">The header and the search row sit in <strong>one continuous block — no separator between them</strong>; they’re one piece of panel chrome, and a rule there would split the header from its own controls. The first border is the one above the feed, where content actually starts.</li>
+  <li><strong>Feed</strong> — one unified list, grouped by time into <strong>Today / This week / Older</strong>.</li>
+  <li><strong>Footer</strong> — “Notifications are kept for 30 days.”</li>
+</ul>
+<h3>Empty states — name the cause, not the void</h3>
+<p>The feed can be empty for four different reasons, and the message says <strong>which one</strong> — because in
+three of the four the user’s own search or filter is what’s hiding the items, and the fix is to clear it:</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Condition</th><th>Message</th><th>Alignment</th></tr></thead>
+  <tbody>
+    <tr><td class="t">Nothing in the feed at all (first run, or everything aged past 30 days)</td><td><strong>No notifications yet.</strong></td><td>centred</td></tr>
+    <tr><td class="t"><strong>Search</strong> active, nothing matches</td><td><strong>No notifications match your search.</strong></td><td><strong>top</strong></td></tr>
+    <tr><td class="t"><strong>Unread</strong> filter on, nothing unread</td><td><strong>No unread notifications.</strong></td><td>centred</td></tr>
+    <tr><td class="t">A <strong>workspace-type</strong> filter on, nothing in it</td><td><strong>No notifications for this filter.</strong></td><td>centred</td></tr>
+  </tbody>
+</table></div>
+<p>A single generic “Nothing here” would be a dead end in the three filtered cases: it reads as “you have no
+notifications” when the truth is “you have some, and you’re filtering them out.” Naming the cause is what makes
+the state recoverable.</p>
+<p><strong>Text only — no illustration, no CTA.</strong> An empty feed is the <em>good</em> state, not a failure: an
+illustration would celebrate nothing, and a CTA (“run an export”) would be patronising in a panel that’s opened
+dozens of times a day. This is also what the FlowX DS prescribes: its empty-state pattern has a <strong>Small</strong>
+size — “subtitle only, drops the icon, title and CTA” — called out explicitly for <strong>“limited space such as a
+dropdown panel.”</strong> That’s this surface.</p>
+<p><strong>Type — Open Sans Regular 14 / 22, <span class="mono">#64748B</span></strong> (neutrals-500 /
+<span class="mono">text-secondary</span> — the same ink the DS gives its Small empty state). One size step up from the
+item’s body band (§5), because when the feed is empty this line is the panel’s <em>only</em> content and shouldn’t read
+as a caption under something; but it keeps secondary ink, since an empty feed is not news.</p>
+<p><strong>The message replaces the list band, not the panel.</strong> Header, search + filter row
+and footer all stay mounted, and the panel keeps its tier height (§6) rather than collapsing around one line of text.
+Two reasons: the control that caused the emptiness stays right there to undo, and the footer keeps stating the 30-day
+retention — the standing answer to “where did the old ones go?”, so the first-run message never has to carry it.</p>
+<p><strong>The panel must not hug the message — it does not resize.</strong> Search is incremental, so a self-sizing
+panel would shrink on a keystroke (<span class="mono">b</span> → 8 results, <span class="mono">bi</span> → 3,
+<span class="mono">biz</span> → 0) and snap back on backspace, moving the footer and the panel’s bottom edge under the
+cursor mid-read; the same would happen on every filter switch. The panel is anchored to a <strong>fixed</strong> bell,
+so its bottom edge must not be a function of the current query. Hugging would also discard the 21 : 26 ratio in the one
+state a first-time user is most likely to see.</p>
+<p><strong>So the message is centred — vertically and horizontally — in the list band.</strong> This is the counterpart
+of not resizing: a single line pinned to the <em>top</em> of a 520&nbsp;px panel reads as “content failed to load”, not
+“there is nothing here”, and that misread is what makes a fixed height feel wrong. Centring is also the convergent
+instruction across design systems (Carbon, PatternFly, Primer and Emarsys all specify the empty state as centred
+<strong>in its container</strong>, never the container shrinking to the state). A populated list, by contrast, stays
+top-aligned and scrolls.</p>
+<p><strong>One message stays top-aligned: “No notifications match your search.”</strong> Search is the only empty state
+that is <strong>live feedback on typing</strong> rather than a state of the panel, and two things follow:</p>
+<ul>
+  <li><strong>It must not move as you type.</strong> <span class="mono">b</span> → 8 results, <span class="mono">bi</span> → 3,
+  <span class="mono">biz</span> → 0 — if the message were centred, the feedback would jump from the top of the band to its
+  middle on that last keystroke and back up on backspace. That’s the same defect as a resizing panel: movement under the
+  eye, caused by a keystroke, at the moment the user is deciding what to type next.</li>
+  <li><strong>It occupies the slot where the answer lives.</strong> One match renders at the top of the band, so zero
+  matches must appear in the same place — a response to a query shouldn’t change position with its result count. It also
+  keeps the message next to the field that caused it, rather than ~130&nbsp;px away from the control the user has to go
+  back and fix.</li>
+</ul>
+<p>The other three have no such transition — nothing narrows into them keystroke by keystroke — so they are stable states
+of an empty container, and they centre.</p>
+<p class="proto-note"><strong>Exception — the narrow-viewport sheet (&lt;&nbsp;520&nbsp;px, §6).</strong> There the panel
+is already <span class="mono">height: auto</span>, so it <em>does</em> hug. Correct, and consistent: that tier
+deliberately releases the ratio, and a phone-width sheet with 380&nbsp;px of void is a worse offence than a resize.</p>
+<h3>Feed item — title-led, body full width</h3>
+<pre>[ 24px disc ]   Title …………………………………………  2m
+                [WS-TYPE] workspace / &#128193; project
+                {source} &rarr; {target} &middot; {detail}
+                &#11015; Download</pre>
+<ul>
+  <li><strong>Row 1 — title + time.</strong> The title leads (it’s what the user scans for); the <strong>timestamp is right-aligned on the same row</strong>. The on-hover <strong>mark-as-read ✓</strong> sits in a fixed slot <em>before</em> the time, so timestamps stay column-aligned across read and unread rows alike.</li>
+  <li><strong>Timestamp format — relative today, an absolute date before that, and never the word “ago.”</strong>
+  An item from <strong>today</strong> shows a relative figure with no unit word (<span class="mono">just now</span> ·
+  <span class="mono">42s</span> · <span class="mono">25m</span> · <span class="mono">3h</span>); an item from
+  <strong>any earlier day</strong> shows <strong><span class="mono">dd Mmm</span></strong> (<span class="mono">26 Jun</span>).
+  “Ago” is dropped because the slot’s meaning comes from its position — a right-aligned figure on a notification row is
+  read as age without being told, and the word repeats on every row while adding nothing. Switching to a <em>date</em>
+  rather than continuing to count (<span class="mono">2d</span>, <span class="mono">3w</span>) is the same argument in
+  reverse: past today, “how long ago” stops being the useful question and “which day” starts — and a date is stable,
+  where a relative figure silently changes under the reader. The handover at midnight means the relative branch never
+  has to express more than <span class="mono">23h</span>, so the two formats can’t both describe the same item.</li>
+  <li><strong>The title is always one line</strong> — it ellipsises rather than wrapping, since a wrapping title would push the context / body / CTA bands down and break the even rhythm that makes a column of items scannable. When clipped, hovering reveals the <strong>full string in a tooltip</strong>, and the tooltip appears <strong>only when the text is actually cut off</strong> — never on a title you can already read in full. Whether a title clips depends on the panel’s width tier (§6), so it is measured <em>at hover time</em> rather than cached.</li>
+  <li><strong>Row 2 — context.</strong> Workspace-type pill (or organization area) · workspace · project.</li>
+  <li><strong>Row 3 — body.</strong> The source label / specifics; a failure adds a line naming the cause.</li>
+  <li><strong>Row 4 — action.</strong> Underneath the text, not in a right-hand column, so the body can run the <strong>full width</strong> of the panel.</li>
+  <li><strong>Status icon — a 24&nbsp;px disc with a 16&nbsp;px glyph inside</strong>, tinted per status. The tint is deliberately low-contrast so a column of discs still reads as calm rather than as a traffic light.</li>
+  <li><strong>Unread is the row fill alone</strong> — a pale blue wash, <em>no</em> left accent bar: the fill already spans the whole row, and a bar on top of it double-states the same thing.</li>
+</ul>
+<p>Type scale — the item runs on a single <strong>4&nbsp;px</strong> rhythm between bands:</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Band</th><th>Size / line-height</th><th>Weight</th><th>Colour</th></tr></thead>
+  <tbody>
+    <tr><td class="t">Title</td><td class="mono">14 / 22</td><td>Semibold</td><td class="mono">#1D232C</td></tr>
+    <tr><td class="t">Context + body details</td><td class="mono">12 / 18</td><td>Regular</td><td class="mono">#64748B</td></tr>
+    <tr><td class="t">Failure cause</td><td class="mono">12 / 18</td><td>Regular</td><td class="mono">#1D232C</td></tr>
+    <tr><td class="t">CTA</td><td class="mono">12 / 18</td><td>Semibold</td><td class="mono">#006BD8</td></tr>
+  </tbody>
+</table></div>
+<p class="proto-note">The failure cause is the one body line promoted to the title’s ink — it’s the substance of the
+notification, not a secondary detail.</p>
+
+<h2 id="width"><span class="num">6</span>Width &amp; sizing</h2>
+<p><strong>Panel size: 420 × 520&nbsp;px</strong> on a MacBook&nbsp;Pro&nbsp;16" — the reference display. The panel
+scrolls internally; the list is the only band that flexes.</p>
+<p>Reasoning for the width, benchmarked against contextual notification panels in comparable tools:</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Product</th><th>Surface</th><th>Approx. width</th></tr></thead>
+  <tbody>
+    <tr><td class="t">Jira</td><td>Header dropdown</td><td>~400 px</td></tr>
+    <tr><td class="t">Notion</td><td>Inbox side panel</td><td>~420–460 px</td></tr>
+    <tr><td class="t">Slack</td><td>Activity panel</td><td>~400 px</td></tr>
+    <tr><td class="t">GitHub</td><td>Dropdown → links to a full page</td><td>~370 px</td></tr>
+    <tr><td class="t">Linear</td><td>Full-page inbox + panel</td><td>page-width</td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li><strong>Below ~360 px</strong> the two-row item (badge + workspace·project + time on row 1; glyph + title + subtitle + CTA on row 2) truncates and the CTA crowds.</li>
+  <li><strong>Above ~480 px</strong> a bell-anchored dropdown starts to feel like it wants to be a page.</li>
+  <li>Because FlowX has <strong>no dedicated notifications page</strong>, the panel is the primary surface — so lean to the comfortable end (420, not 360).</li>
+  <li>Because <strong>per-item detail lives in the operation’s own modals</strong> (the excluded-resources panel, the migration detail page), the panel does <em>not</em> need to show everything — so it doesn’t need to grow into a page either. 420&nbsp;px is the balance.</li>
+</ul>
+<p class="proto-note">Toasts stay a touch narrower (~360 px) since they’re transient and single-action.</p>
+
+<h3>Responsive tiers — a fixed 21 : 26 proportion</h3>
+<p>The panel keeps the same <strong>21 : 26 (w : h)</strong> proportion at every size, and scales in
+<strong>discrete steps rather than fluidly</strong> — a dropdown that resizes continuously with the window makes the
+list reflow while you’re reading it, and the two-row item is only legible inside a narrow width band anyway.</p>
+<p>Tiers switch on <strong>viewport height</strong>, because height is what actually runs out on a laptop: a 16" and a
+13" are ~250&nbsp;px apart vertically, but both have room for a 420&nbsp;px column.</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Tier</th><th>Trigger (viewport height)</th><th>Panel</th><th>Typical display</th></tr></thead>
+  <tbody>
+    <tr><td class="t">S</td><td class="mono">&lt; 900 px</td><td class="mono">380 × 470</td><td>13" laptops (1280×800, MacBook Air)</td></tr>
+    <tr><td class="t">M — baseline</td><td class="mono">900–1149 px</td><td class="mono"><strong>420 × 520</strong></td><td><strong>MacBook Pro 16"</strong>, most docked laptops</td></tr>
+    <tr><td class="t">L</td><td class="mono">≥ 1150 px</td><td class="mono">460 × 570</td><td>27" external, 4K/5K desktop</td></tr>
+  </tbody>
+</table></div>
+<div class="callout amber">
+  <div class="k">Two guards sit above the tiers</div>
+  <p style="margin:0"><strong>Never reach the screen edge</strong> — <code>max-height: calc(100dvh − 72px)</code>. On a
+  very short window the panel clamps below its tier height (the ratio yields to fit) so the <strong>footer stays
+  visible</strong> instead of the list running off-screen. · <strong>Narrow viewports (&lt; 520&nbsp;px)</strong> — the
+  dropdown becomes a near-full-width <strong>sheet</strong> (<code>100vw − 24px</code>, max <code>70dvh</code>) and the
+  ratio is deliberately released: 21:26 serves a bell-anchored panel, not a phone-width one.</p>
+</div>
+
+<h2 id="scope"><span class="num">7</span>Scope: organization vs workspace type · filtering</h2>
+<p>An organization spans <strong>three workspace types</strong> — <code>PRODUCTION</code> / <code>STAGING</code> /
+<code>SANDBOX</code> — plus the org itself. Every notification has one of two scopes:</p>
+<ul>
+  <li><strong>Workspace-type scope</strong> — work-in-a-workspace kinds (export, import, migration). Stamped with
+  <code>{ wsType, workspace, project }</code>, shown with the colour-coded workspace-type pill
+  (blue&nbsp;Sandbox · amber&nbsp;Staging · dark&nbsp;Production) — one component wherever it appears: header, logo-menu
+  group headings, feed item, toast, filter popover.</li>
+  <li><strong>Organization scope</strong> — org-wide events that belong to no single workspace (e.g. Bulk Import
+  End-Users, licence expiry, billing). Stamped with <code>{ area, target }</code> and shown as a plain
+  <span class="mono">{area} · {target}</span> line (e.g. <span class="mono">Access Management · End-Users</span>) —
+  <strong>no coloured pill</strong> (the absence of a workspace-type pill is itself the “not workspace-specific” signal).
+  These appear <strong>under <em>All</em> only</strong> — the filter popover offers workspace types and nothing else, so
+  an org item has no scope option of its own.</li>
+</ul>
+<p>Filtering folds read-state and scope into <strong>one single-select popover</strong> off the filter icon —
+<strong>175&nbsp;px</strong> wide, five rows:</p>
+<pre>All notifications
+Unread (N)              ← read-state, count right-aligned
+────────────
+WORKSPACE TYPE
+  [SANDBOX] [STAGING] [PRODUCTION]   ← the order work promotes in</pre>
+<p><strong>A workspace type is represented by its pill, not by a dot beside a label.</strong> The workspace rows render
+<strong>the same badge the feed items wear</strong> — so the filter and the thing it filters read alike, and picking
+<span class="mono">[PRODUCTION]</span> is visibly the same token you then see on every row that comes back. The pill
+carries the label, so there’s no text beside it to restate it. Read-state rows (<em>All / Unread</em>) stay plain text:
+they aren’t workspace scopes, and giving them any marker of the same family would imply they were. Rows are held to one
+height across the divider, since a pill is shorter than a line of label text.</p>
+<p class="proto-note"><strong>Not doing: an “Organization” row.</strong> Org-level notifications still exist in the feed,
+but they no longer get a scope option — the popover filters <strong>workspace type only</strong>, and org items are
+reachable under <em>All</em> or by search. Removed because a single row mixing a <em>non</em>-workspace scope into a list
+headed “Workspace Type” was the one thing in the popover that didn’t fit its own heading. A future <em>type</em> filter
+(§13) is the better home for them.</p>
+<p>One active filter at a time; picking <em>Unread</em> shows unread across every workspace type. Trade-off: the two axes
+can’t currently be intersected (e.g. “unread Production”) — chosen for simplicity over a separate All/Unread toggle.
+Free-text <strong>search</strong> matches title + source label + context and composes with the filter.</p>
+
+<h2 id="toast"><span class="num">8</span>Toast (live arrival)</h2>
+<p>A toast is <strong>the same object as a feed item, just shorter-lived</strong> — it reuses the <strong>exact
+bands of §5</strong>: the 24&nbsp;px status disc, then title, context, body and action stacked beside it, on the same
+4&nbsp;px rhythm and the same type scale. The only substitution is in the title row, where the feed’s
+<strong>timestamp slot holds the dismiss ×</strong> (a toast is always “now”, so there is nothing to date). Its action
+follows the same tertiary text+icon rule. It carries only what’s needed, plus a status-matched left accent
+(green / amber / red) as its one piece of toast-specific chrome. A toast showing fewer fields than the feed is
+expected.</p>
+<p class="proto-note">Because both surfaces render from one set of classes, a change to the item’s anatomy reaches
+the toast automatically — the two cannot drift into looking like different products.</p>
+<div class="callout">
+  <div class="k">Don’t double-surface</div>
+  <p style="margin:0">The governing rule: a toast fires <strong>only when the user ends up <em>not looking</em></strong>
+  at the finished result. Suppressed when the <strong>center is open</strong>; when the launching <em>“Preparing… /
+  In progress”</em> modal for <em>that</em> job is still open (it switches straight to the result instead of toasting);
+  and on a <strong>direct instant action on a cache hit</strong> — clicking <strong>Get download</strong> when an
+  identical export is <em>“available instantly”</em> fires the download there and then, so no toast, and the entry
+  lands <strong>already read</strong>. Conversely it <em>does</em> fire when the user <strong>backgrounds</strong> an
+  op (<em>Close — keep working</em>) and it finishes while they’re away (§9).</p>
+</div>
+
+<h3>Auto-dismiss &amp; persistence</h3>
+<p>A toast lingers just long enough to read and reach for its action, then clears itself — but it never expires
+<em>while the user is engaging with it or away from the tab</em>. Each toast owns its own countdown, so they
+dismiss independently rather than as a batch.</p>
+<ul>
+  <li><strong>Duration by weight</strong> — <strong>5&nbsp;s</strong> for a toast with <strong>no action</strong>;
+  <strong>7&nbsp;s</strong> for one carrying a <strong>CTA</strong> (Download / Review / View), which needs the
+  extra beat to be reached.</li>
+  <li><strong>Paused (frozen, not reset)</strong> while the pointer is <strong>hovering</strong> the toast, keyboard
+  <strong>focus</strong> is inside it, or the <strong>window/tab is blurred</strong> (<code>visibilitychange</code> —
+  the user is in another tab or app). Holds can overlap; the countdown resumes only once <strong>all</strong> are
+  released.</li>
+  <li><strong>Resumes</strong> on mouse-leave / focus-out / window-focus, banking the time already elapsed.</li>
+  <li>A <strong>manual ×</strong> dismisses immediately, regardless of the timer.</li>
+</ul>
+<div class="callout amber">
+  <div class="k">1000&nbsp;ms grace on resume</div>
+  <p style="margin:0">On resume the remaining time is floored to <strong>1&nbsp;s</strong>, so a nearly-expired toast
+  can’t vanish the instant the cursor or focus leaves it.</p>
+</div>
+
+<h3 id="stacking">Stacking — when several toasts arrive at once</h3>
+<p>Long-running operations can finish together (three exports kicked off in a row, a burst of cache hits).</p>
+<div class="callout amber">
+  <div class="k">The rule</div>
+  <p style="margin:0"><strong>Stack, capped at 3. The newest always gets a slot; at the cap the oldest is evicted
+  early. Nothing is queued.</strong></p>
+</div>
+<ul>
+  <li><strong>Newest nearest the corner.</strong> A bottom-anchored column with the newest appended last, so the most
+  recent result sits closest to the corner and later arrivals never push it off-screen.</li>
+  <li><strong>Evict the oldest, never drop the newest.</strong> The most recent completion is the most relevant, and
+  the evicted toast has already had screen time.</li>
+  <li><strong>Timers stay independent</strong> — hovering one pauses only that one; its neighbours keep expiring.</li>
+  <li><strong>Overflow needs no extra signal</strong> — the bell’s unread dot is already lit (§5), and the <em>Unread</em>
+  count on the filter popover carries the number of results that arrived. The <strong>pulse is deliberately not
+  reused</strong>: it means “your backgrounded operation lives here” (§9), and overloading it would blur a signal we
+  just defined.</li>
+</ul>
+<div class="grid2">
+  <div class="card"><h4>Why not queue them?</h4><p>The timer <strong>pauses on hover, focus and tab-blur</strong> — so
+  one hovered toast, or the user switching tabs, would <strong>stall the whole queue indefinitely</strong>. Serial
+  delivery is also slow: five CTA toasts at 7&nbsp;s each is ~35&nbsp;s, so the last announces news half a minute
+  stale. Queueing optimises for “don’t miss anything”, but <strong>the feed already guarantees that</strong> — every
+  toast is also a feed item, kept 30 days. The toast is a courtesy, not the system of record.</p></div>
+  <div class="card"><h4>Why not unbounded?</h4><p>A wall of toasts covers the app, and because each owns an
+  independent timer they pop out at staggered times — the stack jumps around under the cursor exactly when the user is
+  reaching for a button.</p></div>
+  <div class="card"><h4>Why 3?</h4><p>It absorbs realistic bursts without becoming a curtain, and matches the common
+  default — macOS, Slack and the mainstream toast libraries all land on 3.</p></div>
+  <div class="card"><h4>Accepted trade-off</h4><p>In a burst larger than 3, some results are announced only by the
+  badge. That’s the right call — the alternative spends the user’s attention re-litigating old news, and nothing is
+  lost.</p></div>
+</div>
+<p class="proto-note"><strong>Not doing: coalescing</strong> (“3 exports ready”). It breaks the one-toast → one
+<code>jobId</code> → one action model — a merged toast can’t carry a single meaningful CTA, and it would invent a
+second notification type. A future candidate if bursts ever prove common.</p>
+
+<h2 id="inprogress"><span class="num">9</span>In-progress: launch modal, bell pulse &amp; the count</h2>
+<p>Long-running ops spend most of their life <strong>in progress</strong>. Four rules keep that phase honest.</p>
+
+<h3>The launch modal is a dismissible confirmation</h3>
+<p>Pressing a committing CTA (<strong>Start Migration</strong>, <strong>Export</strong>) opens a small
+<em>“…in progress”</em> modal modelled on export’s <strong>Preparing…</strong> screen: spinner, what&nbsp;→&nbsp;where,
+and a <strong>“Close — keep working”</strong> button. It exists to (a) confirm an <strong>irreversible</strong> action
+actually started, and (b) say <em>“you can leave — we’ll notify you.”</em></p>
+<div class="grid2">
+  <div class="card"><h4>Not a trap</h4><p>Close it any time — a <em>running</em> op’s modal is never treated as dirty (§10), so leaving loses nothing. If left open through completion, it switches straight to the result (§8).</p></div>
+  <div class="card"><h4>Not pure background</h4><p>A bare toast is too ephemeral to be the <em>only</em> acknowledgement that a non-reversible op launched. The modal is the “it started” handshake; the toast/feed is the “it finished” one.</p></div>
+</div>
+<div class="callout">
+  <div class="k">Minimum on-screen time — ~1&nbsp;s</div>
+  <p style="margin:0">The launch modal stays up for at least ~1&nbsp;second even if the op finishes near-instantly
+  (cache hit, tiny migration), so it reads as <em>“it started”</em> instead of flashing (<code>MIN_MODAL_MS</code>).
+  A floor, not a fixed wait — a genuinely long op is unaffected. This is the answer to the “quick migrations make
+  the modal flash” caveat.</p>
+</div>
+
+<h3>The bell pulses when the modal is backgrounded</h3>
+<p>Pressing <strong>Close — keep working</strong> fires a <strong>one-shot pulse</strong> on the header bell — the
+visual handshake tying the just-dismissed modal to <em>where the operation now lives</em>, answering “where do I
+check on this?” without words. Suppressed when the panel is already open (the user can already see the feed update).</p>
+
+<h3>Unread never includes in-progress</h3>
+<p>The bell’s dot (§5) and the <em>Unread</em> count (§7) mean exactly one thing: <strong>unread terminal results that
+need you</strong> (ready / done / failed / org events). A pending entry has <strong>no action</strong> — counting it would
+cry wolf (open the bell, find only a spinner) and double-count at completion (does <em>preparing → ready</em> bump it a
+second time?). So in-progress shows <strong>in the feed</strong> (a spinner row — discoverable) but <strong>out of
+unread</strong>; “work is happening” is carried by the <strong>pulse + the live row</strong>, never by the dot or the
+count.</p>
+<p class="proto-note">Activity ≠ unread-actionable — the two signals are shown differently on purpose.</p>
+
+<h3>At completion, it hinges on one thing: is the user still looking?</h3>
+<ul>
+  <li><strong>Routed to the result</strong> (they let the modal switch them to the download / review / detail view)
+  → they’re looking → <strong>no toast</strong>, and the entry is written <strong>already&nbsp;read</strong> — kept as
+  history (30-day retention + cross-surface pull) without inflating the count or re-alerting. A record, not a second
+  notification. <em>(Mirrors export, which marks the job read when its Preparing modal switches to the download modal.)</em></li>
+  <li><strong>Backgrounded it</strong> via <em>Close — keep working</em> → they’ve <strong>stopped</strong> looking →
+  <strong>toast + unread</strong>, like any not-watched completion. This holds even in the <strong>min-display
+  sliver</strong> — if the op finished during that ≤1&nbsp;s hold and they click <em>Close — keep working</em> in it,
+  they still get the toast, not a silent unread row. <em>(A backgrounded-and-still-running op instead pulses the bell;
+  the toast comes later when it completes.)</em></li>
+</ul>
+
+<h2 id="nav"><span class="num">10</span>Navigating from a notification</h2>
+<p>A notification <strong>never navigates on its own</strong> — every route is a user click. Acting on one that
+routes to a page can fire while a modal is open (a toast sits above the scrim) or from a config page (the bell is
+reachable there). If the user is <strong>mid-setup</strong> (a migration setup/config, or an export setup), a
+<strong>“Discard unsaved changes?”</strong> guard appears first — <strong>Keep working</strong> stays put and leaves
+the notification unread; <strong>Discard &amp; leave</strong> tears the flow down and routes. A <em>running</em>
+operation’s progress modal is not treated as dirty (it keeps going in the background), and a plain download doesn’t
+navigate at all — so neither prompts.</p>
+<div class="callout amber">
+  <div class="k">Never stack a modal on a modal</div>
+  <p style="margin:0">When the dirty flow is itself a modal, the guard doesn’t open a second scrim on top — the
+  underlying modal is hidden while the confirm shows (its state is preserved), so exactly one surface and one focus
+  target exist at a time. Stacked modals are avoided on purpose (double-dimming + competing focus traps / Esc handling).</p>
+</div>
+
+<h2 id="failure"><span class="num">11</span>Failure handling</h2>
+<p>A <code>FAILED</code> transition raises a notification like any other. For a system-outage failure the copy should:
+name the failure, <strong>reassure that nothing was applied</strong> (the main anxiety with a mid-run failure), and
+offer <strong>Retry</strong>. Keep the wording <strong>identical across toast, feed row, and detail page</strong> so it
+reads as one error, not three. A failed item shows <strong>no status chip</strong> — the red glyph + title already say
+it; the action slot holds Retry.</p>
+<div class="callout">
+  <div class="k">Example — bulk migration, service unavailable</div>
+  <p style="margin:0"><strong>Instance migration failed</strong> — the migration service is temporarily unavailable, so
+  the operation couldn’t run. Your process instances weren’t changed. <strong>Retry</strong> once it’s back.</p>
+</div>
+<p class="proto-note">Only claim “nothing was changed” if the operation is transactional/atomic. If a partial effect is
+possible, soften to “Some items may not have been processed — open details to review before retrying.”</p>
+
+<h3>One wording, three surfaces</h3>
+<p>The cause string is defined <strong>once per operation kind</strong> and reused verbatim by the <strong>feed row</strong>
+(a second subtitle line), the <strong>toast</strong>, and the <strong>launch modal’s failure state</strong> — so a failure
+reads as one error, not three. The toast, being one line, carries the title + <code>{source} → {target}</code> and leaves
+the cause to the row it points at. The failed row is the one place a feed item runs to three lines: “why did it fail, and
+was anything applied?” is the first question a failure raises.</p>
+
+<h3>Retry semantics</h3>
+<div class="callout amber">
+  <div class="k">The rule</div>
+  <p style="margin:0"><strong>Retry re-enters the operation’s last confirmation gate if it has one; only a
+  consequence-free operation re-runs on the click itself.</strong> A notification is a low-ceremony surface — one stray
+  click in a dropdown must never launch something irreversible. Retry restores <em>where the user was</em>; it does not
+  skip ahead of the safeguards the original flow imposed.</p>
+</div>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>Operation</th><th>Retry does</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Export<br><span class="mono" style="font-weight:400">read-only</span></td>
+        <td><strong>Re-runs immediately</strong> in the background — no modal, no navigation, safe from anywhere the bell is reachable.</td>
+        <td>It produces an artifact and changes nothing; a confirm step would be ceremony for a no-op risk.</td></tr>
+      <tr><td class="t">Migration<br><span class="mono" style="font-weight:400">irreversible</span></td>
+        <td><strong>Reopens the Bulk Migration Summary</strong> — the same gate the original flow used, with <strong>Start Migration</strong> as the deliberate commit and <strong>Back</strong> still leading to the mapping config.</td>
+        <td>“Once started, the migration cannot be stopped or canceled.” The retry path must not shortcut the gate — and reopening lets the user re-read the plan, since builds/instances may have moved on since the failure.</td></tr>
+    </tbody>
+  </table>
+</div>
+<ul>
+  <li>Either way Retry <strong>reuses the original parameters</strong> (source, target, options) — a re-attempt, not a
+  fresh setup. For gated kinds those params pre-fill the gate.</li>
+  <li><strong>A fresh run raises a fresh notification.</strong> The failed item is marked <strong>read</strong> (acted on —
+  <code>ACTED_ON</code> in the lifecycle) and the retry appears as its own in-progress → terminal item. History is
+  appended, never rewritten in place, so “this failed twice then worked” stays legible.</li>
+  <li><strong>Opening a gate counts as acting on it</strong>, so the item is marked read at that point — same as the export
+  <code>Review</code> flow, which also marks read before a cancellable modal. <strong>Backing out runs nothing</strong>;
+  the failed row stays in the feed with Retry still on it, now read.</li>
+  <li><strong>Retry obeys the discard guard</strong> — if it would tear down an unsaved setup, the “Discard unsaved
+  changes?” confirm comes first.</li>
+  <li><strong>A failure counts as unread</strong> (§9) — it’s a terminal result that needs you. Retrying clears it from the
+  count whether or not the retry ultimately succeeds.</li>
+  <li><strong>Failing while its launch modal is open</strong> switches that modal to a failure state (same copy,
+  <code>Close</code> + <code>Retry</code>) rather than spinning on — the same “switches straight to the result” rule as
+  success, the result just being a failure. No toast fires: the user is already looking.</li>
+  <li><strong>Retry is text-only</strong> (no icon) — it re-runs work rather than handing back a file.</li>
+</ul>
+
+<h2 id="edge"><span class="num">12</span>Edge cases</h2>
+<ul>
+  <li><strong>Concurrent identical requests</strong> — cache key + job lock; the second request attaches to the in-flight job (one notification, not two).</li>
+  <li><strong>Result expiry</strong> — clicking a stale notification shows “expired — re-run”, not a broken action.</li>
+  <li><strong>Source changed after request</strong> — a content-revision in the cache key prevents reuse of a stale artifact (fresh run → fresh notification).</li>
+  <li><strong>Permissions</strong> — re-checked at <em>action</em> time (download / view), not just at request time.</li>
+  <li><strong>Multiple queued operations</strong> — each notification carries a job id + human label to stay distinguishable.</li>
+  <li><strong>Retention</strong> — the center keeps the last <strong>30 days</strong>; the footer states this so the absence of older items reads as policy, not loss.</li>
+</ul>
+
+<h2 id="future"><span class="num">13</span>Future &amp; open questions</h2>
+<div class="grid2">
+  <div class="card"><h4>Artifact expiry (TTL)</h4><p>Show how long a result stays downloadable; a stale notification reads “expired — re-run” instead of breaking. Needs the TTL decision below.</p></div>
+  <div class="card"><h4>Archive</h4><p>Reintroduce per-item dismiss as an on-hover archive action, once there’s an archive destination.</p></div>
+  <div class="card"><h4>Deep-link “Go to”</h4><p>Jump to the build / version / project a notification refers to, auto-switching workspace + workspace type.</p></div>
+  <div class="card"><h4>Grouping by workspace</h4><p>Time grouping ships today; workspace grouping is a candidate as volume grows.</p></div>
+  <div class="card"><h4>Priority / severity</h4><p>Errors and licence expiry styled distinctly, optionally pinned.</p></div>
+  <div class="card"><h4>Preferences</h4><p>Mute types, do-not-disturb, optional email/desktop for long-running jobs.</p></div>
+</div>
+<h3>Open questions</h3>
+<ul>
+  <li><strong>Notification infra</strong> — reuse FlowX’s real-time/notification infrastructure vs. a dedicated path (recommend reuse; needs codebase confirmation).</li>
+  <li><strong>Import warnings</strong> — do imports surface a <em>pre-apply</em> review (“N conflicts”, W-a), or auto-apply and report afterward (“imported — N skipped”, W-b)? This flips the titles for types 3–4.</li>
+  <li><strong>Job cancelability</strong> — can an in-flight job be cancelled, or does it run to completion?</li>
+  <li><strong>Artifact / result TTL</strong> — exact retention window and how expiry surfaces in the feed.</li>
+  <li><strong>Per-user vs. shared</strong> — are notifications strictly per-user, or should a shared operation notify a team?</li>
+</ul>
+
+<footer class="doc">
+  Notification Center — Product Specs · FlowX Designer. Prototype-backed working document; titles &amp; behaviours
+  mirror the interactive prototype. Share feedback with Product / Design.
+</footer>
+
+</div>
+</body>
+</html>
